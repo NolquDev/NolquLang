@@ -116,6 +116,40 @@ ObjNative* newNative(NativeFn fn, const char* name, int arity) {
     return native;
 }
 
+ObjArray* newArray(void) {
+    ObjArray* arr = ALLOC_OBJ(ObjArray, OBJ_ARRAY);
+    arr->items    = NULL;
+    arr->count    = 0;
+    arr->capacity = 0;
+    return arr;
+}
+
+void arrayPush(ObjArray* arr, Value value) {
+    if (arr->count >= arr->capacity) {
+        int old_cap   = arr->capacity;
+        arr->capacity = GROW_CAPACITY(old_cap);
+        arr->items    = GROW_ARRAY(Value, arr->items, old_cap, arr->capacity);
+    }
+    arr->items[arr->count++] = value;
+}
+
+Value arrayPop(ObjArray* arr) {
+    if (arr->count == 0) return NIL_VAL;
+    return arr->items[--arr->count];
+}
+
+Value arrayGet(ObjArray* arr, int index) {
+    if (index < 0) index = arr->count + index; // negative indexing
+    if (index < 0 || index >= arr->count) return NIL_VAL;
+    return arr->items[index];
+}
+
+void arraySet(ObjArray* arr, int index, Value value) {
+    if (index < 0) index = arr->count + index;
+    if (index < 0 || index >= arr->count) return;
+    arr->items[index] = value;
+}
+
 void printObject(Value v) {
     switch (OBJ_TYPE(v)) {
         case OBJ_STRING:
@@ -130,6 +164,19 @@ void printObject(Value v) {
         case OBJ_NATIVE:
             printf("<native %s>", AS_NATIVE(v)->name);
             break;
+        case OBJ_ARRAY: {
+            ObjArray* arr = AS_ARRAY(v);
+            printf("[");
+            for (int i = 0; i < arr->count; i++) {
+                if (IS_STRING(arr->items[i]))
+                    printf("\"%s\"", AS_CSTRING(arr->items[i]));
+                else
+                    printValue(arr->items[i]);
+                if (i < arr->count - 1) printf(", ");
+            }
+            printf("]");
+            break;
+        }
     }
 }
 
@@ -151,6 +198,12 @@ void freeObject(Obj* obj) {
         case OBJ_NATIVE:
             nq_realloc(obj, sizeof(ObjNative), 0);
             break;
+        case OBJ_ARRAY: {
+            ObjArray* arr = (ObjArray*)obj;
+            FREE_ARRAY(Value, arr->items, arr->capacity);
+            nq_realloc(obj, sizeof(ObjArray), 0);
+            break;
+        }
     }
 }
 
@@ -169,6 +222,7 @@ const char* objectTypeName(ObjType t) {
         case OBJ_STRING:   return "string";
         case OBJ_FUNCTION: return "function";
         case OBJ_NATIVE:   return "native function";
+        case OBJ_ARRAY:    return "array";
         default:           return "object";
     }
 }

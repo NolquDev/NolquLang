@@ -241,6 +241,33 @@ static ASTNode* parseStmt(Parser* p) {
                 n->data.assign.value = val;
                 return n;
             }
+            // arr[i] = val  (index assignment)
+            if (check(p, TK_LBRACKET)) {
+                int line = tok.line;
+                ASTNode* obj = makeNode(NODE_IDENT, line);
+                obj->data.ident.name = dupStr(tok.start, tok.length);
+                advance(p); // consume '['
+                ASTNode* idx = parseExpr(p);
+                expect(p, TK_RBRACKET, "Expected ']' to close index");
+                if (check(p, TK_EQ)) {
+                    advance(p);
+                    ASTNode* val = parseExpr(p);
+                    expectNewline(p);
+                    ASTNode* n = makeNode(NODE_SET_INDEX, line);
+                    n->data.set_index.obj   = obj;
+                    n->data.set_index.index = idx;
+                    n->data.set_index.value = val;
+                    return n;
+                }
+                // Otherwise it's a get-index used as expression statement
+                ASTNode* get = makeNode(NODE_GET_INDEX, line);
+                get->data.get_index.obj   = obj;
+                get->data.get_index.index = idx;
+                ASTNode* stmt = makeNode(NODE_EXPR_STMT, line);
+                stmt->data.expr_stmt.expr = get;
+                expectNewline(p);
+                return stmt;
+            }
             ASTNode* ident = makeNode(NODE_IDENT, tok.line);
             ident->data.ident.name = dupStr(tok.start, tok.length);
 
@@ -383,17 +410,30 @@ static ASTNode* parseUnary(Parser* p) {
 
 static ASTNode* parseCall(Parser* p) {
     ASTNode* expr = parsePrimary(p);
-    while (check(p, TK_LPAREN)) {
-        int line = p->current.line; advance(p);
-        ASTNode* call = makeNode(NODE_CALL, line);
-        call->data.call.callee = expr;
-        initNodeList(&call->data.call.args);
-        while (!check(p, TK_RPAREN) && !check(p, TK_EOF)) {
-            appendNode(&call->data.call.args, parseExpr(p));
-            if (!match(p, TK_COMMA)) break;
+    // handle both calls and index access in sequence: f()[0], arr[i](args)
+    for (;;) {
+        if (check(p, TK_LPAREN)) {
+            int line = p->current.line; advance(p);
+            ASTNode* call = makeNode(NODE_CALL, line);
+            call->data.call.callee = expr;
+            initNodeList(&call->data.call.args);
+            while (!check(p, TK_RPAREN) && !check(p, TK_EOF)) {
+                appendNode(&call->data.call.args, parseExpr(p));
+                if (!match(p, TK_COMMA)) break;
+            }
+            expect(p, TK_RPAREN, "Expected ')' to close argument list");
+            expr = call;
+        } else if (check(p, TK_LBRACKET)) {
+            int line = p->current.line; advance(p);
+            ASTNode* idx = parseExpr(p);
+            expect(p, TK_RBRACKET, "Expected ']' to close index access");
+            ASTNode* get = makeNode(NODE_GET_INDEX, line);
+            get->data.get_index.obj   = expr;
+            get->data.get_index.index = idx;
+            expr = get;
+        } else {
+            break;
         }
-        expect(p, TK_RPAREN, "Expected ')' to close argument list");
-        expr = call;
     }
     return expr;
 }
@@ -417,6 +457,18 @@ static ASTNode* parsePrimary(Parser* p) {
     if (check(p, TK_TRUE))  { advance(p); ASTNode* n = makeNode(NODE_BOOL, p->previous.line); n->data.boolean.value = true;  return n; }
     if (check(p, TK_FALSE)) { advance(p); ASTNode* n = makeNode(NODE_BOOL, p->previous.line); n->data.boolean.value = false; return n; }
     if (check(p, TK_NIL))   { advance(p); return makeNode(NODE_NIL, p->previous.line); }
+    // Array literal: [expr, expr, ...]
+    if (check(p, TK_LBRACKET)) {
+        int line = p->current.line; advance(p);
+        ASTNode* arr = makeNode(NODE_ARRAY, line);
+        initNodeList(&arr->data.array.items);
+        while (!check(p, TK_RBRACKET) && !check(p, TK_EOF)) {
+            appendNode(&arr->data.array.items, parseExpr(p));
+            if (!match(p, TK_COMMA)) break;
+        }
+        expect(p, TK_RBRACKET, "Expected ']' to close array literal");
+        return arr;
+    }
     if (check(p, TK_IDENT)) {
         advance(p);
         ASTNode* n = makeNode(NODE_IDENT, p->previous.line);
@@ -430,7 +482,7 @@ static ASTNode* parsePrimary(Parser* p) {
         return inner;
     }
 
-    errorAtCurrent(p, "Invalid expression. Expected a number, string, variable, or expression.");
+    errorAtCurrent(p, "Invalid expression. Expected a number, string, array, variable, or expression.");
     return makeNode(NODE_NIL, p->current.line);
 }
 

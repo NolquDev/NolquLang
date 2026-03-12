@@ -32,6 +32,11 @@ typedef enum {
 
     NODE_BLOCK,         // sequence of statements
 
+    // Array nodes (new in 0.3.0)
+    NODE_ARRAY,         // [expr, expr, ...]  array literal
+    NODE_GET_INDEX,     // arr[index]
+    NODE_SET_INDEX,     // arr[index] = value  (as statement)
+
     NODE_COUNT
 } NodeType;
 
@@ -161,6 +166,25 @@ struct ASTNode {
         } boolean;
 
         // NODE_NIL — no data
+
+        // NODE_ARRAY: [items...]
+        struct {
+            NodeList items;
+        } array;
+
+        // NODE_GET_INDEX: obj[index]
+        struct {
+            ASTNode* obj;
+            ASTNode* index;
+        } get_index;
+
+        // NODE_SET_INDEX: obj[index] = value
+        struct {
+            ASTNode* obj;
+            ASTNode* index;
+            ASTNode* value;
+        } set_index;
+
     } data;
 };
 

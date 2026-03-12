@@ -65,9 +65,54 @@ static Value nativeType(int argc, Value* args) {
     else if (IS_BOOL(v))   name = "bool";
     else if (IS_NUMBER(v)) name = "number";
     else if (IS_STRING(v)) name = "string";
+    else if (IS_ARRAY(v))  name = "array";
     else if (IS_FUNCTION(v) || IS_NATIVE(v)) name = "function";
     else name = "object";
     return OBJ_VAL(copyString(name, (int)strlen(name)));
+}
+
+// len(arr_or_string) — return length
+static Value nativeLen(int argc, Value* args) {
+    if (argc != 1) return NIL_VAL;
+    if (IS_ARRAY(args[0]))  return NUMBER_VAL(AS_ARRAY(args[0])->count);
+    if (IS_STRING(args[0])) return NUMBER_VAL(AS_STRING(args[0])->length);
+    return NIL_VAL;
+}
+
+// push(arr, value) — append to array, return array
+static Value nativePush(int argc, Value* args) {
+    if (argc != 2 || !IS_ARRAY(args[0])) return NIL_VAL;
+    arrayPush(AS_ARRAY(args[0]), args[1]);
+    return args[0];
+}
+
+// pop(arr) — remove and return last element
+static Value nativePop(int argc, Value* args) {
+    if (argc != 1 || !IS_ARRAY(args[0])) return NIL_VAL;
+    return arrayPop(AS_ARRAY(args[0]));
+}
+
+// remove(arr, index) — remove element at index, return removed value
+static Value nativeRemove(int argc, Value* args) {
+    if (argc != 2 || !IS_ARRAY(args[0]) || !IS_NUMBER(args[1])) return NIL_VAL;
+    ObjArray* arr = AS_ARRAY(args[0]);
+    int idx = (int)AS_NUMBER(args[1]);
+    if (idx < 0) idx = arr->count + idx;
+    if (idx < 0 || idx >= arr->count) return NIL_VAL;
+    Value removed = arr->items[idx];
+    for (int i = idx; i < arr->count - 1; i++)
+        arr->items[i] = arr->items[i + 1];
+    arr->count--;
+    return removed;
+}
+
+// contains(arr, value) — return true if value is in array
+static Value nativeContains(int argc, Value* args) {
+    if (argc != 2 || !IS_ARRAY(args[0])) return BOOL_VAL(false);
+    ObjArray* arr = AS_ARRAY(args[0]);
+    for (int i = 0; i < arr->count; i++)
+        if (valuesEqual(arr->items[i], args[1])) return BOOL_VAL(true);
+    return BOOL_VAL(false);
 }
 
 // ─────────────────────────────────────────────
@@ -87,10 +132,15 @@ void initVM(VM* vm) {
     initStringTable(&nq_string_table);
 
     // Register built-in functions
-    registerNative(vm, "input", nativeInput, -1); // variadic: 0 or 1 arg
-    registerNative(vm, "str",   nativeStr,    1);
-    registerNative(vm, "num",   nativeNum,    1);
-    registerNative(vm, "type",  nativeType,   1);
+    registerNative(vm, "input",    nativeInput,    -1);
+    registerNative(vm, "str",      nativeStr,       1);
+    registerNative(vm, "num",      nativeNum,       1);
+    registerNative(vm, "type",     nativeType,      1);
+    registerNative(vm, "len",      nativeLen,       1);
+    registerNative(vm, "push",     nativePush,      2);
+    registerNative(vm, "pop",      nativePop,       1);
+    registerNative(vm, "remove",   nativeRemove,    2);
+    registerNative(vm, "contains", nativeContains,  2);
 }
 
 void freeVM(VM* vm) {
@@ -327,6 +377,58 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             case OP_NOT: { Value v = pop(vm); push(vm, BOOL_VAL(!isTruthy(v))); break; }
 
             case OP_PRINT: { printValue(pop(vm)); printf("\n"); break; }
+
+            case OP_BUILD_ARRAY: {
+                uint8_t count = READ_BYTE();
+                ObjArray* arr = newArray();
+                // items are on stack in order, bottom to top
+                Value* base = vm->stack_top - count;
+                for (int i = 0; i < count; i++) arrayPush(arr, base[i]);
+                vm->stack_top -= count;
+                push(vm, OBJ_VAL(arr));
+                break;
+            }
+            case OP_GET_INDEX: {
+                Value idx_val = pop(vm);
+                Value obj_val = pop(vm);
+                if (IS_ARRAY(obj_val)) {
+                    if (!IS_NUMBER(idx_val)) {
+                        vmRuntimeError(vm, "Array index must be a number.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    int idx = (int)AS_NUMBER(idx_val);
+                    push(vm, arrayGet(AS_ARRAY(obj_val), idx));
+                } else if (IS_STRING(obj_val)) {
+                    if (!IS_NUMBER(idx_val)) {
+                        vmRuntimeError(vm, "String index must be a number.");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                    ObjString* s = AS_STRING(obj_val);
+                    int idx = (int)AS_NUMBER(idx_val);
+                    if (idx < 0) idx = s->length + idx;
+                    if (idx < 0 || idx >= s->length) { push(vm, NIL_VAL); break; }
+                    push(vm, OBJ_VAL(copyString(&s->chars[idx], 1)));
+                } else {
+                    vmRuntimeError(vm, "Only arrays and strings can be indexed.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
+            case OP_SET_INDEX: {
+                Value val     = pop(vm);
+                Value idx_val = pop(vm);
+                Value obj_val = pop(vm);
+                if (!IS_ARRAY(obj_val)) {
+                    vmRuntimeError(vm, "Only arrays support index assignment.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                if (!IS_NUMBER(idx_val)) {
+                    vmRuntimeError(vm, "Array index must be a number.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                arraySet(AS_ARRAY(obj_val), (int)AS_NUMBER(idx_val), val);
+                break;
+            }
 
             case OP_JUMP:          { uint16_t off = READ_UINT16(); frame->ip += off; break; }
             case OP_JUMP_IF_FALSE: { uint16_t off = READ_UINT16(); if (!isTruthy(peek(vm, 0))) frame->ip += off; break; }

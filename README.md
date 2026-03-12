@@ -7,7 +7,7 @@
 | |\  | (_) | | (_| | |_| |
 |_| \_|\___/|_|\__, |\__,_|
                |___/
-v0.2.0-alpha
+v0.3.0-alpha
 ```
 
 Nolqu is a programming language designed so that code reads like plain sentences.
@@ -36,41 +36,6 @@ cd Nolqu
 make
 cp nq $PREFIX/bin/
 ```
-
-### Windows — WSL (Windows Subsystem for Linux)
-
-First, make sure WSL is installed. Open PowerShell as Administrator and run:
-
-```powershell
-wsl --install
-```
-
-Restart your PC, then open the WSL terminal and run:
-
-```bash
-sudo apt update && sudo apt install git gcc make
-git clone https://github.com/Nadzil123/Nolqu.git
-cd Nolqu
-make
-sudo make install   # install to /usr/local/bin/nq
-```
-
-### Windows — Native (MinGW via MSYS2)
-
-1. Download and install **MSYS2** from [msys2.org](https://www.msys2.org)
-2. Open the **MSYS2 UCRT64** terminal and run:
-
-```bash
-pacman -Syu
-pacman -S git mingw-w64-ucrt-x86_64-gcc make
-git clone https://github.com/Nadzil123/Nolqu.git
-cd Nolqu
-make
-cp nq.exe /ucrt64/bin/   # or any directory in your PATH
-```
-
-> **Note:** On Windows with MinGW, the binary will be `nq.exe` instead of `nq`.
-> You can still run it as `nq` from the terminal.
 
 ---
 

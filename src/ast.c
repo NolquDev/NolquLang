@@ -123,6 +123,21 @@ void freeNode(ASTNode* node) {
         case NODE_NIL:
             break; // no heap data
 
+        case NODE_ARRAY:
+            freeNodeList(&node->data.array.items);
+            break;
+
+        case NODE_GET_INDEX:
+            freeNode(node->data.get_index.obj);
+            freeNode(node->data.get_index.index);
+            break;
+
+        case NODE_SET_INDEX:
+            freeNode(node->data.set_index.obj);
+            freeNode(node->data.set_index.index);
+            freeNode(node->data.set_index.value);
+            break;
+
         default:
             break;
     }

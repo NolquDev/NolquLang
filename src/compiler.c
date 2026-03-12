@@ -175,6 +175,18 @@ static void compileExpr(ASTNode* node) {
             emit2(OP_CALL, (uint8_t)argc, line);
             break;
         }
+        case NODE_ARRAY: {
+            int count = node->data.array.items.count;
+            for (int i = 0; i < count; i++) compileExpr(node->data.array.items.items[i]);
+            if (count > 255) { compileError(line, "Too many items in array literal (max 255)."); count = 255; }
+            emit2(OP_BUILD_ARRAY, (uint8_t)count, line);
+            break;
+        }
+        case NODE_GET_INDEX:
+            compileExpr(node->data.get_index.obj);
+            compileExpr(node->data.get_index.index);
+            emit(OP_GET_INDEX, line);
+            break;
         default:
             compileError(line, "Cannot compile expression (type: %d).", node->type);
             break;
@@ -270,6 +282,12 @@ static void compileNode(ASTNode* node) {
         case NODE_EXPR_STMT:
             compileExpr(node->data.expr_stmt.expr);
             emit(OP_POP, line);
+            break;
+        case NODE_SET_INDEX:
+            compileExpr(node->data.set_index.obj);
+            compileExpr(node->data.set_index.index);
+            compileExpr(node->data.set_index.value);
+            emit(OP_SET_INDEX, line);
             break;
         case NODE_IMPORT:
             compileError(line, "'import' is not yet supported in this version.");

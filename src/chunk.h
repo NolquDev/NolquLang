@@ -58,6 +58,11 @@ typedef enum {
     OP_JUMP_IF_FALSE,   // [OP, hi, lo]  if !peek: ip += offset (pops condition)
     OP_LOOP,            // [OP, hi, lo]  ip -= offset (jump back)
 
+    // ── Arrays ────────────────────────────────
+    OP_BUILD_ARRAY,     // [OP, count]  pop count values, push array
+    OP_GET_INDEX,       // pop index, pop array/string, push value
+    OP_SET_INDEX,       // pop value, pop index, pop array, set in-place
+
     // ── Functions ─────────────────────────────
     OP_CALL,            // [OP, argc]  call stack[-argc-1] with argc args
     OP_RETURN,          // return top of stack (or nil)

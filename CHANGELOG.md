@@ -4,6 +4,48 @@
 
 ---
 
+## [0.3.0] — 2026-03-13 (Alpha)
+[Compare v0.2.0...v0.3.0](https://github.com/Nadzil123/Nolqu/compare/v0.2.0-alpha...v0.3.0-alpha)
+
+### Added
+
+**Array / List**
+- Array literal syntax: `let arr = [1, 2, 3]`
+- Index access (0-based): `arr[0]`
+- Negative indexing: `arr[-1]` returns the last element
+- Index assignment: `arr[0] = "new"`
+- String character indexing: `"hello"[0]` returns `"h"`
+
+**New Built-in Functions**
+- `len(arr_or_string)` — return number of elements or string length
+- `push(arr, value)` — append value to end of array, returns the array
+- `pop(arr)` — remove and return the last element
+- `remove(arr, index)` — remove element at index, returns the removed value
+- `contains(arr, value)` — return `true` if value exists in array
+
+**New Opcodes**
+- `OP_BUILD_ARRAY` — build array from N stack values
+- `OP_GET_INDEX`   — get value at index
+- `OP_SET_INDEX`   — set value at index
+
+**New Example**
+- `examples/arrays.nq` — demonstrates array literal, indexing, push/pop/remove/contains, dynamic building, and sum function
+
+### Changed
+
+- `type()` built-in now returns `"array"` for array values
+- Version bumped to `0.3.0`
+
+### Bug Fixes
+
+- (None)
+
+### Breaking Changes
+
+- (None)
+
+---
+
 ## [0.2.0] — 2026-03-12 (Alpha)
 [Compare v0.1.0...v0.2.0](https://github.com/Nadzil123/Nolqu/compare/v0.1.0-alpha...v0.2.0-alpha)
 
