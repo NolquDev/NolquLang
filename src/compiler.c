@@ -74,6 +74,20 @@ static void addLocal(const char* name, int line) {
     local->initialized = false;
 }
 
+static void beginScope(void) {
+    current->scope_depth++;
+}
+
+static void endScope(int line) {
+    current->scope_depth--;
+    // Pop all locals that belong to the scope we just left
+    while (current->local_count > 0 &&
+           current->locals[current->local_count - 1].depth > current->scope_depth) {
+        emit(OP_POP, line);
+        current->local_count--;
+    }
+}
+
 static void compileNode(ASTNode* node);
 static void compileExpr(ASTNode* node);
 static void compileBlock(ASTNode* block);
@@ -227,14 +241,17 @@ static void compileNode(ASTNode* node) {
             compileExpr(node->data.if_stmt.cond);
             int then_jump = emitJump(OP_JUMP_IF_FALSE, line);
             emit(OP_POP, line);                          // pop cond (true path)
+            beginScope();
             compileBlock(node->data.if_stmt.then_block);
-            // Always emit a jump to skip the false-branch OP_POP,
-            // otherwise the true path falls through and corrupts locals.
+            endScope(line);
             int end_jump = emitJump(OP_JUMP, line);
             patchJumpAt(then_jump);
             emit(OP_POP, line);                          // pop cond (false path)
-            if (node->data.if_stmt.else_block)
+            if (node->data.if_stmt.else_block) {
+                beginScope();
                 compileBlock(node->data.if_stmt.else_block);
+                endScope(line);
+            }
             patchJumpAt(end_jump);
             break;
         }
@@ -243,7 +260,9 @@ static void compileNode(ASTNode* node) {
             compileExpr(node->data.loop.cond);
             int exit_jump = emitJump(OP_JUMP_IF_FALSE, line);
             emit(OP_POP, line);
+            beginScope();
             compileBlock(node->data.loop.body);
+            endScope(line);
             emitLoop(loop_start, line);
             patchJumpAt(exit_jump);
             emit(OP_POP, line);
@@ -390,6 +409,9 @@ CompileResult compile(ASTNode* ast, const char* source_path) {
     CompilerCtx ctx;
     initCompilerCtx(&ctx, script);
     ctx.scope_depth = 0;
+    // Reserve slot 0 for the script function object (same as user functions)
+    addLocal("", 0);
+    ctx.locals[ctx.local_count - 1].initialized = true;
     compileBlock(ast);
     emit(OP_HALT, 0);
     ObjFunction* fn = endCompilerCtx();

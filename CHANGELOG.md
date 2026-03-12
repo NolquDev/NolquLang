@@ -4,6 +4,41 @@
 
 ---
 
+## [0.4.0] — 2026-03-13 (Alpha)
+[Compare v0.3.0...v0.4.0](https://github.com/Nadzil123/Nolqu/compare/v0.3.0-alpha...v0.4.0-alpha)
+
+### Added
+
+**Block Scoping**
+- `if` and `loop` blocks now create their own scope
+- Variables declared with `let` inside a block are destroyed when the block ends
+- Inner `let` with the same name as an outer variable shadows it for the duration of the block
+- Outer variable is unchanged after the block exits
+
+**Scope examples:**
+```nolqu
+let x = 1
+if true
+  let x = 99   # shadows outer x
+  print x       # → 99
+end
+print x         # → 1  (outer x unchanged)
+```
+
+### Changed
+
+- `let` inside `if`/`loop` is now always block-local — it no longer leaks to the surrounding scope
+
+### Bug Fixes
+
+- Fixed slot-0 reservation missing for top-level script context. Variables declared inside `if`/`loop` at the top level were resolving to the wrong stack slot, causing them to print `<script>` instead of their value.
+
+### Breaking Changes
+
+- Variables declared with `let` inside `if` or `loop` blocks are **no longer accessible** after the block ends. Code that relied on this leak will need to declare the variable before the block.
+
+---
+
 ## [0.3.0] — 2026-03-13 (Alpha)
 [Compare v0.2.0...v0.3.0](https://github.com/Nadzil123/Nolqu/compare/v0.2.0-alpha...v0.3.0-alpha)
 
