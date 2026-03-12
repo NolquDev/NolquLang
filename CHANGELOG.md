@@ -4,6 +4,37 @@
 
 ---
 
+## [0.5.0] — 2026-03-13 (Alpha)
+[Compare v0.4.0...v0.5.0](https://github.com/Nadzil123/Nolqu/compare/v0.4.0-alpha...v0.5.0-alpha)
+
+### Added
+
+**Extended Stdlib — Math**
+- `random()` — returns a random float in `[0, 1)`
+- `rand_int(lo, hi)` — returns a random integer in `[lo, hi]`
+
+**Extended Stdlib — String**
+- `index(s, sub)` — returns the first position of `sub` in `s`, or `-1` if not found
+- `repeat(s, n)` — returns `s` repeated `n` times
+
+**Extended Stdlib — Array**
+- `sort(arr)` — sorts array in-place (numbers and strings), returns the array
+- `join(arr, sep)` — joins all elements into a string separated by `sep`
+
+### Changed
+
+- Version bumped to `0.5.0`
+
+### Bug Fixes
+
+- (None)
+
+### Breaking Changes
+
+- (None)
+
+---
+
 ## [0.4.0] — 2026-03-13 (Alpha)
 [Compare v0.3.0...v0.4.0](https://github.com/Nadzil123/Nolqu/compare/v0.3.0-alpha...v0.4.0-alpha)
 
@@ -299,21 +330,6 @@ The `examples/` folder contains:
 - No sandbox
 - Runtime has no memory usage limits
 - Programs can consume CPU without limit (infinite loops cannot be interrupted externally)
-
----
-
-### Roadmap
-
-| Version | Target |
-|---------|--------|
-| v0.2    | `input()`, `str()`, `num()`, `type()` builtins ✅ |
-| v0.3    | Array / list |
-| v0.4    | Math standard library (`sqrt`, `floor`, `abs`, `pow`) |
-| v0.5    | String standard library (`length`, `slice`, `contains`) |
-| v0.6    | Module system (`import` active) |
-| v0.7    | Local scope for `if` and `loop` blocks |
-| v0.8    | Basic garbage collector |
-| v1.0    | Stable release |
 
 ---
 

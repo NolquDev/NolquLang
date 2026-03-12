@@ -26,14 +26,8 @@ Bugfix: slot-0 reservation missing for top-level script, causing block-local var
 
 ---
 
-## v0.5 — Extended Stdlib
-**Focus:** Fill in common missing utilities.
-
-- `math.random()` — random number between 0 and 1
-- `string.index(s, sub)` — find position of substring
-- `string.repeat(s, n)` — repeat string n times
-- `array.sort(arr)` — sort array in-place
-- `array.join(arr, sep)` — join array into string
+## ✅ v0.5.0 — Extended Stdlib
+`random()`, `rand_int(lo, hi)`. String: `index(s, sub)`, `repeat(s, n)`. Array: `sort(arr)`, `join(arr, sep)`.
 
 ---
 
@@ -102,7 +96,7 @@ Bugfix: slot-0 reservation missing for top-level script, causing block-local var
 | v0.2 | User input & builtins ✅ |
 | v0.3 | Arrays, stdlib, modules ✅ |
 | v0.4 | Scope improvements ✅ |
-| v0.5 | Extended stdlib |
+| v0.5 | Extended stdlib ✅ |
 | v0.6 | Error handling |
 | v0.7 | File I/O |
 | v0.8 | Garbage collector |

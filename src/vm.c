@@ -3,6 +3,8 @@
 #include "object.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -236,8 +238,111 @@ static Value nativeEndsWith(int argc, Value* args) {
 }
 
 // ─────────────────────────────────────────────
-//  VM init / free
+//  stdlib v0.5.0 — extended utilities
 // ─────────────────────────────────────────────
+
+// random() — float in [0, 1)
+static Value nativeRandom(int argc, Value* args) {
+    (void)argc; (void)args;
+    return NUMBER_VAL((double)rand() / ((double)RAND_MAX + 1.0));
+}
+
+// rand_int(lo, hi) — integer in [lo, hi]
+static Value nativeRandInt(int argc, Value* args) {
+    if (argc!=2||!IS_NUMBER(args[0])||!IS_NUMBER(args[1])) return NIL_VAL;
+    int lo = (int)AS_NUMBER(args[0]);
+    int hi = (int)AS_NUMBER(args[1]);
+    if (lo > hi) return NIL_VAL;
+    return NUMBER_VAL(lo + rand() % (hi - lo + 1));
+}
+
+// index(s, sub) — first position of sub in s, or -1
+static Value nativeIndex(int argc, Value* args) {
+    if (argc!=2||!IS_STRING(args[0])||!IS_STRING(args[1])) return NUMBER_VAL(-1);
+    const char* src = AS_CSTRING(args[0]);
+    const char* sub = AS_CSTRING(args[1]);
+    char* found = strstr(src, sub);
+    if (!found) return NUMBER_VAL(-1);
+    return NUMBER_VAL((double)(found - src));
+}
+
+// repeat(s, n) — repeat string n times
+static Value nativeRepeat(int argc, Value* args) {
+    if (argc!=2||!IS_STRING(args[0])||!IS_NUMBER(args[1])) return NIL_VAL;
+    ObjString* s = AS_STRING(args[0]);
+    int n = (int)AS_NUMBER(args[1]);
+    if (n <= 0) return OBJ_VAL(copyString("", 0));
+    int new_len = s->length * n;
+    char* buf = (char*)malloc((size_t)(new_len + 1));
+    for (int i = 0; i < n; i++)
+        memcpy(buf + i * s->length, s->chars, (size_t)s->length);
+    buf[new_len] = '\0';
+    return OBJ_VAL(takeString(buf, new_len));
+}
+
+// join(arr, sep) — join array elements into a string
+static Value nativeJoin(int argc, Value* args) {
+    if (argc!=2||!IS_ARRAY(args[0])||!IS_STRING(args[1])) return NIL_VAL;
+    ObjArray*   arr = AS_ARRAY(args[0]);
+    ObjString*  sep = AS_STRING(args[1]);
+    if (arr->count == 0) return OBJ_VAL(copyString("", 0));
+
+    // First pass: measure total length
+    int total = sep->length * (arr->count - 1);
+    for (int i = 0; i < arr->count; i++) {
+        if (IS_STRING(arr->items[i]))      total += AS_STRING(arr->items[i])->length;
+        else if (IS_NUMBER(arr->items[i])) total += 32; // max number string
+        else if (IS_BOOL(arr->items[i]))   total += 5;
+        else                               total += 3;  // nil
+    }
+
+    char* buf = (char*)malloc((size_t)(total + 1));
+    int pos = 0;
+    for (int i = 0; i < arr->count; i++) {
+        if (i > 0) { memcpy(buf + pos, sep->chars, (size_t)sep->length); pos += sep->length; }
+        if (IS_STRING(arr->items[i])) {
+            ObjString* item = AS_STRING(arr->items[i]);
+            memcpy(buf + pos, item->chars, (size_t)item->length);
+            pos += item->length;
+        } else if (IS_NUMBER(arr->items[i])) {
+            double v = AS_NUMBER(arr->items[i]);
+            int written = (v == (long long)v)
+                ? snprintf(buf + pos, 32, "%lld", (long long)v)
+                : snprintf(buf + pos, 32, "%g",   v);
+            pos += written;
+        } else if (IS_BOOL(arr->items[i])) {
+            const char* b = AS_BOOL(arr->items[i]) ? "true" : "false";
+            int len = (int)strlen(b);
+            memcpy(buf + pos, b, (size_t)len); pos += len;
+        } else {
+            memcpy(buf + pos, "nil", 3); pos += 3;
+        }
+    }
+    buf[pos] = '\0';
+    return OBJ_VAL(takeString(buf, pos));
+}
+
+// sort(arr) — sort array in-place (numbers and strings), return arr
+static int cmp_values(const void* a, const void* b) {
+    Value va = *(const Value*)a;
+    Value vb = *(const Value*)b;
+    if (IS_NUMBER(va) && IS_NUMBER(vb)) {
+        double d = AS_NUMBER(va) - AS_NUMBER(vb);
+        return (d > 0) - (d < 0);
+    }
+    if (IS_STRING(va) && IS_STRING(vb))
+        return strcmp(AS_CSTRING(va), AS_CSTRING(vb));
+    // numbers before strings
+    if (IS_NUMBER(va)) return -1;
+    return 1;
+}
+static Value nativeSort(int argc, Value* args) {
+    if (argc!=1||!IS_ARRAY(args[0])) return NIL_VAL;
+    ObjArray* arr = AS_ARRAY(args[0]);
+    if (arr->count > 1)
+        qsort(arr->items, (size_t)arr->count, sizeof(Value), cmp_values);
+    return args[0];
+}
 static void registerNative(VM* vm, const char* name, NativeFn fn, int arity) {
     ObjNative*  native   = newNative(fn, name, arity);
     ObjString*  key      = copyString(name, (int)strlen(name));
@@ -280,6 +385,14 @@ void initVM(VM* vm) {
     registerNative(vm, "split",      nativeSplit,       2);
     registerNative(vm, "startswith", nativeStartsWith,  2);
     registerNative(vm, "endswith",   nativeEndsWith,    2);
+    // extended stdlib (v0.5.0)
+    srand((unsigned int)time(NULL));
+    registerNative(vm, "random",     nativeRandom,      0);
+    registerNative(vm, "rand_int",   nativeRandInt,     2);
+    registerNative(vm, "index",      nativeIndex,       2);
+    registerNative(vm, "repeat",     nativeRepeat,      2);
+    registerNative(vm, "join",       nativeJoin,        2);
+    registerNative(vm, "sort",       nativeSort,        1);
 }
 
 void freeVM(VM* vm) {
