@@ -20,8 +20,8 @@ developer yang ingin bahasa yang tidak bawel.
 ## Instalasi
 
 ```bash
-git clone https://github.com/username/nolqu
-cd nolqu
+git clone https://github.com/Nadzil123/Nolqu.git
+cd Nolqu
 make
 sudo make install   # pasang ke /usr/local/bin/nq
 ```
