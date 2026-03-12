@@ -63,6 +63,11 @@ typedef enum {
     OP_GET_INDEX,       // pop index, pop array/string, push value
     OP_SET_INDEX,       // pop value, pop index, pop array, set in-place
 
+    // ── Error handling ────────────────────────
+    OP_TRY,             // [OP, hi, lo]  push try handler; offset = catch block
+    OP_TRY_END,         // pop try handler (no error occurred)
+    OP_THROW,           // pop value, throw as error
+
     // ── Functions ─────────────────────────────
     OP_CALL,            // [OP, argc]  call stack[-argc-1] with argc args
     OP_RETURN,          // return top of stack (or nil)

@@ -11,6 +11,8 @@ static Keyword keywords[] = {
     {"function", 8, TK_FUNCTION},
     {"return",   6, TK_RETURN},
     {"import",   6, TK_IMPORT},
+    {"try",      3, TK_TRY},
+    {"catch",    5, TK_CATCH},
     {"end",      3, TK_END},
     {"true",     4, TK_TRUE},
     {"false",    5, TK_FALSE},
@@ -167,6 +169,8 @@ const char* tokenTypeName(TokenType t) {
         case TK_FUNCTION: return "function";
         case TK_RETURN:   return "return";
         case TK_IMPORT:   return "import";
+        case TK_TRY:      return "try";
+        case TK_CATCH:    return "catch";
         case TK_END:      return "end";
         case TK_TRUE:     return "true";
         case TK_FALSE:    return "false";

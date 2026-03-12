@@ -37,6 +37,9 @@ typedef enum {
     NODE_GET_INDEX,     // arr[index]
     NODE_SET_INDEX,     // arr[index] = value  (as statement)
 
+    // Error handling (new in 0.6.0)
+    NODE_TRY,           // try body catch(err) handler end
+
     NODE_COUNT
 } NodeType;
 
@@ -184,6 +187,13 @@ struct ASTNode {
             ASTNode* index;
             ASTNode* value;
         } set_index;
+
+        // NODE_TRY: try body catch(err_name) handler end
+        struct {
+            ASTNode* body;       // try block
+            char*    err_name;   // catch variable name
+            ASTNode* handler;    // catch block
+        } try_stmt;
 
     } data;
 };

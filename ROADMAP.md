@@ -31,12 +31,8 @@ Bugfix: slot-0 reservation missing for top-level script, causing block-local var
 
 ---
 
-## v0.6 — Error Handling
-**Focus:** Let programs handle errors gracefully.
-
-- `try` / `catch` / `end` blocks
-- Catchable runtime errors (division by zero, index out of bounds, etc.)
-- `error(message)` — throw a custom error from user code
+## ✅ v0.6.0 — Error Handling
+`try`/`catch`/`end` blocks. `error(message)` builtin. Catchable runtime errors: division by zero, modulo by zero, arithmetic type mismatch. Nested try/catch up to 64 levels. Bugfix: THROW_ERROR macro goto fix.
 
 ---
 
@@ -97,7 +93,7 @@ Bugfix: slot-0 reservation missing for top-level script, causing block-local var
 | v0.3 | Arrays, stdlib, modules ✅ |
 | v0.4 | Scope improvements ✅ |
 | v0.5 | Extended stdlib ✅ |
-| v0.6 | Error handling |
+| v0.6 | Error handling ✅ |
 | v0.7 | File I/O |
 | v0.8 | Garbage collector |
 | v0.9 | Stabilization |

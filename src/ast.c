@@ -138,6 +138,12 @@ void freeNode(ASTNode* node) {
             freeNode(node->data.set_index.value);
             break;
 
+        case NODE_TRY:
+            freeNode(node->data.try_stmt.body);
+            free(node->data.try_stmt.err_name);
+            freeNode(node->data.try_stmt.handler);
+            break;
+
         default:
             break;
     }

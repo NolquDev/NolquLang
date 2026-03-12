@@ -21,6 +21,8 @@ typedef enum {
     TK_FUNCTION,    // function
     TK_RETURN,      // return
     TK_IMPORT,      // import
+    TK_TRY,         // try
+    TK_CATCH,       // catch
     TK_END,         // end
     TK_TRUE,        // true
     TK_FALSE,       // false

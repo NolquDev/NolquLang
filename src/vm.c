@@ -343,6 +343,30 @@ static Value nativeSort(int argc, Value* args) {
         qsort(arr->items, (size_t)arr->count, sizeof(Value), cmp_values);
     return args[0];
 }
+
+// error(msg) — throw a user error (uses OP_THROW via special sentinel)
+// We can't call OP_THROW from C directly, so we store the message and
+// return a special "error sentinel" — the VM checks for it after native calls.
+// Simpler approach: we mark vm->thrown and the VM dispatch will re-raise it.
+// Actually, for native functions we return NIL_VAL and set a flag.
+// Cleanest: return a special tagged value. We use a dedicated approach:
+// nativeError sets vm->thrown and returns NIL_VAL; after native dispatch
+// we check vm->thrown.
+static VM* g_vm_for_error = NULL; // set in runVM
+
+static Value nativeError(int argc, Value* args) {
+    if (argc < 1) return NIL_VAL;
+    Value msg = args[0];
+    if (!IS_STRING(msg)) {
+        char buf[64];
+        if (IS_NUMBER(msg)) snprintf(buf, sizeof(buf), "%g", AS_NUMBER(msg));
+        else if (IS_BOOL(msg)) snprintf(buf, sizeof(buf), "%s", AS_BOOL(msg) ? "true" : "false");
+        else snprintf(buf, sizeof(buf), "nil");
+        msg = OBJ_VAL(copyString(buf, (int)strlen(buf)));
+    }
+    if (g_vm_for_error) g_vm_for_error->thrown = msg;
+    return NIL_VAL;
+}
 static void registerNative(VM* vm, const char* name, NativeFn fn, int arity) {
     ObjNative*  native   = newNative(fn, name, arity);
     ObjString*  key      = copyString(name, (int)strlen(name));
@@ -353,6 +377,8 @@ void initVM(VM* vm) {
     vm->stack_top   = vm->stack;
     vm->frame_count = 0;
     vm->source_path = NULL;
+    vm->try_depth   = 0;
+    vm->thrown      = NIL_VAL;
     initTable(&vm->globals);
     initStringTable(&nq_string_table);
 
@@ -393,6 +419,9 @@ void initVM(VM* vm) {
     registerNative(vm, "repeat",     nativeRepeat,      2);
     registerNative(vm, "join",       nativeJoin,        2);
     registerNative(vm, "sort",       nativeSort,        1);
+    // error handling (v0.6.0)
+    g_vm_for_error = vm;
+    registerNative(vm, "error",      nativeError,       1);
 }
 
 void freeVM(VM* vm) {
@@ -439,6 +468,25 @@ void vmRuntimeError(VM* vm, const char* fmt, ...) {
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n\n");
     va_end(args);
+}
+
+// throwError — set vm->thrown and return true if a try handler caught it.
+// The caller should unwind the stack and jump to the catch block.
+static bool throwError(VM* vm, Value error_val) {
+    vm->thrown = error_val;
+    if (vm->try_depth > 0) {
+        TryHandler* h = &vm->try_stack[--vm->try_depth];
+        // Restore stack and frame count
+        vm->stack_top   = h->stack_top;
+        vm->frame_count = h->frame_count;
+        // Push error value for the catch variable
+        vm->stack_top[0] = error_val;
+        vm->stack_top++;
+        // Redirect the active frame's ip to the catch block
+        vm->frames[vm->frame_count - 1].ip = h->catch_ip;
+        return true;  // caught
+    }
+    return false;  // uncaught
 }
 
 // ─────────────────────────────────────────────
@@ -511,19 +559,30 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                         (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_CONST()   (frame->function->chunk->constants.values[READ_BYTE()])
 
+// THROW_ERROR: format, make ObjString error, try to catch or abort
+#define THROW_ERROR(...) do { \
+    char _ebuf[512]; \
+    snprintf(_ebuf, sizeof(_ebuf), __VA_ARGS__); \
+    ObjString* _estr = copyString(_ebuf, (int)strlen(_ebuf)); \
+    if (throwError(vm, OBJ_VAL(_estr))) { \
+        frame = &vm->frames[vm->frame_count - 1]; \
+        goto dispatch_loop_top; \
+    } \
+    vmRuntimeError(vm, "%s", _ebuf); \
+    return INTERPRET_RUNTIME_ERROR; \
+} while (0)
+
 #define BINARY_NUM(op) do { \
     if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
-        vmRuntimeError(vm, \
-            "This operation only works on numbers. " \
-            "Use '..' to concatenate strings."); \
-        return INTERPRET_RUNTIME_ERROR; \
-    } \
+        THROW_ERROR("This operation only works on numbers. Use '..' to concatenate strings."); \
+    } else { \
     double b = AS_NUMBER(pop(vm)); \
     double a = AS_NUMBER(pop(vm)); \
-    push(vm, NUMBER_VAL(a op b)); \
+    push(vm, NUMBER_VAL(a op b)); } \
 } while (0)
 
     for (;;) {
+        dispatch_loop_top: ;
         uint8_t instruction = READ_BYTE();
         switch (instruction) {
 
@@ -573,26 +632,19 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             case OP_MUL: BINARY_NUM(*); break;
             case OP_DIV: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1))) {
-                    vmRuntimeError(vm, "Division only works on numbers.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    THROW_ERROR("Division only works on numbers.");
                 }
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm));
-                if (b == 0.0) {
-                    vmRuntimeError(vm,
-                        "Division by zero is not allowed.\n"
-                        "  Hint: Check the divisor value before dividing.");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
+                if (b == 0.0) { THROW_ERROR("Division by zero."); }
                 push(vm, NUMBER_VAL(a / b));
                 break;
             }
             case OP_MOD: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1))) {
-                    vmRuntimeError(vm, "Modulo only works on numbers.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    THROW_ERROR("Modulo only works on numbers.");
                 }
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm));
-                if (b == 0.0) { vmRuntimeError(vm, "Modulo by zero is not allowed."); return INTERPRET_RUNTIME_ERROR; }
+                if (b == 0.0) { THROW_ERROR("Modulo by zero."); }
                 push(vm, NUMBER_VAL(fmod(a, b)));
                 break;
             }
@@ -671,15 +723,47 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 Value idx_val = pop(vm);
                 Value obj_val = pop(vm);
                 if (!IS_ARRAY(obj_val)) {
-                    vmRuntimeError(vm, "Only arrays support index assignment.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    THROW_ERROR("Only arrays support index assignment.");
                 }
                 if (!IS_NUMBER(idx_val)) {
-                    vmRuntimeError(vm, "Array index must be a number.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    THROW_ERROR("Array index must be a number.");
                 }
                 arraySet(AS_ARRAY(obj_val), (int)AS_NUMBER(idx_val), val);
                 break;
+            }
+
+            case OP_TRY: {
+                uint16_t offset = READ_UINT16();
+                if (vm->try_depth >= NQ_TRY_MAX) {
+                    vmRuntimeError(vm, "Too many nested try blocks (max %d).", NQ_TRY_MAX);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                TryHandler* h  = &vm->try_stack[vm->try_depth++];
+                h->catch_ip    = frame->ip + offset;
+                h->stack_top   = vm->stack_top;
+                h->frame_count = vm->frame_count;
+                break;
+            }
+            case OP_TRY_END: {
+                if (vm->try_depth > 0) vm->try_depth--;
+                break;
+            }
+            case OP_THROW: {
+                Value err = pop(vm);
+                // Ensure it's a string message
+                if (!IS_STRING(err)) {
+                    char buf[64];
+                    snprintf(buf, sizeof(buf), IS_NUMBER(err) ? "%g" :
+                             IS_BOOL(err) ? (AS_BOOL(err) ? "true" : "false") : "nil",
+                             IS_NUMBER(err) ? AS_NUMBER(err) : 0.0);
+                    err = OBJ_VAL(copyString(buf, (int)strlen(buf)));
+                }
+                if (throwError(vm, err)) {
+                    frame = &vm->frames[vm->frame_count - 1];
+                    break;
+                }
+                vmRuntimeError(vm, "%s", AS_CSTRING(err));
+                return INTERPRET_RUNTIME_ERROR;
             }
 
             case OP_JUMP:          { uint16_t off = READ_UINT16(); frame->ip += off; break; }
@@ -700,8 +784,18 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                             native->name, native->arity, argc);
                         return INTERPRET_RUNTIME_ERROR;
                     }
+                    vm->thrown = NIL_VAL;  // clear before call
                     Value result = native->fn(argc, vm->stack_top - argc);
                     vm->stack_top -= argc + 1;
+                    // Check if error() was called inside the native
+                    if (!IS_NIL(vm->thrown)) {
+                        if (throwError(vm, vm->thrown)) {
+                            frame = &vm->frames[vm->frame_count - 1];
+                            break;
+                        }
+                        vmRuntimeError(vm, "%s", IS_STRING(vm->thrown) ? AS_CSTRING(vm->thrown) : "error");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
                     push(vm, result);
                     break;
                 }

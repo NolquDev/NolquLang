@@ -14,9 +14,9 @@
 //  Nolqu Runtime Version
 // ─────────────────────────────────────────────
 #define NQ_VERSION_MAJOR 0
-#define NQ_VERSION_MINOR 5
+#define NQ_VERSION_MINOR 6
 #define NQ_VERSION_PATCH 0
-#define NQ_VERSION       "0.5.0"
+#define NQ_VERSION       "0.6.0"
 #define NQ_LANG_NAME     "Nolqu"
 
 // ─────────────────────────────────────────────

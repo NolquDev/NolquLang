@@ -4,6 +4,65 @@
 
 ---
 
+## [0.6.0] — 2026-03-13 (Alpha)
+[Compare v0.5.0...v0.6.0](https://github.com/Nadzil123/Nolqu/compare/v0.5.0-alpha...v0.6.0-alpha)
+
+### Added
+
+**Error Handling — `try` / `catch` / `end`**
+- `try` block runs code that might fail
+- `catch err` captures the error message as a local variable
+- `end` closes the block
+- Errors caught inside nested functions bubble up to the nearest `catch`
+- Nested `try/catch` blocks are supported (up to 64 levels)
+
+```nolqu
+try
+  let result = 10 / 0
+catch err
+  print err   # → Division by zero.
+end
+```
+
+**`error(message)` builtin**
+- Throws a user-defined error from anywhere in the program
+- Caught by the nearest enclosing `try/catch`
+- If uncaught, terminates the program with a runtime error
+
+```nolqu
+try
+  error("invalid input")
+catch err
+  print err   # → invalid input
+end
+```
+
+**Catchable Runtime Errors**
+- Division by zero
+- Modulo by zero
+- Arithmetic type mismatch
+- Array index assignment on non-array
+- Errors from `error()` builtin
+
+**New Opcodes**
+- `OP_TRY` — push a try handler with offset to the catch block
+- `OP_TRY_END` — pop the try handler (no error occurred)
+- `OP_THROW` — throw a value as an error
+
+### Changed
+
+- Version bumped to `0.6.0`
+
+### Bug Fixes
+
+- Fixed `THROW_ERROR` macro: `break` inside `do{}while(0)` only exited the macro wrapper, not the switch case — code continued executing after a caught error, corrupting the stack. Fixed using `goto dispatch_loop_top`.
+
+### Breaking Changes
+
+- (None)
+
+---
+
 ## [0.5.0] — 2026-03-13 (Alpha)
 [Compare v0.4.0...v0.5.0](https://github.com/Nadzil123/Nolqu/compare/v0.4.0-alpha...v0.5.0-alpha)
 

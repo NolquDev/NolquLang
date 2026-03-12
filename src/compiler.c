@@ -309,6 +309,32 @@ static void compileNode(ASTNode* node) {
             compileExpr(node->data.set_index.value);
             emit(OP_SET_INDEX, line);
             break;
+        case NODE_TRY: {
+            // Emit OP_TRY with a forward jump to the catch block
+            int try_jump = emitJump(OP_TRY, line);
+
+            // Compile try body in its own scope
+            beginScope();
+            compileBlock(node->data.try_stmt.body);
+            endScope(line);
+
+            // No error: pop try handler, jump over catch block
+            emit(OP_TRY_END, line);
+            int over_catch = emitJump(OP_JUMP, line);
+
+            // Patch OP_TRY to jump here on error
+            patchJumpAt(try_jump);
+
+            // Catch block: error value is on the stack, bind to err_name
+            beginScope();
+            addLocal(node->data.try_stmt.err_name, line);
+            current->locals[current->local_count - 1].initialized = true;
+            compileBlock(node->data.try_stmt.handler);
+            endScope(line);
+
+            patchJumpAt(over_catch);
+            break;
+        }
         case NODE_IMPORT: {
             const char* mod_path = node->data.import.path;
 

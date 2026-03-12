@@ -26,6 +26,17 @@ typedef enum {
 } InterpretResult;
 
 // ─────────────────────────────────────────────
+//  TryHandler — saved state for try/catch
+// ─────────────────────────────────────────────
+#define NQ_TRY_MAX 64
+
+typedef struct {
+    uint8_t* catch_ip;       // instruction pointer for catch block
+    Value*   stack_top;      // stack top at time of OP_TRY (to restore on error)
+    int      frame_count;    // call frame depth at time of OP_TRY
+} TryHandler;
+
+// ─────────────────────────────────────────────
 //  The Nolqu Virtual Machine
 // ─────────────────────────────────────────────
 struct VM {
@@ -36,6 +47,13 @@ struct VM {
     // Value stack
     Value  stack[NQ_STACK_MAX];
     Value* stack_top;
+
+    // Try/catch handler stack
+    TryHandler try_stack[NQ_TRY_MAX];
+    int        try_depth;
+
+    // Pending error value (set when throwing)
+    Value thrown;
 
     // Global variables
     Table globals;

@@ -214,6 +214,43 @@ static ASTNode* parseImportStmt(Parser* p) {
     return n;
 }
 
+static ASTNode* parseTryStmt(Parser* p) {
+    int line = p->previous.line;
+    expectNewline(p);
+
+    // Parse try body
+    ASTNode* body = makeNode(NODE_BLOCK, line);
+    initNodeList(&body->data.block.stmts);
+    while (!check(p, TK_CATCH) && !check(p, TK_EOF)) {
+        ASTNode* stmt = parseStmt(p);
+        if (stmt) appendNode(&body->data.block.stmts, stmt);
+        skipNewlines(p);
+    }
+    expect(p, TK_CATCH, "Expected 'catch' after try block.");
+
+    // catch err_name
+    expect(p, TK_IDENT, "Expected a variable name after 'catch'. Example: catch err");
+    char* err_name = dupStr(p->previous.start, p->previous.length);
+    expectNewline(p);
+
+    // Parse handler body
+    ASTNode* handler = makeNode(NODE_BLOCK, p->previous.line);
+    initNodeList(&handler->data.block.stmts);
+    while (!check(p, TK_END) && !check(p, TK_EOF)) {
+        ASTNode* stmt = parseStmt(p);
+        if (stmt) appendNode(&handler->data.block.stmts, stmt);
+        skipNewlines(p);
+    }
+    expect(p, TK_END, "Expected 'end' to close try/catch block.");
+    expectNewline(p);
+
+    ASTNode* n = makeNode(NODE_TRY, line);
+    n->data.try_stmt.body     = body;
+    n->data.try_stmt.err_name = err_name;
+    n->data.try_stmt.handler  = handler;
+    return n;
+}
+
 static ASTNode* parseStmt(Parser* p) {
     skipNewlines(p);
     if (check(p, TK_EOF)) return NULL;
@@ -228,6 +265,7 @@ static ASTNode* parseStmt(Parser* p) {
         case TK_FUNCTION: return parseFunctionDecl(p);
         case TK_RETURN:   return parseReturnStmt(p);
         case TK_IMPORT:   return parseImportStmt(p);
+        case TK_TRY:      return parseTryStmt(p);
 
         case TK_IDENT: {
             if (check(p, TK_EQ)) {
