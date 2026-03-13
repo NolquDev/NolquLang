@@ -435,11 +435,13 @@ static ASTNode* parseMultiply(Parser* p) {
 }
 
 static ASTNode* parseUnary(Parser* p) {
-    if (check(p, TK_MINUS) || check(p, TK_NOT)) {
+    if (check(p, TK_MINUS) || check(p, TK_NOT) || check(p, TK_BANG)) {
         TokenType op = p->current.type; advance(p); int line = p->previous.line;
         ASTNode* operand = parseUnary(p);
         ASTNode* n = makeNode(NODE_UNARY, line);
-        n->data.unary.op = op; n->data.unary.operand = operand;
+        // ! is syntactic sugar for not
+        n->data.unary.op = (op == TK_BANG) ? TK_NOT : op;
+        n->data.unary.operand = operand;
         return n;
     }
     return parseCall(p);

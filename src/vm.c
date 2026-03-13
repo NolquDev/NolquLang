@@ -102,17 +102,39 @@ static Value nativePush(int argc, Value* args) {
 
 // pop(arr) — remove and return last element
 static Value nativePop(int argc, Value* args) {
-    if (argc != 1 || !IS_ARRAY(args[0])) return NIL_VAL;
-    return arrayPop(AS_ARRAY(args[0]));
+    if (argc != 1 || !IS_ARRAY(args[0])) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("pop: expected an array", 21));
+        return NIL_VAL;
+    }
+    ObjArray* arr = AS_ARRAY(args[0]);
+    if (arr->count == 0) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("pop: cannot pop from an empty array", 35));
+        return NIL_VAL;
+    }
+    return arrayPop(arr);
 }
 
 // remove(arr, index) — remove element at index, return removed value
 static Value nativeRemove(int argc, Value* args) {
-    if (argc != 2 || !IS_ARRAY(args[0]) || !IS_NUMBER(args[1])) return NIL_VAL;
+    if (argc != 2 || !IS_ARRAY(args[0]) || !IS_NUMBER(args[1])) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("remove: expected array and index", 31));
+        return NIL_VAL;
+    }
     ObjArray* arr = AS_ARRAY(args[0]);
     int idx = (int)AS_NUMBER(args[1]);
     if (idx < 0) idx = arr->count + idx;
-    if (idx < 0 || idx >= arr->count) return NIL_VAL;
+    if (idx < 0 || idx >= arr->count) {
+        char msg[128];
+        snprintf(msg, sizeof(msg),
+            "remove: index %d out of bounds (array length %d)",
+            (int)AS_NUMBER(args[1]), arr->count);
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return NIL_VAL;
+    }
     Value removed = arr->items[idx];
     for (int i = idx; i < arr->count - 1; i++)
         arr->items[i] = arr->items[i + 1];
@@ -920,25 +942,29 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 Value idx_val = pop(vm);
                 Value obj_val = pop(vm);
                 if (IS_ARRAY(obj_val)) {
-                    if (!IS_NUMBER(idx_val)) {
-                        vmRuntimeError(vm, "Array index must be a number.");
-                        return INTERPRET_RUNTIME_ERROR;
-                    }
+                    if (!IS_NUMBER(idx_val))
+                        THROW_ERROR("Array index must be a number, got %s.",
+                            IS_STRING(idx_val) ? "string" : IS_BOOL(idx_val) ? "bool" : "nil");
+                    ObjArray* arr = AS_ARRAY(obj_val);
                     int idx = (int)AS_NUMBER(idx_val);
-                    push(vm, arrayGet(AS_ARRAY(obj_val), idx));
+                    if (idx < 0) idx = arr->count + idx;
+                    if (idx < 0 || idx >= arr->count)
+                        THROW_ERROR("Array index %d out of bounds (length %d).",
+                            (int)AS_NUMBER(idx_val), arr->count);
+                    push(vm, arr->items[idx]);
                 } else if (IS_STRING(obj_val)) {
-                    if (!IS_NUMBER(idx_val)) {
-                        vmRuntimeError(vm, "String index must be a number.");
-                        return INTERPRET_RUNTIME_ERROR;
-                    }
+                    if (!IS_NUMBER(idx_val))
+                        THROW_ERROR("String index must be a number.");
                     ObjString* s = AS_STRING(obj_val);
                     int idx = (int)AS_NUMBER(idx_val);
                     if (idx < 0) idx = s->length + idx;
-                    if (idx < 0 || idx >= s->length) { push(vm, NIL_VAL); break; }
+                    if (idx < 0 || idx >= s->length)
+                        THROW_ERROR("String index %d out of bounds (length %d).",
+                            (int)AS_NUMBER(idx_val), s->length);
                     push(vm, OBJ_VAL(copyString(&s->chars[idx], 1)));
                 } else {
-                    vmRuntimeError(vm, "Only arrays and strings can be indexed.");
-                    return INTERPRET_RUNTIME_ERROR;
+                    THROW_ERROR("Only arrays and strings support indexing, not %s.",
+                        IS_NUMBER(obj_val) ? "number" : IS_BOOL(obj_val) ? "bool" : "nil");
                 }
                 break;
             }

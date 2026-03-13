@@ -141,7 +141,7 @@ Token nextToken(Lexer* lex) {
         case '>':  return makeToken(lex, matchChar(lex, '=') ? TK_GTEQ  : TK_GT);
         case '!':
             if (matchChar(lex, '=')) return makeToken(lex, TK_BANGEQ);
-            return errorToken(lex, "Invalid character '!'. Did you mean '!='?");
+            return makeToken(lex, TK_BANG);  // standalone ! = logical not
         case '.':
             if (matchChar(lex, '.')) return makeToken(lex, TK_DOTDOT);
             return errorToken(lex, "Invalid character '.'. Did you mean '..' for string concatenation?");
@@ -186,6 +186,7 @@ const char* tokenTypeName(TokenType t) {
         case TK_EQ:       return "=";
         case TK_EQEQ:     return "==";
         case TK_BANGEQ:   return "!=";
+        case TK_BANG:     return "!";
         case TK_LT:       return "<";
         case TK_GT:       return ">";
         case TK_LTEQ:     return "<=";
