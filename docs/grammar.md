@@ -1,195 +1,262 @@
-# Nolqu Language Grammar
+# Nolqu Language Grammar — v1.0.0
 ## Formal Grammar Specification (EBNF)
 
 ---
 
 ## Program Structure
 
-```
+```ebnf
 program     → statement* EOF
 
 statement   → let_stmt
             | assign_stmt
+            | index_assign_stmt
             | print_stmt
             | if_stmt
             | loop_stmt
             | function_decl
             | return_stmt
             | import_stmt
+            | try_stmt
             | expr_stmt
+            | NEWLINE
 ```
 
 ---
 
 ## Statements
 
-```
-let_stmt     → "let" IDENT "=" expr NEWLINE
+```ebnf
+let_stmt         → "let" IDENT "=" expr NEWLINE
 
-assign_stmt  → IDENT "=" expr NEWLINE
+assign_stmt      → IDENT "=" expr NEWLINE
 
-print_stmt   → "print" expr NEWLINE
+index_assign_stmt → expr "[" expr "]" "=" expr NEWLINE
 
-if_stmt      → "if" expr NEWLINE
-                   block
-               ( "else" NEWLINE block )?
-               "end" NEWLINE
+print_stmt       → "print" expr NEWLINE
 
-loop_stmt    → "loop" expr NEWLINE
-                   block
-               "end" NEWLINE
+if_stmt          → "if" expr NEWLINE
+                     statement*
+                   ( "else" NEWLINE statement* )?
+                   "end" NEWLINE
 
-function_decl → "function" IDENT "(" params? ")" NEWLINE
-                    block
-                "end" NEWLINE
+loop_stmt        → "loop" expr NEWLINE
+                     statement*
+                   "end" NEWLINE
 
-return_stmt  → "return" expr? NEWLINE
+function_decl    → "function" IDENT "(" param_list? ")" NEWLINE
+                     statement*
+                   "end" NEWLINE
 
-import_stmt  → "import" STRING NEWLINE
+param_list       → IDENT ( "," IDENT )*
 
-expr_stmt    → expr NEWLINE
+return_stmt      → "return" expr? NEWLINE
 
-block        → statement*
+import_stmt      → "import" STRING NEWLINE
 
-params       → IDENT ( "," IDENT )*
-args         → expr ( "," expr )*
+try_stmt         → "try" NEWLINE
+                     statement*
+                   "catch" IDENT NEWLINE
+                     statement*
+                   "end" NEWLINE
+
+expr_stmt        → expr NEWLINE
 ```
 
 ---
 
-## Expressions (by precedence, lowest to highest)
+## Expressions
 
-```
-expr         → logic_or
+Precedence (lowest → highest):
 
-logic_or     → logic_and ( "or"  logic_and )*
+```ebnf
+expr         → or_expr
 
-logic_and    → equality  ( "and" equality  )*
+or_expr      → and_expr ( "or" and_expr )*
+
+and_expr     → not_expr ( "and" not_expr )*
+
+not_expr     → "not" not_expr
+             | equality
 
 equality     → comparison ( ( "==" | "!=" ) comparison )*
 
-comparison   → addition ( ( "<" | ">" | "<=" | ">=" ) addition )*
+comparison   → concat ( ( "<" | ">" | "<=" | ">=" ) concat )*
 
-addition     → multiply ( ( "+" | "-" | ".." ) multiply )*
+concat       → add ( ".." add )*             (* string concatenation *)
 
-multiply     → unary ( ( "*" | "/" | "%" ) unary )*
+add          → mult ( ( "+" | "-" ) mult )*
 
-unary        → ( "-" | "not" ) unary
+mult         → unary ( ( "*" | "/" | "%" ) unary )*
+
+unary        → "-" unary
+             | "!" unary                     (* prefix bang = logical not *)
              | call
 
-call         → primary ( "(" args? ")" )*
+call         → primary ( "(" arg_list? ")" | "[" expr "]" )*
 
 primary      → NUMBER
              | STRING
-             | "true"
-             | "false"
-             | "nil"
+             | "true" | "false" | "nil"
              | IDENT
              | "(" expr ")"
+             | "[" ( expr ( "," expr )* )? "]"   (* array literal *)
+
+arg_list     → expr ( "," expr )*
 ```
 
 ---
 
-## Lexical Elements
+## Lexical Structure
 
+### Identifiers
+```
+IDENT       → [a-zA-Z_][a-zA-Z0-9_]*
+```
+Identifiers beginning with `_` suppress unused-variable warnings.
+
+### Numbers
 ```
 NUMBER      → DIGIT+ ( "." DIGIT+ )?
-STRING      → '"' ( [^"\\] | ESCAPE )* '"'
-ESCAPE      → '\' ( 'n' | 't' | 'r' | '"' | '\' )
-IDENT       → ALPHA ( ALPHA | DIGIT | '_' )*
-COMMENT     → '#' [^\n]*
-NEWLINE     → '\n'
-WHITESPACE  → ' ' | '\t' | '\r'   (ignored, not significant)
-
-ALPHA       → [a-zA-Z_]
 DIGIT       → [0-9]
+```
+All numbers are 64-bit IEEE 754 double-precision floats.
+
+### Strings
+```
+STRING      → '"' char* '"'
+char        → any character except '"' and unescaped newline
+            | escape_sequence
+
+escape_sequence → "\n"   newline
+                | "\t"   tab
+                | "\r"   carriage return
+                | "\\"   backslash
+                | "\""   double quote
+```
+
+### Comments
+```
+comment     → "#" [^\n]* NEWLINE
+```
+Comments run from `#` to the end of the line. Block comments are not supported.
+
+### Keywords
+```
+let  print  if  else  loop  function  return
+import  try  catch  end
+true  false  nil
+and  or  not
+```
+
+### Operators
+```
++   -   *   /   %           arithmetic
+==  !=  <   >   <=  >=      comparison
+=                           assignment
+..                          string concatenation
+!                           prefix logical not (same as 'not')
+[   ]                       array indexing
+```
+
+### Whitespace & Newlines
+- Spaces and tabs between tokens are ignored.
+- `NEWLINE` (`\n`) is the statement terminator.
+- Blank lines are allowed anywhere.
+
+---
+
+## Scoping Rules
+
+- Variables declared with `let` at the top level are **global**.
+- Variables declared with `let` inside a function body are **local**.
+- Variables declared inside `if`, `loop`, or `try` blocks are **local to that block**.
+- Local variables shadow outer variables of the same name within their scope.
+- Catch variables (`catch err`) are local to the catch block.
+
+---
+
+## Type System
+
+Nolqu is **dynamically typed** with four primitive types:
+
+| Type       | Literal examples              | Notes                        |
+|------------|-------------------------------|------------------------------|
+| `nil`      | `nil`                         | Represents absence of value  |
+| `bool`     | `true` `false`                |                              |
+| `number`   | `0` `3.14` `-5` `1e6`        | Always 64-bit float          |
+| `string`   | `"hello"` `"line\n"`         | Immutable, interned          |
+
+And two compound types:
+
+| Type       | Example                       | Notes                        |
+|------------|-------------------------------|------------------------------|
+| `array`    | `[1, "two", true]`            | Dynamic, heterogeneous       |
+| `function` | `function f(x) ... end`       | First-class value            |
+
+### Truthiness
+- `nil` and `false` are falsy.
+- Everything else (including `0` and `""`) is truthy.
+
+### Equality
+- Two values are equal if they have the same type and the same content.
+- Strings are compared by value (interning guarantees pointer equality).
+- Arrays are compared by identity (two arrays with the same elements are not equal unless they are the same object).
+
+---
+
+## Error Handling
+
+```nolqu
+try
+  # code that might throw
+  error("something went wrong")
+catch variableName
+  # variableName holds the error message (string)
+  print "Caught: " .. variableName
+end
+```
+
+- `try`/`catch`/`end` blocks can be nested up to 64 levels.
+- The following operations throw catchable errors:
+  - `error(msg)` — user-defined error
+  - `assert(cond, msg?)` — assertion failure
+  - Division and modulo by zero
+  - Arithmetic on non-numbers
+  - Array/string index out of bounds
+  - Wrong index type (non-number)
+  - File I/O failures (`file_read`, `file_write`, `file_append`, `file_lines`)
+  - Calling a non-function value
+  - `pop` on empty array
+  - `len` on wrong type
+
+---
+
+## Module System
+
+```nolqu
+import "path/to/module"
+```
+
+- The path is relative to the current working directory (not the script file).
+- File extension `.nq` is added automatically.
+- Importing a module executes it in the global scope — all top-level declarations become global.
+- Re-importing a module that has already been loaded **re-executes** it (no deduplication in v1.0.0).
+
+**Built-in modules (in `stdlib/`):**
+```nolqu
+import "stdlib/math"    # clamp  lerp  sign
+import "stdlib/array"   # map  filter  reduce  reverse
+import "stdlib/file"    # read_or_default  write_lines  count_lines
 ```
 
 ---
 
-## Keywords
+## Notes and Limitations (v1.0.0)
 
-| Keyword    | Kegunaan                     |
-|------------|------------------------------|
-| `let`      | Deklarasi variabel           |
-| `print`    | Mencetak ke output           |
-| `if`       | Kondisi percabangan          |
-| `else`     | Alternatif kondisi           |
-| `loop`     | Perulangan (while-style)     |
-| `function` | Deklarasi fungsi             |
-| `return`   | Mengembalikan nilai dari fungsi |
-| `import`   | Mengimpor file lain          |
-| `end`      | Menutup blok (if/loop/function) |
-| `true`     | Nilai boolean benar          |
-| `false`    | Nilai boolean salah          |
-| `nil`      | Nilai kosong                 |
-| `and`      | Logika AND                   |
-| `or`       | Logika OR                    |
-| `not`      | Negasi logika                |
-
----
-
-## Operators
-
-| Operator | Jenis       | Contoh           |
-|----------|-------------|------------------|
-| `+`      | Penjumlahan | `5 + 3`          |
-| `-`      | Pengurangan | `10 - 4`         |
-| `*`      | Perkalian   | `4 * 7`          |
-| `/`      | Pembagian   | `10 / 2`         |
-| `%`      | Modulo      | `10 % 3`         |
-| `..`     | Concat teks | `"a" .. "b"`     |
-| `==`     | Sama dengan | `x == 5`         |
-| `!=`     | Tidak sama  | `x != 0`         |
-| `<`      | Lebih kecil | `x < 10`         |
-| `>`      | Lebih besar | `x > 0`          |
-| `<=`     | Kurang sama | `x <= 100`       |
-| `>=`     | Lebih sama  | `x >= 1`         |
-| `and`    | Logika AND  | `x > 0 and y > 0`|
-| `or`     | Logika OR   | `x == 1 or y == 1`|
-| `not`    | Negasi      | `not false`      |
-| `-`      | Negasi angka| `-x`             |
-
----
-
-## Tipe Data
-
-| Tipe       | Contoh                    | Keterangan                     |
-|------------|---------------------------|--------------------------------|
-| `angka`    | `42`, `3.14`, `-7`        | Bilangan 64-bit floating point |
-| `teks`     | `"Halo"`, `"Nolqu"`       | String Unicode, immutable      |
-| `boolean`  | `true`, `false`           | Nilai logika                   |
-| `nil`      | `nil`                     | Tidak ada nilai                |
-| `fungsi`   | `function add(a, b) ...`  | Fungsi                         |
-
----
-
-## Aturan Scoping
-
-- Variabel yang dideklarasikan di level atas bersifat **global**
-- Variabel yang dideklarasikan di dalam fungsi bersifat **lokal**
-- Parameter fungsi bersifat lokal
-- Blok `if` dan `loop` **tidak** membuat scope baru (menggunakan scope fungsi/global)
-
----
-
-## Truthiness
-
-| Nilai   | Truthy? |
-|---------|---------|
-| `nil`   | ❌ Falsy |
-| `false` | ❌ Falsy |
-| `0`     | ✅ Truthy |
-| `""`    | ✅ Truthy |
-| semua lainnya | ✅ Truthy |
-
----
-
-## Catatan Khusus
-
-- **Satu statement per baris** — tidak ada semicolon
-- **Komentar** dimulai dengan `#`
-- **Konkatenasi teks** menggunakan `..` (bukan `+`)
-- **Pengecekan kesamaan** menggunakan `==` (bukan `=`)
-- **Penugasan** menggunakan `=` (untuk `let` atau reassign)
-- Indentasi **tidak wajib** tapi dianjurkan untuk keterbacaan
+- No closures — functions cannot capture variables from outer scopes.
+- No first-class arrays in stdlib `map`/`filter`/`reduce` — callback must be a named function.
+- No string mutation — all string operations return new strings.
+- Numbers are always floats — there is no distinct integer type.
+- `import` has no cycle detection; circular imports will infinite-loop.
+- The transpiler (`nq compile`) is experimental and does not support `import`, `try/catch`, or arrays.

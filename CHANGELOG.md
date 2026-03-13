@@ -1,93 +1,137 @@
 # Nolqu Changelog
 
+---
+
+## v1.0.0 — Stable Release (2026)
+
+**First stable release of Nolqu.** Language and bytecode format are now frozen.
+Programs written for v1.0.0 will continue to run on all future 1.x versions.
+
+### Bug Fixes
+
+- **`vm.c` — memory tracker underflow (critical):**
+  Seven native functions (`nativeUpper`, `nativeLower`, `nativeRepeat`,
+  `nativeReplace`, `nativeJoin`, `nativeFileRead`, `concatStrings`) used
+  `malloc()` to allocate string buffers that were then handed to `takeString()`.
+  When `takeString` deduplicates against the intern table it frees the buffer
+  via `nq_realloc()` — but since the buffer was allocated with `malloc`, the
+  byte counter `nq_bytes_allocated` underflowed, causing the GC threshold to
+  never be reached (GC would not fire).
+  Fixed: all native buffers now use `nq_realloc(NULL, 0, size)`.
+
+- **`vm.c` — `nativeFileLines` free mismatch:**
+  The temporary read buffer was allocated via `nq_realloc` but freed with
+  bare `free()`. Fixed: `free(buf)` → `nq_realloc(buf, size + 1, 0)`.
+
+### Code Improvements
+
+- **`nq_embed.cpp` — native registration refactored:**
+  Replaced the 16-slot `MAKE_WRAPPER` macro table with a clean C++ template
+  trampoline system (`TrampolineTable<Is...>` + `MakeSeq<N>`).
+  Limit raised from 16 to 64 registered host-native functions.
+  Dead `dispatch_wrapper` stub removed.
+
+- **Documentation completed:**
+  - `README.md` — full language tour, all builtins, embed API, project structure
+  - `docs/grammar.md` — complete EBNF, type system, scoping rules, limitations
+  - `docs/vm_design.md` — full instruction set reference, GC phases, error flow
+
+- **Test suite expanded:**
+  All four test files (`math_test.nq`, `string_test.nq`, `array_test.nq`,
+  `error_test.nq`) rewritten with correct syntax and broader coverage.
+  `array_test.nq` previously used `!contains()` (unsupported prefix `!` on calls);
+  fixed to `not contains()`.
+
+### Stability
+
+- 17/17 tests passing
+- Zero warnings in release build
+- ASan + UBSan clean (debug build)
+- Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
 ## v1.0.0-rc1 — Release Candidate (2026)
 
 ### Architecture: C / C++ Split
-- **Runtime core** (VM, GC, memory, value system, objects, table, chunk)
-  remains pure **C11** — for performance and ABI stability.
-- **Tooling layer** (lexer, parser, AST, compiler, code-generator, REPL,
-  CLI, embed API) migrated to **C++17** — for maintainability.
-- All public headers updated with `extern "C"` guards for correct
-  C/C++ interoperability.
-- `value.h` — `NIL_VAL`, `BOOL_VAL`, `NUMBER_VAL`, `OBJ_VAL` box macros
-  now use **inline functions** under C++ (C99 compound literals are not
-  valid C++); C path unchanged.
+- Runtime core (`memory`, `value`, `chunk`, `object`, `table`, `gc`, `vm`) → **C11**
+- Tooling layer (`lexer`, `parser`, `ast`, `compiler`, `codegen`, `repl`, `main`,
+  `nq_embed`) → **C++17**
+- All public headers updated with `extern "C"` guards
+- `value.h` box macros (`NIL_VAL`, `BOOL_VAL`, etc.) use inline functions under C++;
+  C path keeps compound literals
 
-### Bug Fixes
-- **`gc.c` — memory tracker bypass** (critical):  
-  `removeWhiteStrings()` previously used `calloc` / `free` directly,
-  bypassing `nq_realloc`. This caused `nq_bytes_allocated` to drift,
-  making the GC trigger unpredictably.  
-  Fixed: all allocations now go through `NQ_ALLOC` / `FREE_ARRAY`.
-
-- **`object.c` — memory tracker bypass** (critical):  
-  `allocString()` called `free(chars)` when an identical interned string
-  already existed. Because the buffer was allocated via `nq_realloc`,
-  the free must also go through `nq_realloc`.  
-  Fixed: `free(chars)` → `nq_realloc(chars, length + 1, 0)`.
-
-- **`memory.c` — counter ordering**:  
-  `nq_bytes_allocated += new_size` was executed before the subtraction of
-  `old_size`, which could temporarily inflate the counter and trigger a
-  spurious GC.  
-  Fixed: subtract first, then add.
+### Bug Fixes (rc1)
+- `gc.c` — `removeWhiteStrings()` used `calloc`/`free` bypassing tracker → fixed
+- `object.c` — `allocString()` called `free(chars)` instead of `nq_realloc` → fixed
+- `memory.c` — counter add-before-subtract ordering → fixed
 
 ### Build System
-- New **Makefile** supports mixed C/C++ compilation:
-  - `.c` files → `$(CC)` with `-std=c11 -Wall -Wextra -Wpedantic`
-  - `.cpp` files → `$(CXX)` with `-std=c++17 -Wall -Wextra`
-  - Linker step uses `$(CXX)` to satisfy C++ runtime requirements
-- Platform notes added for **Linux**, **macOS**, **Windows (MinGW)**,
-  and **Termux (Android)**.
-- Debug build: AddressSanitizer + UndefinedBehaviourSanitizer.
-
-### Code Quality
-- All headers fully documented with section banners and field comments.
-- `extern "C"` guards on every public header.
-- `NQ_UNUSED(x)` macro applied consistently.
-- Removed all implicit `void*` → `type*` casts that are valid C but
-  invalid C++ (now explicit in the few places needed).
-
-### Compatibility
-- **No syntax changes.**  All existing `.nq` programs run unchanged.
-- **No bytecode changes.**  Instruction set identical to v0.9.0-beta.
-- **No API changes.**  `nolqu.h` embed API unchanged.
+- New Makefile: mixed C/C++ build, platform notes for Linux/macOS/Windows/Termux
+- Debug build: AddressSanitizer + UndefinedBehaviourSanitizer
 
 ---
 
 ## v0.9.0-beta — Stabilization
 
 - New builtins: `assert`, `clock`, `mem_usage`, `is_nil/num/str/bool/array`
-- "Did you mean?" suggestions on undefined variable errors (Levenshtein)
-- Compiler warning for unused local variables (`_` prefix suppresses)
-- Improved REPL: `help`, `clear`, depth-proportional prompt
-- Improved error format: `file:line`, coloured call stack
-- Fixed: GC string table cleanup (`removeWhiteStrings` wired correctly)
+- "Did you mean?" on undefined variable (Levenshtein distance)
+- Compiler warning for unused locals (`_` prefix suppresses)
+- Improved REPL: `help`, `clear`, depth-proportional prompt, heap buffer
+- Improved error format: `file:line`, coloured stack trace
+- All comparison operators now throw catchable errors
 - Zero compiler warnings
 
 ## v0.8.0-beta — Garbage Collector
 
 - Mark-and-sweep GC in `gc.c` / `gc.h`
-- Auto-trigger when `nq_bytes_allocated > nq_gc_threshold` (initial: 1 MB)
+- Auto-trigger when `nq_bytes_allocated > nq_gc_threshold` (initial 1 MB)
+- After collection: threshold = max(2× surviving bytes, 1 MB)
 - `gc_collect()` builtin — manual trigger, returns bytes freed
-- `mem_usage()` builtin
 
 ## v0.7.0 — File I/O
 
-- `file_read`, `file_write`, `file_append`, `file_exists`, `file_lines`
+- `file_read` `file_write` `file_append` `file_exists` `file_lines`
 - `stdlib/file.nq`: `read_or_default`, `write_lines`, `count_lines`
 
 ## v0.6.0 — Error Handling
 
-- `try` / `catch` / `end` blocks (nestable, up to 64 levels)
+- `try` / `catch` / `end` (nestable, up to 64 levels)
 - `error(msg)` builtin
-- Catchable runtime errors: division by zero, type mismatch, index errors
+- Catchable: division/modulo by zero, type mismatch, index out of bounds
 - Opcodes: `OP_TRY`, `OP_TRY_END`, `OP_THROW`
 
-## v0.1 – v0.5 — Foundation
+## v0.5.0 — Extended Stdlib
 
-- v0.1: core VM, variables, arithmetic, control flow
-- v0.2: user input, type builtins
-- v0.3: arrays, stdlib modules, `import`
-- v0.4: scope improvements, closures
-- v0.5: extended stdlib (string, math, array, random)
+- String: `index`, `repeat`, `join`
+- Random: `random()`, `rand_int(lo, hi)`
+- `nq check` command — syntax check without execution
+- `nq test` command — run `*_test.nq` files
+
+## v0.4.0 — Scope Improvements
+
+- Block-scoped locals in `if`, `loop`, `function`
+- Unused-variable warning framework
+
+## v0.3.0 — Arrays and Modules
+
+- Array literals `[a, b, c]`, indexing, `push`, `pop`, `remove`, `contains`, `sort`
+- `import "path"` module system
+- `stdlib/math.nq`: `clamp`, `lerp`, `sign`
+- `stdlib/array.nq`: `map`, `filter`, `reduce`, `reverse`
+
+## v0.2.0 — User Input and Type Builtins
+
+- `input(prompt?)` — read from stdin
+- `str()`, `num()`, `type()` — type conversion
+- `upper`, `lower`, `trim`, `slice`, `replace`, `split`, `startswith`, `endswith`
+
+## v0.1.0 — Foundation
+
+- Lexer → Parser → AST → Compiler → Stack VM pipeline
+- Variables (`let`), arithmetic, string concatenation (`..`)
+- `if` / `else` / `end` conditionals
+- `loop` / `end` loops
+- `function` / `return` / `end`
+- `print` keyword
+- `sqrt`, `floor`, `ceil`, `round`, `abs`, `pow`, `min`, `max`

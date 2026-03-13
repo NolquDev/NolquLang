@@ -171,7 +171,7 @@ static Value nativeMin(int argc, Value* args)   { if (argc!=2||!IS_NUMBER(args[0
 static Value nativeUpper(int argc, Value* args) {
     if (argc!=1||!IS_STRING(args[0])) return NIL_VAL;
     ObjString* s = AS_STRING(args[0]);
-    char* buf = (char*)malloc((size_t)(s->length+1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(s->length + 1));
     for (int i=0;i<s->length;i++) buf[i]=(char)toupper((unsigned char)s->chars[i]);
     buf[s->length]='\0';
     return OBJ_VAL(takeString(buf, s->length));
@@ -181,7 +181,7 @@ static Value nativeUpper(int argc, Value* args) {
 static Value nativeLower(int argc, Value* args) {
     if (argc!=1||!IS_STRING(args[0])) return NIL_VAL;
     ObjString* s = AS_STRING(args[0]);
-    char* buf = (char*)malloc((size_t)(s->length+1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(s->length + 1));
     for (int i=0;i<s->length;i++) buf[i]=(char)tolower((unsigned char)s->chars[i]);
     buf[s->length]='\0';
     return OBJ_VAL(takeString(buf, s->length));
@@ -226,7 +226,7 @@ static Value nativeReplace(int argc, Value* args) {
     if (!found) return args[0];
     int prefix = (int)(found - src);
     int new_len = prefix + repl_len + (src_len - prefix - old_len);
-    char* buf = (char*)malloc((size_t)(new_len+1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(new_len + 1));
     memcpy(buf,           src,    (size_t)prefix);
     memcpy(buf+prefix,    repl,   (size_t)repl_len);
     memcpy(buf+prefix+repl_len, found+old_len, (size_t)(src_len-prefix-old_len));
@@ -307,7 +307,7 @@ static Value nativeRepeat(int argc, Value* args) {
     int n = (int)AS_NUMBER(args[1]);
     if (n <= 0) return OBJ_VAL(copyString("", 0));
     int new_len = s->length * n;
-    char* buf = (char*)malloc((size_t)(new_len + 1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(new_len + 1));
     for (int i = 0; i < n; i++)
         memcpy(buf + i * s->length, s->chars, (size_t)s->length);
     buf[new_len] = '\0';
@@ -330,7 +330,7 @@ static Value nativeJoin(int argc, Value* args) {
         else                               total += 3;  // nil
     }
 
-    char* buf = (char*)malloc((size_t)(total + 1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(total + 1));
     int pos = 0;
     for (int i = 0; i < arr->count; i++) {
         if (i > 0) { memcpy(buf + pos, sep->chars, (size_t)sep->length); pos += sep->length; }
@@ -419,7 +419,7 @@ static Value nativeFileRead(int argc, Value* args) {
         return NIL_VAL;
     }
     fseek(f, 0, SEEK_END); long size = ftell(f); rewind(f);
-    char* buf = (char*)malloc((size_t)(size + 1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(size + 1));
     size_t n = fread(buf, 1, (size_t)size, f); buf[n] = '\0'; fclose(f);
     return OBJ_VAL(takeString(buf, (int)n));
 }
@@ -480,7 +480,7 @@ static Value nativeFileLines(int argc, Value* args) {
         return NIL_VAL;
     }
     fseek(f, 0, SEEK_END); long size = ftell(f); rewind(f);
-    char* buf = (char*)malloc((size_t)(size + 1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(size + 1));
     size_t n = fread(buf, 1, (size_t)size, f); buf[n] = '\0'; fclose(f);
 
     ObjArray* arr = newArray();
@@ -494,7 +494,7 @@ static Value nativeFileLines(int argc, Value* args) {
         if (!nl) break;
         cur = nl + 1;
     }
-    free(buf);
+    nq_realloc(buf, (size_t)(size + 1), 0);   /* paired with nq_realloc alloc above */
     return OBJ_VAL(arr);
 }
 
@@ -713,7 +713,7 @@ static ObjString* valueToString(Value v) {
 
 static Value concatStrings(ObjString* a, ObjString* b) {
     int len  = a->length + b->length;
-    char* buf = (char*)malloc((size_t)(len + 1));
+    char* buf = (char*)nq_realloc(NULL, 0, (size_t)(len + 1));
     memcpy(buf,             a->chars, (size_t)a->length);
     memcpy(buf + a->length, b->chars, (size_t)b->length);
     buf[len] = '\0';

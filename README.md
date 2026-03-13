@@ -1,22 +1,37 @@
-# Nolqu Programming Language
+# Nolqu
 
 ```
- _   _       _
-| \ | | ___ | | __ _ _   _
-|  \| |/ _ \| |/ _` | | | |
-| |\  | (_) | | (_| | |_| |
-|_| \_|\___/|_|\__, |\__,_|
-               |___/
-v0.9.0-beta
+  _   _       _
+ | \ | | ___ | | __ _ _   _
+ |  \| |/ _ \| |/ _` | | | |
+ | |\  | (_) | | (_| | |_| |
+ |_| \_|\___/|_|\__, |\__,_|
+                |___/
+ v1.0.0  —  Stable Release
 ```
 
-Nolqu is a programming language designed so that code reads like plain sentences.
-One goal: write programs without fighting the syntax. Great for learning programming
-from scratch, or for developers who want a language that stays out of the way.
+A small, fast programming language with a clean syntax and its own bytecode VM.
+Nolqu is designed so code reads like plain sentences — great for learning, scripting,
+and embedding into C or C++ applications.
 
 ---
 
-## Installation
+## Features
+
+- **Clean syntax** — `if`, `loop`, `function`, `end` — no braces, no semicolons
+- **Stack-based bytecode VM** — fast and portable
+- **Garbage collected** — mark-and-sweep GC, automatic
+- **Try / catch** — structured error handling
+- **Arrays** — dynamic, heterogeneous, with negative indexing
+- **Modules** — `import "stdlib/math"` and your own `.nq` files
+- **File I/O** — read, write, append, split by lines
+- **Rich standard library** — math, string, array, random, file helpers
+- **Embed API** — use Nolqu inside any C or C++ project via `nolqu.h`
+- **C/C++ runtime** — core VM in C11, tooling in C++17
+
+---
+
+## Quick Install
 
 ### Linux / macOS
 
@@ -24,7 +39,7 @@ from scratch, or for developers who want a language that stays out of the way.
 git clone https://github.com/Nadzil123/Nolqu.git
 cd Nolqu
 make
-sudo make install   # install to /usr/local/bin/nq
+sudo make install        # installs to /usr/local/bin/nq
 ```
 
 ### Termux (Android)
@@ -33,39 +48,48 @@ sudo make install   # install to /usr/local/bin/nq
 pkg update && pkg install git clang make
 git clone https://github.com/Nadzil123/Nolqu.git
 cd Nolqu
-make
+make CC=clang CXX=clang++
 cp nq $PREFIX/bin/
 ```
 
----
-
-## Usage
+### Windows (MinGW-w64 / MSYS2)
 
 ```bash
-nq program.nq          # Run a program
-nq run program.nq      # Run a program (alternative)
-nq repl                # Interactive REPL mode
-nq version             # Show version
-nq help                # Show help
+git clone https://github.com/Nadzil123/Nolqu.git
+cd Nolqu
+mingw32-make
 ```
 
 ---
 
-## Basic Syntax
+## Running Programs
+
+```bash
+nq program.nq            # run a file
+nq run program.nq        # same, explicit command
+nq check program.nq      # parse + compile only (no run)
+nq repl                  # interactive REPL
+nq version               # show version
+nq help                  # show help and built-in list
+```
+
+---
+
+## Language Tour
 
 ### Variables
 
 ```nolqu
-let name = "Alice"
-let age  = 25
+let name   = "Alice"
+let age    = 25
 let active = true
 let empty  = nil
 
-print name
-print age
+print name              # Alice
+print "Age: " .. age    # Age: 25
 ```
 
-### Arithmetic
+### Arithmetic & Strings
 
 ```nolqu
 let x = 10
@@ -76,41 +100,24 @@ print x - y    # 7
 print x * y    # 30
 print x / y    # 3.33333...
 print x % y    # 1
-```
 
-### String Concatenation
-
-```nolqu
-let greeting = "Hello, " .. "World" .. "!"
-print greeting    # Hello, World!
-
-let n = 42
-print "The answer is: " .. n
-```
-
-### User Input (new in v0.2.0)
-
-```nolqu
-let name = input("What is your name? ")
-print "Hello, " .. name .. "!"
-
-let age_str = input("How old are you? ")
-let age = num(age_str)
-print "Next year you will be " .. age + 1
+# String concatenation with ..
+let greeting = "Hello, " .. name .. "!"
+print greeting          # Hello, Alice!
 ```
 
 ### Conditionals
 
 ```nolqu
-let score = 75
+let score = 82
 
 if score >= 90
-  print "Grade A"
+  print "A"
 else
   if score >= 75
-    print "Grade B"
+    print "B"
   else
-    print "Grade C"
+    print "C"
   end
 end
 ```
@@ -123,6 +130,7 @@ loop i <= 5
   print i
   i = i + 1
 end
+# prints 1 2 3 4 5
 ```
 
 ### Functions
@@ -132,7 +140,7 @@ function greet(name)
   return "Hello, " .. name .. "!"
 end
 
-print greet("World")
+print greet("World")    # Hello, World!
 
 function factorial(n)
   if n <= 1
@@ -141,7 +149,7 @@ function factorial(n)
   return n * factorial(n - 1)
 end
 
-print factorial(5)    # 120
+print factorial(10)     # 3628800
 ```
 
 ### Boolean Logic
@@ -151,118 +159,111 @@ let a = 10
 let b = 20
 
 if a > 0 and b > 0
-  print "Both positive"
+  print "both positive"
 end
 
 if a > 100 or b > 10
-  print "At least one is true"
+  print "at least one"
 end
 
 if not false
-  print "This always prints"
+  print "always"
 end
 ```
 
----
-
-## Built-in Functions
-
-| Function         | Description                                          |
-|------------------|------------------------------------------------------|
-| `input(prompt?)` | Read a line from stdin. Optional prompt string.      |
-| `str(value)`     | Convert any value to a string.                       |
-| `num(value)`     | Convert a string to a number. Returns nil if invalid.|
-| `type(value)`    | Return the type name of a value as a string.         |
+### Arrays
 
 ```nolqu
-print type(42)        # number
-print type("hello")   # string
-print type(true)      # bool
-print type(nil)       # nil
+let nums = [3, 1, 4, 1, 5, 9]
 
-print str(99)         # "99"
-let n = num("3.14")
-print n + 1           # 4.14
+print len(nums)         # 6
+print nums[0]           # 3
+print nums[-1]          # 9  (negative indexing)
+
+push(nums, 2)           # append
+let last = pop(nums)    # remove and return last
+
+sort(nums)              # sort in-place
+print join(nums, ", ")  # 1, 1, 3, 4, 5
+
+# Array slice (strings too)
+let words = ["one", "two", "three"]
+print words[1]          # two
 ```
 
----
-
-## Data Types
-
-| Type       | Example               | Description                  |
-|------------|-----------------------|------------------------------|
-| `number`   | `42`, `3.14`, `-5`    | 64-bit floating point        |
-| `string`   | `"Hello World"`       | Immutable Unicode string     |
-| `bool`     | `true`, `false`       | Boolean value                |
-| `nil`      | `nil`                 | No value                     |
-| `function` | `function f() ...`    | Function                     |
-
----
-
-## Keywords
-
-```
-let       — variable declaration
-print     — print to output
-if        — conditional
-else      — alternative branch
-loop      — condition-based loop (while-style)
-function  — function declaration
-return    — return a value from a function
-import    — import a file (not yet active)
-end       — close a block (if / loop / function)
-true      — boolean true
-false     — boolean false
-nil       — empty value
-and       — logical AND
-or        — logical OR
-not       — logical NOT
-```
-
----
-
-## Full Example
-
-### Fibonacci
+### Error Handling
 
 ```nolqu
-function fibonacci(n)
-  if n <= 1
-    return n
-  end
-  return fibonacci(n - 1) + fibonacci(n - 2)
+try
+  let result = 10 / 0
+catch err
+  print "Caught: " .. err    # Caught: Division by zero.
 end
 
-let i = 0
-loop i < 10
-  print fibonacci(i)
-  i = i + 1
+# User errors
+try
+  error("something went wrong")
+catch msg
+  print msg
 end
+
+# Assert
+assert(1 + 1 == 2, "math is broken")
+
+# is_* type predicates
+print is_num(42)        # true
+print is_str("hi")      # true
+print is_array([])      # true
+print type(3.14)        # number
 ```
 
-### FizzBuzz
+### File I/O
 
 ```nolqu
-let n = 1
-loop n <= 20
-  if n % 15 == 0
-    print "FizzBuzz"
-  else
-    if n % 3 == 0
-      print "Fizz"
-    else
-      if n % 5 == 0
-        print "Buzz"
-      else
-        print n
-      end
-    end
-  end
-  n = n + 1
+# Write
+file_write("hello.txt", "Hello from Nolqu!\n")
+
+# Read
+let content = file_read("hello.txt")
+print content
+
+# Check existence
+if file_exists("hello.txt")
+  print "file found"
 end
+
+# Read as lines
+let lines = file_lines("hello.txt")
+print len(lines) .. " lines"
+
+# Append
+file_append("log.txt", "new entry\n")
 ```
 
-### Interactive Greeting
+### Modules
+
+```nolqu
+import "stdlib/math"
+import "stdlib/array"
+import "stdlib/file"
+
+# stdlib/math provides: clamp, lerp, sign
+print clamp(15, 0, 10)     # 10
+print lerp(0, 100, 0.5)    # 50
+
+# stdlib/array provides: map, filter, reduce, reverse
+import "stdlib/array"
+
+function double(x)
+  return x * 2
+end
+
+let nums = [1, 2, 3, 4, 5]
+let doubled = map(nums, double)
+print join(doubled, " ")    # 2 4 6 8 10
+```
+
+### User Input
 
 ```nolqu
 let name = input("Your name: ")
@@ -273,92 +274,240 @@ print "Hello, " .. name .. "!"
 if age >= 18
   print "You are an adult."
 else
-  print "You are a minor."
+  print "You are " .. (18 - age) .. " years from adulthood."
 end
 ```
 
 ---
 
-## Architecture
+## Built-in Functions
 
-```
-source.nq
-    │
-    ▼ Lexer         → Token stream
-    ▼ Parser        → AST (Abstract Syntax Tree)
-    ▼ Compiler      → Bytecode Chunk
-    ▼ Nolqu VM      → Execution (stack-based)
+### I/O
+| Function | Description |
+|---|---|
+| `input(prompt?)` | Read a line from stdin |
+| `print expr` | Print value with newline (keyword, not function) |
+
+### Type
+| Function | Description |
+|---|---|
+| `str(v)` | Convert to string |
+| `num(v)` | String → number, nil if invalid |
+| `type(v)` | Return type name: `"nil"` `"bool"` `"number"` `"string"` `"array"` `"function"` |
+| `is_nil(v)` `is_num(v)` `is_str(v)` `is_bool(v)` `is_array(v)` | Type predicates |
+
+### Math
+| Function | Description |
+|---|---|
+| `sqrt(n)` `floor(n)` `ceil(n)` `round(n)` `abs(n)` | Standard math |
+| `pow(base, exp)` | Exponentiation |
+| `min(a, b)` `max(a, b)` | Comparisons |
+| `random()` | Float in `[0, 1)` |
+| `rand_int(lo, hi)` | Integer in `[lo, hi]` |
+
+### String
+| Function | Description |
+|---|---|
+| `len(s)` | String length |
+| `upper(s)` `lower(s)` | Case conversion |
+| `trim(s)` | Strip leading/trailing whitespace |
+| `slice(s, start, end?)` | Substring — supports negative indices |
+| `replace(s, old, new)` | Replace first occurrence |
+| `split(s, sep)` | Split → array |
+| `join(arr, sep)` | Array → string |
+| `index(s, sub)` | First position of `sub`, or `-1` |
+| `repeat(s, n)` | Repeat string `n` times |
+| `startswith(s, prefix)` `endswith(s, suffix)` | Prefix / suffix check |
+
+### Array
+| Function | Description |
+|---|---|
+| `len(arr)` | Array length |
+| `push(arr, val)` | Append, return array |
+| `pop(arr)` | Remove and return last element |
+| `remove(arr, idx)` | Remove at index, return removed value |
+| `contains(arr, val)` | True if value is in array |
+| `sort(arr)` | Sort in-place, return array |
+
+### File I/O
+| Function | Description |
+|---|---|
+| `file_read(path)` | Read entire file as string |
+| `file_write(path, content)` | Overwrite file, return bool |
+| `file_append(path, content)` | Append to file, return bool |
+| `file_exists(path)` | True if file is readable |
+| `file_lines(path)` | Read file → array of lines |
+
+### Error & Assert
+| Function | Description |
+|---|---|
+| `error(msg)` | Throw a runtime error |
+| `assert(cond, msg?)` | Throw if condition is false |
+
+### Memory & Time
+| Function | Description |
+|---|---|
+| `clock()` | Seconds since program start |
+| `mem_usage()` | Bytes currently allocated |
+| `gc_collect()` | Trigger GC, return bytes freed |
+
+---
+
+## Standard Library Modules
+
+```nolqu
+import "stdlib/math"    # clamp(v,lo,hi)  lerp(a,b,t)  sign(n)
+import "stdlib/array"   # map(arr,fn)  filter(arr,fn)  reduce(arr,fn,init)  reverse(arr)
+import "stdlib/file"    # read_or_default(path,def)  write_lines(path,arr)  count_lines(path)
 ```
 
-### Project Structure
+---
+
+## REPL
+
+```bash
+$ nq repl
+
+  +--------------------------------------+
+  |  Nolqu 1.0.0    Interactive REPL    |
+  |  'help' for help  'exit' to quit    |
+  +--------------------------------------+
+
+nq > let x = 10
+nq > print x * x
+100
+nq > function add(a, b)
+  ...   return a + b
+  ... end
+nq > print add(3, 4)
+7
+nq > exit
+```
+
+**REPL commands:** `help` · `clear` · `exit` · `quit`
+
+---
+
+## Embed in C / C++
+
+```c
+#include "nolqu.h"
+
+int main(void) {
+    NqState* nq = nq_open();
+
+    nq_setglobal_string(nq, "player", "Alice");
+    nq_setglobal_number(nq, "score", 9001);
+
+    nq_dostring(nq, "print player .. \" scored \" .. score");
+    nq_dofile(nq, "game_logic.nq");
+
+    NqValue result = nq_getglobal(nq, "final_score");
+    if (result.type == NQ_TYPE_NUMBER)
+        printf("Final: %g\n", result.as.number);
+
+    nq_close(nq);
+    return 0;
+}
+```
+
+See `include/nolqu.h` for the full embedding API.
+
+---
+
+## Project Structure
 
 ```
 nolqu/
 ├── src/
-│   ├── common.h      — Shared headers & macros
-│   ├── memory.h/.c   — Memory management
-│   ├── value.h/.c    — Value types (nil, bool, number, obj)
-│   ├── chunk.h/.c    — Bytecode chunk + disassembler
-│   ├── object.h/.c   — Heap objects (string, function, native)
-│   ├── table.h/.c    — Hash table (globals, string interning)
-│   ├── lexer.h/.c    — Lexer / tokenizer
-│   ├── ast.h/.c      — AST node types
-│   ├── parser.h/.c   — Recursive descent parser
-│   ├── compiler.h/.c — AST → Bytecode compiler
-│   ├── vm.h/.c       — Nolqu Virtual Machine
-│   ├── repl.h/.c     — Interactive REPL
-│   └── main.c        — CLI entry point (nq)
+│   ├── common.h          Shared macros, limits, ANSI colours
+│   ├── memory.c/h        Tracked allocator — all heap through nq_realloc
+│   ├── value.c/h         Value tagged union (nil/bool/number/obj)
+│   ├── chunk.c/h         Bytecode chunk + disassembler
+│   ├── object.c/h        Heap objects: ObjString, ObjFunction, ObjNative, ObjArray
+│   ├── table.c/h         Open-addressing hash table (globals, string intern)
+│   ├── gc.c/h            Mark-and-sweep garbage collector
+│   ├── vm.c/h            Stack-based bytecode VM + all built-in functions
+│   ├── lexer.cpp/h       Tokeniser
+│   ├── ast.cpp/h         AST node types + NodeList
+│   ├── parser.cpp/h      Recursive-descent parser
+│   ├── compiler.cpp/h    AST → bytecode compiler
+│   ├── codegen.cpp/h     Nolqu → C transpiler (experimental)
+│   ├── repl.cpp/h        Interactive REPL
+│   ├── nq_embed.cpp      C/C++ embedding API implementation
+│   └── main.cpp          CLI entry point
+├── include/
+│   └── nolqu.h           Public embedding API header
+├── stdlib/
+│   ├── math.nq           clamp, lerp, sign
+│   ├── array.nq          map, filter, reduce, reverse
+│   └── file.nq           read_or_default, write_lines, count_lines
 ├── examples/
 │   ├── hello.nq
 │   ├── fibonacci.nq
 │   ├── functions.nq
 │   ├── counter.nq
-│   └── input.nq
+│   ├── input.nq
+│   ├── arrays.nq
+│   ├── stdlib.nq
+│   ├── import_demo.nq
+│   ├── files.nq
+│   └── tests/
+│       ├── math_test.nq
+│       ├── string_test.nq
+│       ├── array_test.nq
+│       └── error_test.nq
 ├── docs/
-│   ├── grammar.md
-│   └── vm_design.md
+│   ├── grammar.md        Formal EBNF grammar
+│   └── vm_design.md      VM architecture and bytecode reference
 ├── Makefile
 ├── README.md
 ├── CHANGELOG.md
-└── LICENSE
+├── ROADMAP.md
+└── LICENSE               MIT
 ```
 
 ---
 
-## Build
+## Build System
 
 ```bash
-make          # Release build → ./nq
-make debug    # Debug build   → ./nq-debug
-make test     # Run example programs
-make clean    # Remove build artifacts
+make              # Release build  → ./nq
+make debug        # Debug + ASan   → ./nq-debug
+make test         # Run test suite
+make install      # Copy to /usr/local/bin/nq
+make clean        # Remove build artefacts
 ```
+
+The runtime core (`memory`, `value`, `chunk`, `object`, `table`, `gc`, `vm`) is
+compiled as **C11**. The tooling layer (`lexer`, `parser`, `ast`, `compiler`,
+`repl`, `main`) is compiled as **C++17**. All public headers carry `extern "C"`
+guards for correct interoperability.
 
 ---
 
 ## Error Messages
 
-Nolqu provides clear, actionable error messages:
+Nolqu gives clear, actionable messages:
 
 ```
-[ Runtime Error ] program.nq:5
-  Undefined variable 'x'.
-  Hint: Did you declare it with 'let x = ...'?
-```
+[ Runtime Error ] program.nq:7
+  Undefined variable 'scroe'. Did you mean 'score'?
+  Hint: Use 'let scroe = ...' to declare a variable.
 
-```
-[ Runtime Error ] program.nq:8
-  Division by zero is not allowed.
-  Hint: Check the divisor value before dividing.
-```
-
-```
 [ Runtime Error ] program.nq:12
-  Function 'add' expects 2 argument(s), but got 1.
+  Division by zero.
+
+[ Compile Error ] program.nq:4
+  Function 'greet' expects 2 argument(s), but got 1.
+
+[ Warning ] line 9: Local variable 'tmp' is declared but never used.
+  Hint: Prefix with _ to suppress: _tmp
 ```
 
 ---
 
 ## License
 
-MIT License — free to use and modify.
+MIT License — free to use, modify, and distribute.  
+See `LICENSE` for the full text.

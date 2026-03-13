@@ -1,9 +1,30 @@
-assert(upper("hello") == "HELLO",         "upper")
-assert(lower("WORLD") == "world",         "lower")
-assert(len("nolqu") == 5,                 "len string")
-assert(trim("  hi  ") == "hi",            "trim")
-assert(startswith("nolqu", "no"),         "startswith")
-assert(endswith("nolqu", "qu"),           "endswith")
-assert(index("hello", "ell") == 1,        "index")
-assert(repeat("ab", 3) == "ababab",       "repeat")
-assert(replace("aXb", "X", "-") == "a-b", "replace")
+# string_test.nq — string builtins
+
+assert(upper("hello") == "HELLO",           "upper")
+assert(lower("WORLD") == "world",           "lower")
+assert(len("nolqu") == 5,                   "len string")
+assert(trim("  hi  ") == "hi",             "trim")
+assert(startswith("nolqu", "no"),           "startswith true")
+assert(not startswith("nolqu", "xy"),       "startswith false")
+assert(endswith("nolqu", "qu"),             "endswith true")
+assert(not endswith("nolqu", "xy"),         "endswith false")
+assert(index("hello", "ell") == 1,          "index found")
+assert(index("hello", "xyz") == -1,         "index not found")
+assert(repeat("ab", 3) == "ababab",         "repeat")
+assert(replace("a-b-c", "-", ".") == "a.b-c", "replace first")
+assert(slice("hello", 1, 3) == "el",        "slice")
+assert(slice("hello", -2) == "lo",          "slice negative")
+
+# split and join roundtrip
+let parts = split("a,b,c", ",")
+assert(len(parts) == 3,          "split count")
+assert(parts[0] == "a",          "split[0]")
+assert(parts[2] == "c",          "split[2]")
+assert(join(parts, ",") == "a,b,c", "join roundtrip")
+
+# string indexing
+let s = "hello"
+assert(s[0] == "h",  "str idx 0")
+assert(s[-1] == "o", "str idx -1")
+
+print "string tests OK"

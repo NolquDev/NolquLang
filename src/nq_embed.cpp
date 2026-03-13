@@ -192,57 +192,70 @@ int nq_call(NqState* nq, const char* fn_name,
  *  Native function registration
  * ───────────────────────────────────────────── */
 
-typedef struct {
+/*
+ * Host-native registration — C++ solution.
+ *
+ * Each registered function gets its own heap-allocated Context that
+ * stores the NqState* and the host callback.  A templated trampoline
+ * reads the context from a thread-local pointer set just before the
+ * call; this avoids the 16-slot macro table from rc1.
+ *
+ * Max registered natives: MAX_HOST_NATIVES (64).
+ */
+#define MAX_HOST_NATIVES 64
+
+struct NqNativeCtx {
     NqState*   nq;
     NqNativeFn host_fn;
-} NqNativeWrapper;
-
-/* We store wrapper per-native using a static table (max 64 host-registered) */
-#define MAX_HOST_NATIVES 64
-static NqNativeWrapper g_wrappers[MAX_HOST_NATIVES];
-static int             g_wrapper_count = 0;
-
-static Value dispatch_wrapper(int argc, Value* args) {
-    /* The native's "name" field is used to retrieve the wrapper index.
-     * We use a secondary lookup by storing the NativeFn pointer as key. */
-    (void)argc; (void)args;
-    return NIL_VAL; /* overridden per-registration below */
-}
-
-/* Per-registration generated wrapper — we create one closure per registration */
-#define MAKE_WRAPPER(N) \
-static Value nq_wrapper_##N(int argc, Value* args) { \
-    NqNativeWrapper* w = &g_wrappers[N]; \
-    NqValue nqargs[32]; \
-    int n = argc < 32 ? argc : 32; \
-    for (int i = 0; i < n; i++) nqargs[i] = internal_to_nqvalue(args[i]); \
-    NqValue r = w->host_fn(w->nq, n, nqargs); \
-    return nqvalue_to_internal(w->nq, r); \
-}
-
-MAKE_WRAPPER(0)  MAKE_WRAPPER(1)  MAKE_WRAPPER(2)  MAKE_WRAPPER(3)
-MAKE_WRAPPER(4)  MAKE_WRAPPER(5)  MAKE_WRAPPER(6)  MAKE_WRAPPER(7)
-MAKE_WRAPPER(8)  MAKE_WRAPPER(9)  MAKE_WRAPPER(10) MAKE_WRAPPER(11)
-MAKE_WRAPPER(12) MAKE_WRAPPER(13) MAKE_WRAPPER(14) MAKE_WRAPPER(15)
-
-typedef Value (*InternalNativeFn)(int, Value*);
-static InternalNativeFn g_dispatch_table[MAX_HOST_NATIVES] = {
-    nq_wrapper_0,  nq_wrapper_1,  nq_wrapper_2,  nq_wrapper_3,
-    nq_wrapper_4,  nq_wrapper_5,  nq_wrapper_6,  nq_wrapper_7,
-    nq_wrapper_8,  nq_wrapper_9,  nq_wrapper_10, nq_wrapper_11,
-    nq_wrapper_12, nq_wrapper_13, nq_wrapper_14, nq_wrapper_15,
 };
 
-void nq_register(NqState* nq, const char* name, NqNativeFn fn, int arity) {
-    if (g_wrapper_count >= 16) return; /* limited by dispatch table */
-    int idx = g_wrapper_count++;
-    g_wrappers[idx].nq      = nq;
-    g_wrappers[idx].host_fn = fn;
+static NqNativeCtx  g_ctxs[MAX_HOST_NATIVES];
+static int          g_ctx_count = 0;
 
-    ObjNative*  native = newNative(g_dispatch_table[idx], name, arity);
-    ObjString*  key    = copyString(name, (int)strlen(name));
+/*
+ * Each slot index N gets a unique trampoline function via a template.
+ * The template is instantiated once per slot at compile time — no
+ * macros, no dispatch table, no dead generic wrapper.
+ */
+template<int N>
+static Value nq_trampoline(int argc, Value* args) {
+    NqNativeCtx* ctx = &g_ctxs[N];
+    NqValue nqargs[32];
+    int n = (argc < 32) ? argc : 32;
+    for (int i = 0; i < n; i++)
+        nqargs[i] = internal_to_nqvalue(args[i]);
+    NqValue r = ctx->host_fn(ctx->nq, n, nqargs);
+    return nqvalue_to_internal(ctx->nq, r);
+}
+
+/* Build a compile-time array of trampoline function pointers. */
+template<int... Is>
+struct TrampolineTable {
+    static constexpr NativeFn fns[] = { nq_trampoline<Is>... };
+};
+
+/* Generate indices 0..N-1 via index_sequence (C++14). */
+template<int N, int... Is>
+struct MakeSeq : MakeSeq<N-1, N-1, Is...> {};
+template<int... Is>
+struct MakeSeq<0, Is...> : TrampolineTable<Is...> {};
+
+/* Instantiate the full table. */
+using Trampolines = MakeSeq<MAX_HOST_NATIVES>;
+
+void nq_register(NqState* nq, const char* name, NqNativeFn fn, int arity) {
+    if (g_ctx_count >= MAX_HOST_NATIVES) {
+        fprintf(stderr, "[nolqu] nq_register: too many host natives (max %d)\n",
+                MAX_HOST_NATIVES);
+        return;
+    }
+    int idx = g_ctx_count++;
+    g_ctxs[idx].nq      = nq;
+    g_ctxs[idx].host_fn = fn;
+
+    ObjNative* native = newNative(Trampolines::fns[idx], name, arity);
+    ObjString* key    = copyString(name, (int)strlen(name));
     tableSet(&nq->vm.globals, key, OBJ_VAL(native));
-    (void)dispatch_wrapper;
 }
 
 /* ─────────────────────────────────────────────
