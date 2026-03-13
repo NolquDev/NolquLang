@@ -1,0 +1,30 @@
+# try/catch basic
+let caught = false
+try
+  error("boom")
+catch err
+  caught = true
+  assert(err == "boom", "error message")
+end
+assert(caught, "catch ran")
+
+# assert pass
+assert(true, "assert true")
+
+# assert fail caught
+let afail = false
+try
+  assert(1 == 2, "intentional")
+catch err
+  afail = true
+end
+assert(afail, "assert fail caught")
+
+# division by zero
+let dzero = false
+try
+  let x = 10 / 0
+catch err
+  dzero = true
+end
+assert(dzero, "division by zero caught")

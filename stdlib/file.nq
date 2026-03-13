@@ -1,0 +1,26 @@
+# stdlib/file.nq — File I/O helpers
+# Usage: import "stdlib/file"
+# Note: file_read, file_write, file_append, file_exists, file_lines
+#       are built-in — this module adds higher-level helpers.
+
+# read_or_default(path, default) — return file content or default if missing
+function read_or_default(path, default_val)
+  if file_exists(path)
+    return file_read(path)
+  end
+  return default_val
+end
+
+# write_lines(path, arr) — write array of strings as lines
+function write_lines(path, arr)
+  let content = join(arr, "\n")
+  return file_write(path, content)
+end
+
+# count_lines(path) — return number of lines in a file
+function count_lines(path)
+  if file_exists(path)
+    return len(file_lines(path))
+  end
+  return 0
+end

@@ -1,0 +1,35 @@
+# ───────────────────────────────────────────
+#  counter.nq — Loops and conditionals
+# ───────────────────────────────────────────
+
+print "Countdown:"
+let count = 10
+
+loop count > 0
+  print count
+  count = count - 1
+end
+
+print "Done!"
+
+# FizzBuzz
+print ""
+print "FizzBuzz 1 to 20:"
+
+let n = 1
+loop n <= 20
+  if n % 15 == 0
+    print "FizzBuzz"
+  else
+    if n % 3 == 0
+      print "Fizz"
+    else
+      if n % 5 == 0
+        print "Buzz"
+      else
+        print n
+      end
+    end
+  end
+  n = n + 1
+end

@@ -1,0 +1,40 @@
+# ───────────────────────────────────────────
+#  files.nq — File I/O demo (new in v0.7.0)
+# ───────────────────────────────────────────
+
+let path = "/tmp/nolqu_demo.txt"
+
+# Write a file
+file_write(path, "Line one\nLine two\nLine three\n")
+print file_exists(path)
+
+# Read entire file
+let content = file_read(path)
+print content
+
+# Read as lines
+let lines = file_lines(path)
+print len(lines)
+let i = 0
+loop i < len(lines)
+  print lines[i]
+  i = i + 1
+end
+
+# Append to file
+file_append(path, "Line four\n")
+print len(file_lines(path))
+
+# Handle missing file with try/catch
+try
+  let data = file_read("/tmp/missing_file.txt")
+catch err
+  print "Error:"
+  print err
+end
+
+# stdlib/file helpers
+import "stdlib/file"
+let lines2 = file_lines(path)
+print count_lines(path)
+print read_or_default("/tmp/nope.txt", "fallback value")

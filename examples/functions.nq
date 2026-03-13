@@ -1,0 +1,43 @@
+# ───────────────────────────────────────────
+#  functions.nq — Functions example
+# ───────────────────────────────────────────
+
+function add(a, b)
+  return a + b
+end
+
+function multiply(a, b)
+  return a * b
+end
+
+function isEven(n)
+  if n % 2 == 0
+    return true
+  end
+  return false
+end
+
+function greet(name)
+  return "Hello, " .. name .. "!"
+end
+
+print add(5, 10)
+print multiply(4, 7)
+print greet("Nadzil")
+
+let number = 42
+if isEven(number)
+  print number .. " is an even number"
+else
+  print number .. " is an odd number"
+end
+
+function factorial(n)
+  if n <= 1
+    return 1
+  end
+  return n * factorial(n - 1)
+end
+
+print "5! = " .. factorial(5)
+print "10! = " .. factorial(10)

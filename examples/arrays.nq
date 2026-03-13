@@ -1,0 +1,63 @@
+# ───────────────────────────────────────────
+#  arrays.nq — Array / list example (new in v0.3.0)
+# ───────────────────────────────────────────
+
+# --- Array literal ---
+let fruits = ["apple", "banana", "cherry"]
+print fruits
+
+# --- len ---
+print len(fruits)
+
+# --- Index access (0-based) ---
+print fruits[0]
+print fruits[2]
+
+# --- Negative index ---
+print fruits[-1]
+
+# --- Index assignment ---
+fruits[1] = "blueberry"
+print fruits
+
+# --- push / pop ---
+push(fruits, "mango")
+print fruits
+print pop(fruits)
+print fruits
+
+# --- remove ---
+remove(fruits, 0)
+print fruits
+
+# --- contains ---
+print contains(fruits, "cherry")
+print contains(fruits, "apple")
+
+# --- Empty array and building dynamically ---
+let numbers = []
+let i = 1
+loop i <= 5
+  push(numbers, i * i)
+  i = i + 1
+end
+print numbers
+
+# --- Sum of array ---
+function sum(arr)
+  let total = 0
+  let j = 0
+  loop j < len(arr)
+    total = total + arr[j]
+    j = j + 1
+  end
+  return total
+end
+
+print sum(numbers)
+
+# --- String indexing ---
+let word = "Nolqu"
+print word[0]
+print word[-1]
+print len(word)

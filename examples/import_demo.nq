@@ -1,0 +1,31 @@
+# ───────────────────────────────────────────
+#  import_demo.nq — Module system demo (new in v0.3.0)
+# ───────────────────────────────────────────
+
+import "stdlib/math"
+import "stdlib/array"
+
+# --- stdlib/math ---
+print clamp(150, 0, 100)
+print lerp(0, 100, 0.25)
+print sign(-7)
+
+# --- stdlib/array ---
+let nums = [1, 2, 3, 4, 5]
+
+function double(x)
+  return x * 2
+end
+
+function isEven(x)
+  return x % 2 == 0
+end
+
+function add(a, b)
+  return a + b
+end
+
+print map(nums, double)
+print filter(nums, isEven)
+print reduce(nums, add, 0)
+print reverse(nums)

@@ -1,0 +1,26 @@
+# stdlib/math.nq — Math helpers
+# Usage: import "stdlib/math"
+
+function clamp(val, lo, hi)
+  if val < lo
+    return lo
+  end
+  if val > hi
+    return hi
+  end
+  return val
+end
+
+function lerp(a, b, t)
+  return a + (b - a) * t
+end
+
+function sign(n)
+  if n > 0
+    return 1
+  end
+  if n < 0
+    return -1
+  end
+  return 0
+end
