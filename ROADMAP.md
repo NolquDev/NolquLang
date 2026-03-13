@@ -36,13 +36,8 @@ Bugfix: slot-0 reservation missing for top-level script, causing block-local var
 
 ---
 
-## v0.7 — File I/O
-**Focus:** Read and write files.
-
-- `file.read(path)` — read file as string
-- `file.write(path, content)` — write string to file
-- `file.exists(path)` — check if file exists
-- `file.lines(path)` — read file as array of lines
+## ✅ v0.7.0 — File I/O
+`file_read(path)`, `file_write(path, content)`, `file_append(path, content)`, `file_exists(path)`, `file_lines(path)`. All file errors are catchable via `try/catch`. Module `stdlib/file.nq` adds `read_or_default`, `write_lines`, `count_lines`.
 
 ---
 
@@ -94,7 +89,7 @@ Bugfix: slot-0 reservation missing for top-level script, causing block-local var
 | v0.4 | Scope improvements ✅ |
 | v0.5 | Extended stdlib ✅ |
 | v0.6 | Error handling ✅ |
-| v0.7 | File I/O |
+| v0.7 | File I/O ✅ |
 | v0.8 | Garbage collector |
 | v0.9 | Stabilization |
 | v1.0.0-rc1 | Release candidate |

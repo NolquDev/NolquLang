@@ -4,6 +4,52 @@
 
 ---
 
+## [0.7.0] — 2026-03-13 (Alpha)
+[Compare v0.6.0...v0.7.0](https://github.com/Nadzil123/Nolqu/compare/v0.6.0-alpha...v0.7.0-alpha)
+
+### Added
+
+**File I/O — Built-in Functions**
+- `file_read(path)` — read entire file as a string; throws on error
+- `file_write(path, content)` — write string to file (overwrite); returns `true`/`false`
+- `file_append(path, content)` — append string to existing file; returns `true`/`false`
+- `file_exists(path)` — return `true` if the file exists and is readable
+- `file_lines(path)` — read file and return each line as an array (newlines stripped)
+
+All file functions integrate with `try`/`catch` — errors from missing or unreadable files can be caught as strings.
+
+```nolqu
+try
+  let content = file_read("data.txt")
+  print content
+catch err
+  print "Could not read file:"
+  print err
+end
+```
+
+**`stdlib/file.nq` — File helper module**
+- `read_or_default(path, default)` — return file content or a fallback value if file doesn't exist
+- `write_lines(path, arr)` — write an array of strings as newline-separated lines
+- `count_lines(path)` — return the number of lines in a file
+
+**New Example**
+- `examples/files.nq` — demonstrates write, read, lines, append, error handling, and stdlib/file helpers
+
+### Changed
+
+- Version bumped to `0.7.0`
+
+### Bug Fixes
+
+- (None)
+
+### Breaking Changes
+
+- (None)
+
+---
+
 ## [0.6.0] — 2026-03-13 (Alpha)
 [Compare v0.5.0...v0.6.0](https://github.com/Nadzil123/Nolqu/compare/v0.5.0-alpha...v0.6.0-alpha)
 

@@ -367,6 +367,103 @@ static Value nativeError(int argc, Value* args) {
     if (g_vm_for_error) g_vm_for_error->thrown = msg;
     return NIL_VAL;
 }
+
+// ─────────────────────────────────────────────
+//  stdlib v0.7.0 — File I/O
+// ─────────────────────────────────────────────
+
+// file_read(path) — read entire file as string, throws on error
+static Value nativeFileRead(int argc, Value* args) {
+    if (argc != 1 || !IS_STRING(args[0])) {
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString("file_read: expected a path string", 32));
+        return NIL_VAL;
+    }
+    const char* path = AS_CSTRING(args[0]);
+    FILE* f = fopen(path, "rb");
+    if (!f) {
+        char msg[512]; snprintf(msg, sizeof(msg), "file_read: cannot open '%s'", path);
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return NIL_VAL;
+    }
+    fseek(f, 0, SEEK_END); long size = ftell(f); rewind(f);
+    char* buf = (char*)malloc((size_t)(size + 1));
+    size_t n = fread(buf, 1, (size_t)size, f); buf[n] = '\0'; fclose(f);
+    return OBJ_VAL(takeString(buf, (int)n));
+}
+
+// file_write(path, content) — overwrite file, return true/false
+static Value nativeFileWrite(int argc, Value* args) {
+    if (argc != 2 || !IS_STRING(args[0]) || !IS_STRING(args[1])) {
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString("file_write: expected path and content", 36));
+        return BOOL_VAL(false);
+    }
+    FILE* f = fopen(AS_CSTRING(args[0]), "wb");
+    if (!f) {
+        char msg[512]; snprintf(msg, sizeof(msg), "file_write: cannot write to '%s'", AS_CSTRING(args[0]));
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return BOOL_VAL(false);
+    }
+    ObjString* content = AS_STRING(args[1]);
+    fwrite(content->chars, 1, (size_t)content->length, f); fclose(f);
+    return BOOL_VAL(true);
+}
+
+// file_append(path, content) — append to file, return true/false
+static Value nativeFileAppend(int argc, Value* args) {
+    if (argc != 2 || !IS_STRING(args[0]) || !IS_STRING(args[1])) {
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString("file_append: expected path and content", 37));
+        return BOOL_VAL(false);
+    }
+    FILE* f = fopen(AS_CSTRING(args[0]), "ab");
+    if (!f) {
+        char msg[512]; snprintf(msg, sizeof(msg), "file_append: cannot open '%s'", AS_CSTRING(args[0]));
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return BOOL_VAL(false);
+    }
+    ObjString* content = AS_STRING(args[1]);
+    fwrite(content->chars, 1, (size_t)content->length, f); fclose(f);
+    return BOOL_VAL(true);
+}
+
+// file_exists(path) — return true if file is readable
+static Value nativeFileExists(int argc, Value* args) {
+    if (argc != 1 || !IS_STRING(args[0])) return BOOL_VAL(false);
+    FILE* f = fopen(AS_CSTRING(args[0]), "r");
+    if (!f) return BOOL_VAL(false);
+    fclose(f); return BOOL_VAL(true);
+}
+
+// file_lines(path) — return array of lines (newline stripped)
+static Value nativeFileLines(int argc, Value* args) {
+    if (argc != 1 || !IS_STRING(args[0])) {
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString("file_lines: expected a path string", 33));
+        return NIL_VAL;
+    }
+    const char* path = AS_CSTRING(args[0]);
+    FILE* f = fopen(path, "rb");
+    if (!f) {
+        char msg[512]; snprintf(msg, sizeof(msg), "file_lines: cannot open '%s'", path);
+        if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return NIL_VAL;
+    }
+    fseek(f, 0, SEEK_END); long size = ftell(f); rewind(f);
+    char* buf = (char*)malloc((size_t)(size + 1));
+    size_t n = fread(buf, 1, (size_t)size, f); buf[n] = '\0'; fclose(f);
+
+    ObjArray* arr = newArray();
+    char* cur = buf;
+    char* end = buf + n;
+    while (cur <= end) {
+        char* nl = (char*)memchr(cur, '\n', (size_t)(end - cur));
+        int len  = nl ? (int)(nl - cur) : (int)(end - cur);
+        if (len > 0 && cur[len - 1] == '\r') len--; // strip \r
+        arrayPush(arr, OBJ_VAL(copyString(cur, len)));
+        if (!nl) break;
+        cur = nl + 1;
+    }
+    free(buf);
+    return OBJ_VAL(arr);
+}
 static void registerNative(VM* vm, const char* name, NativeFn fn, int arity) {
     ObjNative*  native   = newNative(fn, name, arity);
     ObjString*  key      = copyString(name, (int)strlen(name));
@@ -421,7 +518,13 @@ void initVM(VM* vm) {
     registerNative(vm, "sort",       nativeSort,        1);
     // error handling (v0.6.0)
     g_vm_for_error = vm;
-    registerNative(vm, "error",      nativeError,       1);
+    registerNative(vm, "error",       nativeError,       1);
+    // file I/O (v0.7.0)
+    registerNative(vm, "file_read",   nativeFileRead,    1);
+    registerNative(vm, "file_write",  nativeFileWrite,   2);
+    registerNative(vm, "file_append", nativeFileAppend,  2);
+    registerNative(vm, "file_exists", nativeFileExists,  1);
+    registerNative(vm, "file_lines",  nativeFileLines,   1);
 }
 
 void freeVM(VM* vm) {
