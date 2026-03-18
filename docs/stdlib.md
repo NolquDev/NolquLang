@@ -216,3 +216,169 @@ print pad_left("42", 6)                 # "    42"
 
 > **Note:** Import paths are relative to the working directory where `nq` is
 > invoked, not to the script file itself.
+
+---
+
+## stdlib/time
+
+Time measurement utilities.
+
+```nolqu
+import "stdlib/time"
+
+let t0 = now()
+# ... do work ...
+print "elapsed: " .. elapsed(t0) .. "s"
+print "millis:  " .. millis()
+
+sleep(0.1)   # pause ~100ms
+
+print format_duration(3725)   # 1h 2m 5s
+
+function work()
+  let i = 0
+  loop i < 100000
+    i = i + 1
+  end
+end
+benchmark("loop 100k", work)   # loop 100k: 0.003s
+```
+
+**Functions:** `now()` · `millis()` · `elapsed(start)` · `sleep(seconds)` · `format_duration(secs)` · `benchmark(label, fn)`
+
+---
+
+## stdlib/string
+
+Extended string utilities (complements the built-ins).
+
+```nolqu
+import "stdlib/string"
+
+print is_empty("")           # true
+print is_empty("  ")         # true
+
+print lines("a\nb\nc")       # ["a", "b", "c"]
+print words("  hello world ") # ["hello", "world"]
+
+print count("banana", "an")  # 2
+print replace_all("a.b.c", ".", "-")  # a-b-c
+
+print pad_left("42", 6)      # "    42"
+print pad_right("name", 10)  # "name      "
+print center("hi", 8)        # "   hi   "
+print truncate("Hello, World!", 8)   # "Hello..."
+```
+
+**Functions:** `is_empty` · `lines` · `words` · `count` · `replace_all` · `lstrip` · `rstrip` · `pad_left` · `pad_right` · `center` · `truncate`
+
+---
+
+## stdlib/path
+
+File path manipulation (string-only, does not touch the filesystem).
+
+```nolqu
+import "stdlib/path"
+
+print path_join("usr/local", "bin")    # usr/local/bin
+print basename("docs/readme.md")       # readme.md
+print dirname("docs/readme.md")        # docs
+print ext("main.nq")                   # .nq
+print strip_ext("main.nq")             # main
+print is_absolute("/usr/bin")          # true
+print normalize("a//b///c/")           # a/b/c
+```
+
+**Functions:** `path_join` · `basename` · `dirname` · `ext` · `strip_ext` · `is_absolute` · `normalize`
+
+---
+
+## stdlib/json
+
+JSON encode and decode using a flat array object representation.
+
+```nolqu
+import "stdlib/json"
+
+let person = json_object()
+json_set(person, "name", "Alice")
+json_set(person, "age", 30)
+json_set(person, "scores", [10, 20, 30])
+
+print json_stringify(person)
+# {"name":"Alice","age":30,"scores":[10,20,30]}
+
+let data = json_parse("{\"city\":\"Jakarta\",\"pop\":10000000}")
+print json_get(data, "city")    # Jakarta
+print json_get(data, "pop")     # 10000000
+```
+
+**Object API:** `json_object` · `json_set` · `json_get` · `json_has` · `json_keys` · `json_is_object`  
+**Encoding:** `json_stringify`  
+**Decoding:** `json_parse` · `json_parse_error`
+
+---
+
+## stdlib/math (extended)
+
+In addition to `clamp`, `lerp`, `sign` — the math module now includes:
+
+```nolqu
+import "stdlib/math"
+
+# Constants
+print PI      # 3.14159...
+print E       # 2.71828...
+print TAU     # 6.28318...
+
+# Trigonometry (radians)
+print sin(PI / 2)    # ~1.0
+print cos(0)         # ~1.0
+print tan(PI / 4)    # ~1.0
+print degrees(PI)    # ~180
+print radians(90)    # ~PI/2
+
+# Logarithm
+print log(E)         # ~1.0
+print log2(8)        # ~3.0
+print log10(1000)    # ~3.0
+```
+
+**New:** `PI` · `TAU` · `E` · `sin` · `cos` · `tan` · `degrees` · `radians` · `log` · `log2` · `log10`
+
+---
+
+## stdlib/test
+
+Lightweight test framework.
+
+```nolqu
+import "stdlib/test"
+
+suite("math")
+expect(1 + 1 == 2,     "addition")
+expect_eq(str(42), "42", "str(42)")
+
+suite("errors")
+function div_zero()
+  let _x = 1 / 0
+end
+expect_err(div_zero, "division by zero throws")
+
+done()
+```
+
+Output:
+```
+  ── math ──
+    [PASS] addition
+    [PASS] str(42)
+
+  ── errors ──
+    [PASS] division by zero throws
+
+  All 3 test(s) passed.
+```
+
+**Functions:** `suite(name)` · `expect(cond, label)` · `expect_eq(actual, expected, label)` · `expect_err(fn, label)` · `done()`

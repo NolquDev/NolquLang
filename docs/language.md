@@ -265,12 +265,10 @@ Infinite loop pattern:
 loop true
   let line = input()
   if line == "quit"
-    # can't break yet — see Limitations
+    break
   end
 end
 ```
-
-> **Note:** There is no `break` or `continue` in v1.0.0.
 
 ---
 
@@ -671,7 +669,6 @@ Rules summary:
 | Limitation | Notes |
 |---|---|
 | No closures | Functions cannot capture variables from enclosing scopes |
-| No `break` / `continue` | Loop control requires condition variables |
 | No hash maps | Only arrays and strings are built-in collections |
 | No integer type | All numbers are 64-bit floats |
 | `import` re-executes | Importing a file twice runs it twice |

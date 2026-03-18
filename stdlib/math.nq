@@ -24,3 +24,112 @@ function sign(n)
   end
   return 0
 end
+
+# ─── Constants ────────────────────────────────────────────────────────
+
+# Mathematical constants
+let PI  = 3.14159265358979323846
+let TAU = 6.28318530717958647692   # 2 * PI
+let E   = 2.71828182845904523536
+
+# ─── Trigonometry (via Taylor series) ────────────────────────────────
+
+# degrees(rad) — convert radians to degrees
+function degrees(rad)
+  return rad * 180 / PI
+end
+
+# radians(deg) — convert degrees to radians
+function radians(deg)
+  return deg * PI / 180
+end
+
+# sin(x) — sine of x (radians), Taylor series (20 terms)
+function sin(x)
+  # Normalise x into [-PI, PI] for precision
+  loop x > PI
+    x = x - TAU
+  end
+  loop x < -1 * PI
+    x = x + TAU
+  end
+  let result = 0
+  let term   = x
+  let i      = 1
+  loop i < 20
+    result = result + term
+    term   = -1 * term * x * x / ((2 * i) * (2 * i + 1))
+    i      = i + 1
+  end
+  return result
+end
+
+# cos(x) — cosine of x (radians), Taylor series (20 terms)
+function cos(x)
+  loop x > PI
+    x = x - TAU
+  end
+  loop x < -1 * PI
+    x = x + TAU
+  end
+  let result = 0
+  let term   = 1
+  let i      = 1
+  loop i < 20
+    result = result + term
+    term   = -1 * term * x * x / ((2 * i - 1) * (2 * i))
+    i      = i + 1
+  end
+  return result
+end
+
+# tan(x) — tangent of x (radians)
+function tan(x)
+  let c = cos(x)
+  if c == 0
+    error("tan: undefined at this angle (cos == 0)")
+  end
+  return sin(x) / c
+end
+
+# ─── Logarithm ────────────────────────────────────────────────────────
+
+# log(x) — natural logarithm (ln), Newton's method
+# Throws for x <= 0.
+function log(x)
+  if x <= 0
+    error("log: argument must be positive, got " .. str(x))
+  end
+  # Reduce x: find integer k such that x = m * e^k with m near 1
+  let k = 0
+  loop x > E
+    x = x / E
+    k = k + 1
+  end
+  loop x < 1
+    x = x * E
+    k = k - 1
+  end
+  # x is now in [1, e]. Use ln(x) = 2*atanh((x-1)/(x+1)) via series.
+  let y  = (x - 1) / (x + 1)
+  let y2 = y * y
+  let sum  = 0
+  let term = y
+  let n    = 1
+  loop n < 40
+    sum  = sum + term / n
+    term = term * y2
+    n    = n + 2
+  end
+  return 2 * sum + k
+end
+
+# log2(x) — base-2 logarithm
+function log2(x)
+  return log(x) / log(2)
+end
+
+# log10(x) — base-10 logarithm
+function log10(x)
+  return log(x) / log(10)
+end

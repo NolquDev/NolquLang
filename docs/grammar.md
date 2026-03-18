@@ -22,6 +22,8 @@ statement   → let_stmt
             | return_stmt
             | import_stmt
             | try_stmt
+            | break_stmt
+            | continue_stmt
             | expr_stmt
             | NEWLINE
 ```
@@ -63,6 +65,10 @@ try_stmt         → "try" NEWLINE
                    "catch" IDENT NEWLINE
                      statement*
                    "end" NEWLINE
+
+break_stmt       → "break" NEWLINE
+
+continue_stmt    → "continue" NEWLINE
 
 expr_stmt        → expr NEWLINE
 ```
@@ -151,6 +157,7 @@ let  print  if  else  loop  function  return
 import  try  catch  end
 true  false  nil
 and  or  not
+break  continue
 ```
 
 ### Operators

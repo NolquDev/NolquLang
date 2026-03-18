@@ -2,6 +2,53 @@
 
 ---
 
+## v1.1.0 — Extended Standard Library (2026)
+
+### Language
+- **`break`** — exit the nearest enclosing loop immediately
+- **`continue`** — skip to the next loop iteration (re-evaluates condition)
+- Both are compile-time errors when used outside a loop
+- Nested loops: `break`/`continue` only affect the innermost loop
+
+### Standard Library — New Modules
+- **`stdlib/time.nq`** — `now`, `millis`, `elapsed`, `sleep`, `format_duration`, `benchmark`
+- **`stdlib/string.nq`** — `is_empty`, `lines`, `words`, `count`, `replace_all`,
+  `lstrip`, `rstrip`, `pad_left`, `pad_right`, `center`, `truncate`
+- **`stdlib/path.nq`** — `path_join`, `basename`, `dirname`, `ext`, `strip_ext`,
+  `is_absolute`, `normalize`
+- **`stdlib/json.nq`** — `json_object`, `json_set`, `json_get`, `json_has`,
+  `json_keys`, `json_is_object`, `json_stringify`, `json_parse`, `json_parse_error`
+- **`stdlib/test.nq`** — `suite`, `expect`, `expect_eq`, `expect_err`, `done`
+
+### Standard Library — Extended
+- **`stdlib/math.nq`** — added `PI`, `TAU`, `E`, `sin`, `cos`, `tan`,
+  `degrees`, `radians`, `log`, `log2`, `log10`
+
+### Bug Fixes
+- `stdlib/string.nq` — `replace_all` double-appended the tail after the last match
+- `stdlib/json.nq` — scientific notation (`1e15`) not supported by Nolqu lexer,
+  replaced with plain literals
+- `stdlib/json.nq` — multi-line `or` chain in `_jp_is_numchar` caused parse error,
+  split into separate `if` blocks
+- `stdlib/test.nq` — `\xNN` Unicode escapes not supported by Nolqu string literals,
+  replaced with ASCII `[PASS]` / `[FAIL]`
+
+### Project Health
+- **`CONTRIBUTING.md`** — code style, commit format, PR process, development workflow
+- **`SECURITY.md`** — vulnerability reporting (nolqucontact@gmail.com), scope, disclosure policy
+- **`CODE_OF_CONDUCT.md`** — community standards (nolquteam@gmail.com)
+- **`.gitignore`** — C/C++, editor, OS artefacts
+- **`.github/ISSUE_TEMPLATE/bug_report.md`**
+- **`.github/ISSUE_TEMPLATE/feature_request.md`**
+- **`.github/PULL_REQUEST_TEMPLATE.md`**
+
+### Documentation
+- `docs/language.md` — added `break`/`continue` section, removed from Known Limitations
+- `docs/grammar.md` — `break_stmt`, `continue_stmt` added to grammar, keywords updated
+- `docs/stdlib.md` — all 5 new modules documented with examples
+
+---
+
 ## v1.0.0 — Stable Release (2026)
 
 **First stable release of Nolqu.** Language and bytecode format are now frozen.
@@ -48,6 +95,53 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.1.0 — Extended Standard Library (2026)
+
+### Language
+- **`break`** — exit the nearest enclosing loop immediately
+- **`continue`** — skip to the next loop iteration (re-evaluates condition)
+- Both are compile-time errors when used outside a loop
+- Nested loops: `break`/`continue` only affect the innermost loop
+
+### Standard Library — New Modules
+- **`stdlib/time.nq`** — `now`, `millis`, `elapsed`, `sleep`, `format_duration`, `benchmark`
+- **`stdlib/string.nq`** — `is_empty`, `lines`, `words`, `count`, `replace_all`,
+  `lstrip`, `rstrip`, `pad_left`, `pad_right`, `center`, `truncate`
+- **`stdlib/path.nq`** — `path_join`, `basename`, `dirname`, `ext`, `strip_ext`,
+  `is_absolute`, `normalize`
+- **`stdlib/json.nq`** — `json_object`, `json_set`, `json_get`, `json_has`,
+  `json_keys`, `json_is_object`, `json_stringify`, `json_parse`, `json_parse_error`
+- **`stdlib/test.nq`** — `suite`, `expect`, `expect_eq`, `expect_err`, `done`
+
+### Standard Library — Extended
+- **`stdlib/math.nq`** — added `PI`, `TAU`, `E`, `sin`, `cos`, `tan`,
+  `degrees`, `radians`, `log`, `log2`, `log10`
+
+### Bug Fixes
+- `stdlib/string.nq` — `replace_all` double-appended the tail after the last match
+- `stdlib/json.nq` — scientific notation (`1e15`) not supported by Nolqu lexer,
+  replaced with plain literals
+- `stdlib/json.nq` — multi-line `or` chain in `_jp_is_numchar` caused parse error,
+  split into separate `if` blocks
+- `stdlib/test.nq` — `\xNN` Unicode escapes not supported by Nolqu string literals,
+  replaced with ASCII `[PASS]` / `[FAIL]`
+
+### Project Health
+- **`CONTRIBUTING.md`** — code style, commit format, PR process, development workflow
+- **`SECURITY.md`** — vulnerability reporting (nolqucontact@gmail.com), scope, disclosure policy
+- **`CODE_OF_CONDUCT.md`** — community standards (nolquteam@gmail.com)
+- **`.gitignore`** — C/C++, editor, OS artefacts
+- **`.github/ISSUE_TEMPLATE/bug_report.md`**
+- **`.github/ISSUE_TEMPLATE/feature_request.md`**
+- **`.github/PULL_REQUEST_TEMPLATE.md`**
+
+### Documentation
+- `docs/language.md` — added `break`/`continue` section, removed from Known Limitations
+- `docs/grammar.md` — `break_stmt`, `continue_stmt` added to grammar, keywords updated
+- `docs/stdlib.md` — all 5 new modules documented with examples
 
 ---
 

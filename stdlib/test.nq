@@ -1,0 +1,132 @@
+# stdlib/test.nq — Lightweight test framework
+#
+# Import:
+#   import "stdlib/test"
+#
+# A minimal but complete testing library. Organises tests into named
+# suites and prints a clear pass/fail summary at the end.
+#
+# Quick reference:
+#   suite(name)             start a new named test suite
+#   expect(cond, label)     assert a condition (counts pass/fail)
+#   expect_eq(a, b, label)  assert two values are equal
+#   expect_err(fn, label)   assert a function throws
+#   done()                  print summary and return exit status
+
+# ─── Internal state ───────────────────────────────────────────────────
+
+let _t_suite   = "default"
+let _t_pass    = 0
+let _t_fail    = 0
+let _t_total   = 0
+
+# ─── suite ────────────────────────────────────────────────────────────
+
+# suite(name) — begin a new named group of tests
+#
+# Prints a header and resets per-suite tracking.
+# Can be called multiple times in a single file.
+#
+# Example:
+#   suite("array operations")
+#   expect(len([]) == 0, "empty array has length 0")
+function suite(name)
+  _t_suite = name
+  print ""
+  print "  ── " .. name .. " ──"
+end
+
+# ─── expect ───────────────────────────────────────────────────────────
+
+# expect(cond, label) — assert that cond is truthy
+#
+# Prints "  ✓ label" on pass, "  ✗ label" on fail.
+# Always increments the total counter.
+#
+# Example:
+#   expect(1 + 1 == 2, "addition works")
+#   expect(len("hi") == 2, "string length")
+function expect(cond, label)
+  _t_total = _t_total + 1
+  if cond
+    _t_pass = _t_pass + 1
+    print "    [PASS] " .. label
+  else
+    _t_fail = _t_fail + 1
+    print "    [FAIL] " .. label
+  end
+end
+
+# ─── expect_eq ────────────────────────────────────────────────────────
+
+# expect_eq(actual, expected, label) — assert two values are equal
+#
+# On failure, prints both values to help diagnose the problem.
+#
+# Example:
+#   expect_eq(str(42), "42",  "str(42)")
+#   expect_eq(len([1,2,3]), 3, "array length")
+function expect_eq(actual, expected, label)
+  _t_total = _t_total + 1
+  if actual == expected
+    _t_pass = _t_pass + 1
+    print "    [PASS] " .. label
+  else
+    _t_fail = _t_fail + 1
+    print "    [FAIL] " .. label
+    print "       expected: " .. str(expected)
+    print "         actual: " .. str(actual)
+  end
+end
+
+# ─── expect_err ───────────────────────────────────────────────────────
+
+# expect_err(fn, label) — assert that calling fn() throws an error
+#
+# fn must be a zero-argument function. Passes if fn() raises any error,
+# fails if fn() completes normally.
+#
+# Example:
+#   function bad_divide()
+#     let _x = 1 / 0
+#   end
+#   expect_err(bad_divide, "division by zero throws")
+function expect_err(fn, label)
+  _t_total = _t_total + 1
+  let threw = false
+  try
+    fn()
+  catch _e
+    threw = true
+  end
+  if threw
+    _t_pass = _t_pass + 1
+    print "    [PASS] " .. label
+  else
+    _t_fail = _t_fail + 1
+    print "    [FAIL] " .. label
+  end
+end
+
+# ─── done ─────────────────────────────────────────────────────────────
+
+# done() — print the final test summary
+#
+# Returns 0 if all tests passed, 1 if any failed.
+# Call at the end of every test file.
+#
+# Example:
+#   done()
+function done()
+  print ""
+  if _t_fail == 0
+    print "  All " .. _t_total .. " test(s) passed."
+  else
+    print "  FAILED: " .. _t_fail .. "/" .. _t_total .. " test(s) failed."
+  end
+  print ""
+  if _t_fail > 0
+    return 1
+  end
+  return 0
+end

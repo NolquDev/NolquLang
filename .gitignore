@@ -1,0 +1,74 @@
+# ── Build artefacts ───────────────────────────────────────────────────
+build/
+nq
+nq-debug
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# ── Compiled Nolqu output ─────────────────────────────────────────────
+*.nqc
+
+# ── Temporary test files ──────────────────────────────────────────────
+/tmp/
+*.tmp
+*.log
+
+# ── Editor and OS files ───────────────────────────────────────────────
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains (CLion, etc.)
+.idea/
+cmake-build-*/
+*.iml
+
+# Vim / Neovim
+*.swp
+*.swo
+*~
+.netrwhist
+
+# Emacs
+\#*\#
+.\#*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ── Compiler generated ────────────────────────────────────────────────
+*.d
+*.pch
+*.gch
+
+# ── Sanitizer / profiling artefacts ──────────────────────────────────
+*.profraw
+*.profdata
+default.profraw
+cachegrind.out.*
+callgrind.out.*
+massif.out.*
+
+# ── Distribution packages ─────────────────────────────────────────────
+*.zip
+*.tar.gz
+*.tar.bz2

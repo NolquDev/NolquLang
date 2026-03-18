@@ -23,6 +23,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - Mark-and-sweep garbage collector — automatic, tunable
 - Structured error handling — `try` / `catch` / `end`
 - Dynamic arrays with negative indexing
+- `break` and `continue` in loops
 - Module system — `import "stdlib/math"` or your own `.nq` files
 - File I/O — read, write, append, split by lines
 - 40+ built-in functions — math, string, array, random, time, memory
@@ -129,7 +130,7 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 |---|---|
 | [docs/language.md](docs/language.md) | Full language reference — syntax, types, all built-ins, modules |
 | [docs/grammar.md](docs/grammar.md) | Formal EBNF grammar specification |
-| [docs/stdlib.md](docs/stdlib.md) | Standard library modules reference |
+| [docs/stdlib.md](docs/stdlib.md) | Standard library modules reference (8 modules) |
 | [docs/embedding.md](docs/embedding.md) | Embed Nolqu in C / C++ via `nolqu.h` |
 | [docs/vm_design.md](docs/vm_design.md) | VM internals, bytecode reference, GC algorithm |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |

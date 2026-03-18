@@ -44,6 +44,8 @@ typedef enum {
     TK_AND,         /* and      */
     TK_OR,          /* or       */
     TK_NOT,         /* not      */
+    TK_BREAK,       /* break    */
+    TK_CONTINUE,    /* continue */
 
     /* Arithmetic operators */
     TK_PLUS,        /* +  */

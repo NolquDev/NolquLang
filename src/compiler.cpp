@@ -5,10 +5,25 @@
 #include "parser.h"
 #include <string.h>
 #include <stdio.h>
+#include <vector>
 
 static CompilerCtx* current         = NULL;
 static bool         had_compile_error = false;
 static const char*  src_path        = NULL;
+
+/*
+ * Loop context — tracks information needed to compile break and continue.
+ *
+ * loop_start:    bytecode offset of the loop condition (for continue).
+ * break_patches: list of OP_JUMP offsets emitted by break statements,
+ *                patched to jump past the loop once compilation finishes.
+ */
+struct LoopCtx {
+    int               loop_start;
+    std::vector<int>  break_patches;
+};
+
+static std::vector<LoopCtx> loop_stack;
 
 static void compileError(int line, const char* fmt, ...) {
     had_compile_error = true;
@@ -268,16 +283,59 @@ static void compileNode(ASTNode* node) {
             break;
         }
         case NODE_LOOP: {
-            int loop_start = currentChunk()->count;
+            /* Push a new loop context so break/continue know where to go. */
+            LoopCtx lctx;
+            lctx.loop_start = currentChunk()->count;
+            loop_stack.push_back(lctx);
+
             compileExpr(node->data.loop.cond);
             int exit_jump = emitJump(OP_JUMP_IF_FALSE, line);
             emit(OP_POP, line);
             beginScope();
             compileBlock(node->data.loop.body);
             endScope(line);
-            emitLoop(loop_start, line);
+            emitLoop(loop_stack.back().loop_start, line);
+
+            /* Patch the condition exit jump to land here. */
             patchJumpAt(exit_jump);
             emit(OP_POP, line);
+
+            /* Patch all break jumps to land here (after the loop). */
+            for (int patch : loop_stack.back().break_patches)
+                patchJumpAt(patch);
+
+            loop_stack.pop_back();
+            break;
+        }
+        case NODE_BREAK: {
+            if (loop_stack.empty()) {
+                compileError(line, "'break' used outside of a loop.");
+                break;
+            }
+            /* Pop any locals in scope before jumping out. */
+            int depth = current->scope_depth;
+            for (int i = current->local_count - 1; i >= 0; i--) {
+                if (current->locals[i].depth < depth) break;
+                emit(OP_POP, line);
+            }
+            /* Emit a forward jump — will be patched when the loop ends. */
+            int patch = emitJump(OP_JUMP, line);
+            loop_stack.back().break_patches.push_back(patch);
+            break;
+        }
+        case NODE_CONTINUE: {
+            if (loop_stack.empty()) {
+                compileError(line, "'continue' used outside of a loop.");
+                break;
+            }
+            /* Pop any locals in scope before jumping back. */
+            int depth = current->scope_depth;
+            for (int i = current->local_count - 1; i >= 0; i--) {
+                if (current->locals[i].depth < depth) break;
+                emit(OP_POP, line);
+            }
+            /* Jump back to the loop condition. */
+            emitLoop(loop_stack.back().loop_start, line);
             break;
         }
         case NODE_FUNCTION: {

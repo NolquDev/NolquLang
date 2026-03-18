@@ -20,6 +20,8 @@ static Keyword keywords[] = {
     {"and",      3, TK_AND},
     {"or",       2, TK_OR},
     {"not",      3, TK_NOT},
+    {"break",    5, TK_BREAK},
+    {"continue", 8, TK_CONTINUE},
     {NULL,       0, TK_IDENT},
 };
 
@@ -178,6 +180,8 @@ const char* tokenTypeName(TokenType t) {
         case TK_AND:      return "and";
         case TK_OR:       return "or";
         case TK_NOT:      return "not";
+        case TK_BREAK:    return "break";
+        case TK_CONTINUE: return "continue";
         case TK_PLUS:     return "+";
         case TK_MINUS:    return "-";
         case TK_STAR:     return "*";

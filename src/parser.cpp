@@ -265,6 +265,14 @@ static ASTNode* parseStmt(Parser* p) {
         case TK_RETURN:   return parseReturnStmt(p);
         case TK_IMPORT:   return parseImportStmt(p);
         case TK_TRY:      return parseTryStmt(p);
+        case TK_BREAK: {
+            expectNewline(p);
+            return makeNode(NODE_BREAK, tok.line);
+        }
+        case TK_CONTINUE: {
+            expectNewline(p);
+            return makeNode(NODE_CONTINUE, tok.line);
+        }
 
         case TK_IDENT: {
             if (check(p, TK_EQ)) {

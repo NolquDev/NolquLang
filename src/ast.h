@@ -54,6 +54,10 @@ typedef enum {
     /* Error handling */
     NODE_TRY,           /* try body catch(err) handler end            */
 
+    /* Loop control */
+    NODE_BREAK,         /* break    — exit the nearest loop           */
+    NODE_CONTINUE,      /* continue — jump to next loop iteration     */
+
     NODE_COUNT          /* sentinel                                   */
 } NodeType;
 
