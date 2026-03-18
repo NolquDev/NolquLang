@@ -1,13 +1,11 @@
-# Nolqu Language Reference — v1.0.0
+# Nolqu Language Reference — v1.1.1a4 (Alpha)
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
-> This document describes features in the current alpha series.
-> Some features listed here do not exist in the v1.0.0 stable release.
-> For stable documentation see [`docs/stable/`](../stable/).
+> This document describes the current alpha series.
+> For the v1.0.0 stable reference see [`docs/stable/language.md`](../stable/language.md).
 
-
-Complete reference for the Nolqu programming language.
+Complete reference for Nolqu v1.1.1a4.
 For the formal grammar see [grammar.md](grammar.md).
 For VM internals see [vm_design.md](vm_design.md).
 
@@ -16,7 +14,7 @@ For VM internals see [vm_design.md](vm_design.md).
 ## Table of Contents
 
 1. [Basic Concepts](#1-basic-concepts)
-2. [Variables](#2-variables)
+2. [Variables and Assignment](#2-variables-and-assignment)
 3. [Data Types](#3-data-types)
 4. [Operators](#4-operators)
 5. [Control Flow](#5-control-flow)
@@ -33,99 +31,82 @@ For VM internals see [vm_design.md](vm_design.md).
 
 ## 1. Basic Concepts
 
-### Source files
-
 Nolqu programs are plain text files with the `.nq` extension.
-Run them with:
 
 ```bash
-nq program.nq
+nq program.nq          # run
+nq check program.nq    # parse + compile only
+nq repl                # interactive REPL
 ```
 
 ### Comments
 
 ```nolqu
-# This is a comment — from # to end of line
+# This is a comment
 let x = 10   # inline comment
 ```
 
-Block comments are not supported.
+### Statements
 
-### Statements and newlines
-
-Each statement occupies one line. Newlines are the statement terminator.
-Blank lines are ignored.
-
-```nolqu
-let a = 1
-let b = 2
-print a + b
-```
+One statement per line. Newlines are the terminator. Blank lines are ignored.
 
 ### Print
 
-`print` is a keyword (not a function). It prints any value followed by a newline.
+`print` is a keyword, not a function. It prints any value followed by a newline.
 
 ```nolqu
 print "Hello"       # Hello
 print 42            # 42
-print true          # true
-print nil           # nil
 print [1, 2, 3]     # [1, 2, 3]
 ```
 
 ---
 
-## 2. Variables
+## 2. Variables and Assignment
 
-Variables are declared with `let`. Assignment without `let` reassigns an
-existing variable.
+### Declaration
 
 ```nolqu
-let name = "Alice"     # declare and assign
+let name  = "Alice"
 let count = 0
-
-count = count + 1      # reassign (no let)
+let flag  = true
+let empty = nil
 ```
 
-Variables declared at the top level are **global**.
-Variables declared inside a block (function, if, loop) are **local** to that block.
-
-### Unused variable warnings
-
-The compiler warns if a local variable is declared but never read:
-
-```
-[ Warning ] line 3: Local variable 'tmp' is declared but never used.
-  Hint: Prefix with _ to suppress: _tmp
-```
-
-Prefix the name with `_` to explicitly mark it as intentionally unused:
+### Reassignment
 
 ```nolqu
-let _ignored = some_call()   # no warning
+count = count + 1
+name  = "Bob"
 ```
 
-### Compound assignment
+### Compound Assignment *(v1.1.1a2+)*
 
-`+=` `-=` `*=` `/=` `..=` modify a variable in place.
+Modify a variable in place without repeating the name.
 
 ```nolqu
 let score = 0
-score += 10     # score = score + 10
-score -= 2      # score = score - 2
-score *= 3      # score = score * 3
-score /= 6      # score = score / 6
-print score     # 4
+score += 10     # score = score + 10  → 10
+score -= 2      # score = score - 2   → 8
+score *= 3      # score = score * 3   → 24
+score /= 4      # score = score / 4   → 6
 
 let msg = "hello"
 msg ..= " world"   # msg = msg .. " world"
 print msg           # hello world
 ```
 
-Works on both local and global variables.
+Works on local and global variables. Throws a catchable error if the variable
+is not yet declared.
 
----
+### Unused variable warning
+
+The compiler warns when a local variable is declared but never read.
+Prefix with `_` to suppress:
+
+```nolqu
+let _ignored = expensive_call()   # no warning
+```
 
 ---
 
@@ -133,19 +114,12 @@ Works on both local and global variables.
 
 Nolqu is **dynamically typed**. Every value has a runtime type.
 
-### Primitives
-
 | Type | Literals | Notes |
 |---|---|---|
 | `nil` | `nil` | Absence of value |
 | `bool` | `true` `false` | |
-| `number` | `0` `3.14` `-5` `1e6` | Always 64-bit float (no integer type) |
+| `number` | `0` `3.14` `-5` | Always 64-bit float |
 | `string` | `"hello"` `"line\n"` | Immutable, interned |
-
-### Compound types
-
-| Type | Example | Notes |
-|---|---|---|
 | `array` | `[1, "two", true]` | Dynamic, heterogeneous |
 | `function` | `function f(x) ... end` | First-class value |
 
@@ -161,10 +135,9 @@ Nolqu is **dynamically typed**. Every value has a runtime type.
 
 ### Truthiness
 
-- `nil` and `false` are **falsy**.
-- Everything else is **truthy** — including `0` and `""`.
+`nil` and `false` are **falsy**. Everything else is truthy — including `0` and `""`.
 
-### Type checking at runtime
+### Type checking
 
 ```nolqu
 print type(42)          # number
@@ -178,6 +151,8 @@ print is_str("hi")      # true
 print is_bool(false)    # true
 print is_nil(nil)       # true
 print is_array([])      # true
+print ord("A")          # 65
+print chr(65)           # A
 ```
 
 ---
@@ -191,35 +166,31 @@ print 10 + 3     # 13
 print 10 - 3     # 7
 print 10 * 3     # 30
 print 10 / 3     # 3.33333...
-print 10 % 3     # 1   (modulo)
-print -5         # -5  (unary negation)
+print 10 % 3     # 1
+print -5         # unary negation
 ```
 
-Division and modulo by zero throw a catchable error.
+Division and modulo by zero throw a **catchable** error.
 
 ### String concatenation
 
-Use `..` to concatenate. Numbers and booleans are auto-converted.
+Use `..` to join strings. Numbers and booleans are auto-converted.
 
 ```nolqu
-print "Hello, " .. "World!"    # Hello, World!
-print "Value: " .. 42          # Value: 42
+print "Hello, " .. "World!"   # Hello, World!
 print "Pi ≈ " .. 3.14          # Pi ≈ 3.14
 ```
 
 ### Comparison
 
 ```nolqu
-print 1 == 1      # true
-print 1 != 2      # true
-print 3 < 5       # true
-print 5 > 3       # true
-print 3 <= 3      # true
-print 4 >= 4      # true
+print 1 == 1    # true
+print 1 != 2    # true
+print 3 < 5     # true
+print 3 <= 3    # true
 ```
 
-Comparison operators (`<`, `>`, `<=`, `>=`) only work on numbers and throw a
-catchable error on other types.
+`<` `>` `<=` `>=` only work on numbers and throw a catchable error on other types.
 
 ### Logical
 
@@ -227,31 +198,22 @@ catchable error on other types.
 print true and false    # false
 print true or false     # true
 print not true          # false
-print not nil           # true  (nil is falsy)
 ```
 
-`!` is an alias for `not` when used as a prefix:
+`!` is an alias for `not`.
 
-```nolqu
-if not contains(arr, x)
-  # ...
-end
-```
-
-### Operator precedence (high to low)
+### Operator precedence (high → low)
 
 | Level | Operators |
 |---|---|
-| 7 — unary | `-` `not` `!` |
-| 6 — multiply | `*` `/` `%` |
-| 5 — add | `+` `-` |
-| 4 — concat | `..` |
-| 3 — compare | `<` `>` `<=` `>=` |
-| 2 — equality | `==` `!=` |
-| 1 — and | `and` |
-| 0 — or | `or` |
-
-Use parentheses to override.
+| Unary | `-` `not` `!` |
+| Multiply | `*` `/` `%` |
+| Add | `+` `-` |
+| Concat | `..` |
+| Compare | `<` `>` `<=` `>=` |
+| Equality | `==` `!=` |
+| And | `and` |
+| Or | `or` |
 
 ---
 
@@ -273,60 +235,80 @@ else
 end
 ```
 
-Conditions can be any expression. `nil` and `false` are falsy; everything else is truthy.
-
 ### loop / end
 
-`loop` is a while-style loop. It runs as long as the condition is truthy.
+While-style loop. Runs as long as the condition is truthy.
 
 ```nolqu
 let i = 1
 loop i <= 10
   print i
-  i = i + 1
+  i += 1
 end
 ```
 
-Infinite loop pattern:
+### for / in / end *(v1.1.1a2+)*
+
+Range-based loop — iterate over every element of an array.
 
 ```nolqu
-loop true
-  let line = input()
-  if line == "quit"
+let fruits = ["apple", "banana", "cherry"]
+for fruit in fruits
+  print fruit
+end
+```
+
+The loop variable is local to the `for` block.
+
+```nolqu
+# with continue — skip evens
+let odds = []
+for n in [1, 2, 3, 4, 5, 6]
+  if n % 2 == 0
+    continue
+  end
+  push(odds, n)
+end
+print join(odds, ", ")   # 1, 3, 5
+
+# with break — stop at first negative
+for n in [3, 7, -1, 4]
+  if n < 0
     break
+  end
+  print n
+end
+
+# nested
+let matrix = [[1, 2], [3, 4]]
+for row in matrix
+  for val in row
+    print val
   end
 end
 ```
 
+### break / continue *(v1.1.0+)*
+
+`break` exits the nearest enclosing `loop` or `for` immediately.
+`continue` skips to the next iteration (re-evaluates condition for `loop`,
+increments index for `for`).
+
+Using either outside a loop is a **compile-time error**.
+
 ---
 
 ## 6. Functions
-
-### Declaration
-
-```nolqu
-function add(a, b)
-  return a + b
-end
-
-print add(3, 4)     # 7
-```
-
-### Return value
-
-Functions return the value of the `return` statement.
-A function with no `return` returns `nil`.
 
 ```nolqu
 function greet(name)
   return "Hello, " .. name .. "!"
 end
 
-let msg = greet("Alice")
-print msg           # Hello, Alice!
+print greet("World")     # Hello, World!
 ```
 
-### Recursion
+A function with no `return` returns `nil`. Functions are first-class values.
 
 ```nolqu
 function factorial(n)
@@ -336,78 +318,58 @@ function factorial(n)
   return n * factorial(n - 1)
 end
 
-print factorial(10)     # 3628800
+print factorial(10)      # 3628800
 ```
 
 ### First-class functions
 
-Functions are values. They can be stored in variables and passed as arguments.
-
 ```nolqu
+import "stdlib/array"
+
 function double(x)
   return x * 2
 end
 
-import "stdlib/array"
-
 let nums    = [1, 2, 3, 4, 5]
 let doubled = map(nums, double)
-print join(doubled, ", ")       # 2, 4, 6, 8, 10
+print join(doubled, ", ")        # 2, 4, 6, 8, 10
 ```
 
-> **Note:** Closures (capturing variables from outer scopes) are not supported in v1.0.0.
-> Functions can only access global variables and their own parameters/locals.
+> **Note:** Closures (capturing outer variables) are not supported in v1.1.x.
 
 ---
 
 ## 7. Arrays
 
-### Literals and access
-
 ```nolqu
-let fruits = ["apple", "banana", "cherry"]
+let a = [3, 1, 4, 1, 5, 9]
 
-print fruits[0]      # apple
-print fruits[1]      # banana
-print fruits[-1]     # cherry   (negative indexing)
-print fruits[-2]     # banana
-```
+print a[0]       # 3
+print a[-1]      # 9   (negative indexing)
+print len(a)     # 6
 
-### Mutation
+push(a, 2)       # append
+let v = pop(a)   # remove last → v = 2
+a[0] = 99        # index assignment
+remove(a, 1)     # remove at index 1
 
-```nolqu
-let a = [1, 2, 3]
-
-push(a, 4)           # append → [1, 2, 3, 4]
-let v = pop(a)       # remove last → v=4, a=[1, 2, 3]
-
-a[0] = 99            # index assignment
-print a              # [99, 2, 3]
-
-remove(a, 1)         # remove index 1 → [99, 3]
-```
-
-### Useful array operations
-
-```nolqu
-let nums = [5, 3, 1, 4, 2]
-
-sort(nums)
-print join(nums, ", ")       # 1, 2, 3, 4, 5
-
-print len(nums)              # 5
-print contains(nums, 3)      # true
-print contains(nums, 99)     # false
+sort(a)
+print join(a, ", ")
 ```
 
 ### Iterating
 
 ```nolqu
-let items = ["a", "b", "c"]
+# preferred in v1.1.x
+for item in a
+  print item
+end
+
+# classic style still works
 let i = 0
-loop i < len(items)
-  print items[i]
-  i = i + 1
+loop i < len(a)
+  print a[i]
+  i += 1
 end
 ```
 
@@ -422,8 +384,6 @@ print matrix[1][0]    # 3
 
 ## 8. Error Handling
 
-### try / catch / end
-
 ```nolqu
 try
   let result = 10 / 0
@@ -431,8 +391,6 @@ catch err
   print "Caught: " .. err     # Caught: Division by zero.
 end
 ```
-
-The catch variable receives the error message as a string.
 
 ### Throwing errors
 
@@ -443,24 +401,18 @@ function divide(a, b)
   end
   return a / b
 end
-
-try
-  print divide(10, 0)
-catch msg
-  print msg
-end
 ```
 
 ### assert
 
 ```nolqu
-assert(1 + 1 == 2)                  # passes — no effect
+assert(1 + 1 == 2)                  # passes silently
 assert(len("hi") == 2, "len bug")   # passes
 
 try
   assert(false, "something is wrong")
 catch msg
-  print msg       # something is wrong
+  print msg      # something is wrong
 end
 ```
 
@@ -471,19 +423,17 @@ try
   try
     error("inner")
   catch e
-    print "inner caught: " .. e
+    print "inner: " .. e
     error("re-thrown")
   end
 catch e
-  print "outer caught: " .. e
+  print "outer: " .. e
 end
 ```
 
-### What throws
+### What throws (all catchable)
 
-All of these throw catchable errors:
-
-| Operation | Error message |
+| Operation | Error |
 |---|---|
 | `error(msg)` | `msg` |
 | `assert(false, msg)` | `msg` (or `"Assertion failed."`) |
@@ -495,10 +445,11 @@ All of these throw catchable errors:
 | Non-number index | `"Array index must be a number."` |
 | File read / write failure | `"file_read: cannot open 'path'"` etc. |
 | Calling a non-function | `"Only functions can be called, not <type>."` |
-| Accessing undefined variable | `"Undefined variable 'name'."` |
-| Assigning to undeclared variable | `"Variable 'name' is not declared."` |
+| Builtin wrong argument count | `"Built-in function 'x' expects N argument(s)."` |
 | `pop` on empty array | `"pop: cannot pop from an empty array"` |
 | `len` on wrong type | `"len: expected string or array, got <type>"` |
+| Accessing undefined variable | `"Undefined variable 'name'."` |
+| Assigning to undeclared variable | `"Variable 'name' is not declared."` |
 
 ---
 
@@ -507,54 +458,52 @@ All of these throw catchable errors:
 ```nolqu
 import "stdlib/math"
 import "stdlib/array"
-import "my_module"        # loads my_module.nq from the current directory
+import "my_module"     # loads my_module.nq from CWD
 ```
 
-- The path is relative to the **working directory** when `nq` is invoked.
-- `.nq` extension is appended automatically.
-- Importing executes the file in the **global scope** — all top-level declarations become globals.
-- No cycle detection in v1.0.0 — circular imports will loop forever.
+- Path is relative to the **working directory** where `nq` is run.
+- `.nq` extension is added automatically.
+- Each module is executed **at most once** per program — re-importing is a no-op. *(fixed in v1.1.1a2)*
+- No cycle detection — circular imports will loop forever.
 
-**Built-in modules:**
+**All built-in modules:**
 
 ```nolqu
-import "stdlib/math"    # clamp  lerp  sign
-import "stdlib/array"   # map  filter  reduce  reverse
-import "stdlib/file"    # read_or_default  write_lines  count_lines
+import "stdlib/math"     # clamp lerp sign  +  PI TAU E sin cos tan log gcd lcm ...
+import "stdlib/array"    # map filter reduce reverse  +  sum flatten unique zip ...
+import "stdlib/file"     # read_or_default write_lines count_lines
+import "stdlib/string"   # is_empty lines words replace_all pad_left title_case ...
+import "stdlib/path"     # path_join basename dirname ext normalize ...
+import "stdlib/time"     # now millis elapsed sleep format_duration benchmark
+import "stdlib/json"     # json_object json_set json_get json_stringify json_parse ...
+import "stdlib/test"     # suite expect expect_eq expect_err done
+import "stdlib/os"       # read_lines write_lines touch path_exists file_size ...
+import "stdlib/fmt"      # fmt printf fmt_num fmt_pad fmt_table
 ```
 
-See [stdlib.md](stdlib.md) for full module reference.
+See [stdlib.md](stdlib.md) for full reference.
 
 ---
 
 ## 10. File I/O
 
 ```nolqu
-# Write (creates or overwrites)
 file_write("notes.txt", "First line\nSecond line\n")
-
-# Append
 file_append("notes.txt", "Third line\n")
 
-# Check existence
 if file_exists("notes.txt")
   print "exists"
 end
 
-# Read entire file
 let content = file_read("notes.txt")
-print content
+let lines   = file_lines("notes.txt")
 
-# Read as array of lines
-let lines = file_lines("notes.txt")
 let i = 0
 loop i < len(lines)
   print str(i + 1) .. ": " .. lines[i]
-  i = i + 1
+  i += 1
 end
 ```
-
-All file operations throw catchable errors on failure.
 
 ---
 
@@ -564,105 +513,89 @@ All file operations throw catchable errors on failure.
 
 | Function | Description |
 |---|---|
-| `input()` | Read a line from stdin, return as string |
+| `input()` | Read a line from stdin |
 | `input(prompt)` | Print prompt, then read a line |
 
 ### Type conversion
 
 | Function | Description |
 |---|---|
-| `str(v)` | Convert any value to string |
-| `num(v)` | Parse string to number; returns `nil` if invalid |
-| `type(v)` | Return type name: `"nil"` `"bool"` `"number"` `"string"` `"array"` `"function"` |
+| `str(v)` | Convert any value to string (14 significant digits for floats) |
+| `num(v)` | Parse string → number; `nil` if invalid |
+| `type(v)` | Return `"nil"` `"bool"` `"number"` `"string"` `"array"` `"function"` |
 
 ### Type predicates
 
 | Function | Returns |
 |---|---|
-| `ord(ch)` | Code point of first character (0–127) |
-| `chr(n)` | Single-character string for code point `n` (0–127) |
 | `is_nil(v)` | `true` if `v` is `nil` |
 | `is_num(v)` | `true` if `v` is a number |
 | `is_str(v)` | `true` if `v` is a string |
 | `is_bool(v)` | `true` if `v` is a bool |
 | `is_array(v)` | `true` if `v` is an array |
+| `ord(ch)` | Code point of first character (0–127) |
+| `chr(n)` | Single-character string for code point `n` (0–127) |
 
 ### Math
 
 | Function | Description |
 |---|---|
-| `sqrt(n)` | Square root |
-| `floor(n)` | Round down |
-| `ceil(n)` | Round up |
-| `round(n)` | Round to nearest integer |
-| `abs(n)` | Absolute value |
+| `sqrt(n)` `floor(n)` `ceil(n)` `round(n)` `abs(n)` | Standard math |
 | `pow(base, exp)` | Exponentiation |
-| `min(a, b)` | Smaller of two numbers |
-| `max(a, b)` | Larger of two numbers |
+| `min(a, b)` `max(a, b)` | Smaller / larger of two numbers |
 | `random()` | Float in `[0.0, 1.0)` |
-| `rand_int(lo, hi)` | Integer in `[lo, hi]` inclusive |
+| `rand_int(lo, hi)` | Integer in `[lo, hi]` |
 
-### String
+### String (built-in)
 
 | Function | Description |
 |---|---|
-| `len(s)` | String length in bytes |
-| `upper(s)` | Uppercase |
-| `lower(s)` | Lowercase |
-| `trim(s)` | Remove leading and trailing whitespace |
-| `slice(s, start)` | Substring from `start` to end |
-| `slice(s, start, end)` | Substring `[start, end)` — supports negative indices |
-| `replace(s, old, new)` | Replace **first** occurrence of `old` with `new` |
-| `split(s, sep)` | Split `s` on `sep`, return array of strings |
-| `join(arr, sep)` | Join array elements into a string, separated by `sep` |
-| `index(s, sub)` | First position of `sub` in `s`, or `-1` |
-| `repeat(s, n)` | Repeat string `n` times |
-| `startswith(s, prefix)` | `true` if `s` starts with `prefix` |
-| `endswith(s, suffix)` | `true` if `s` ends with `suffix` |
+| `len(s)` | Length in bytes |
+| `upper(s)` `lower(s)` | Case conversion |
+| `trim(s)` | Remove leading/trailing whitespace |
+| `slice(s, start, end?)` | Substring — supports negative indices |
+| `replace(s, old, new)` | Replace **first** occurrence |
+| `split(s, sep)` | Split → array |
+| `join(arr, sep)` | Array → string |
+| `index(s, sub)` | First position of `sub`, or `-1` |
+| `repeat(s, n)` | Repeat `n` times |
+| `startswith(s, prefix)` `endswith(s, suffix)` | Prefix / suffix check |
 
-### Array
+### Array (built-in)
 
 | Function | Description |
 |---|---|
 | `len(arr)` | Number of elements |
-| `push(arr, val)` | Append `val`, return the array |
-| `pop(arr)` | Remove and return last element (throws on empty) |
-| `remove(arr, idx)` | Remove element at `idx`, return removed value |
+| `push(arr, val)` | Append, return array |
+| `pop(arr)` | Remove and return last element |
+| `remove(arr, idx)` | Remove element at index |
 | `contains(arr, val)` | `true` if `val` is in `arr` |
-| `sort(arr)` | Sort in-place (numbers then strings), return `arr` |
-| `sum(arr)` ⁺ | Sum of all numbers in an array |
-| `min_arr(arr)` · `max_arr(arr)` | Smallest / largest element |
-| `any(arr, fn)` · `all(arr, fn)` | True if any / all elements satisfy predicate |
-| `flatten(arr)` | Flatten one level of nested arrays |
-| `unique(arr)` | Remove duplicates, preserve order |
-| `zip(a, b)` | Pair elements into `[[a0,b0], [a1,b1], ...]` |
-| `chunk(arr, size)` | Split into sub-arrays of given size |
+| `sort(arr)` | Sort in-place, return array |
 
-### File I/O
+### File I/O (built-in)
 
 | Function | Description |
 |---|---|
-| `file_read(path)` | Read entire file, return string (throws on error) |
-| `file_write(path, content)` | Overwrite file, return `true`/`false` |
-| `file_append(path, content)` | Append to file, return `true`/`false` |
-| `file_exists(path)` | `true` if the file can be opened for reading |
-| `file_lines(path)` | Read file, return array of lines (newlines stripped) |
+| `file_read(path)` | Read entire file → string |
+| `file_write(path, content)` | Overwrite file |
+| `file_append(path, content)` | Append to file |
+| `file_exists(path)` | `true` if readable |
+| `file_lines(path)` | Read file → array of lines |
 
 ### Error and assertion
 
 | Function | Description |
 |---|---|
-| `error(msg)` | Throw `msg` as a runtime error |
-| `assert(cond)` | Throw `"Assertion failed."` if `cond` is falsy |
-| `assert(cond, msg)` | Throw `msg` if `cond` is falsy |
+| `error(msg)` | Throw a runtime error |
+| `assert(cond, msg?)` | Throw if `cond` is falsy |
 
 ### Memory and time
 
 | Function | Description |
 |---|---|
-| `clock()` | Seconds elapsed since program start (float) |
-| `mem_usage()` | Bytes currently allocated on the heap |
-| `gc_collect()` | Manually trigger GC, return bytes freed |
+| `clock()` | Seconds since program start |
+| `mem_usage()` | Bytes currently on the heap |
+| `gc_collect()` | Run GC manually, return bytes freed |
 
 ---
 
@@ -672,38 +605,22 @@ All file operations throw catchable errors on failure.
 let x = "global"
 
 function test()
-  let x = "local"      # shadows global x inside the function
-  print x              # local
+  let x = "local"    # shadows global x
+  print x            # local
 end
 
 test()
-print x                # global
+print x              # global
 ```
 
-```nolqu
-let total = 0
-
-let i = 0
-loop i < 5
-  let item = i * 2     # local to loop block
-  total = total + item
-  i = i + 1
-end
-
-# item is not accessible here
-print total             # 20
-```
-
-Rules summary:
-- `let` at the top level → global variable
-- `let` inside a function → local to that function
-- `let` inside `if`, `loop`, `try`, or `catch` → local to that block
-- Local variables **shadow** outer ones with the same name
-- `catch` variable is local to the catch block
+- `let` at top level → **global**
+- `let` inside function → **local** to that function
+- `let` inside `if` / `loop` / `for` / `try` / `catch` → **local** to that block
+- Locals shadow outer names within their scope
 
 ---
 
-## 13. Known Limitations (v1.0.0)
+## 13. Known Limitations (v1.1.1a4)
 
 | Limitation | Notes |
 |---|---|
@@ -712,6 +629,7 @@ Rules summary:
 | No integer type | All numbers are 64-bit floats |
 | No cycle detection | Circular imports loop forever |
 | No string mutation | All string operations return new strings |
-| Single-pass compiler | No forward references to functions within a file |
-| `replace()` first only | The built-in replaces only the first occurrence; use `replace_all()` from `stdlib/string` for all occurrences |
+| Single-pass compiler | No forward references to functions in the same file |
+| `replace()` first only | Built-in replaces first occurrence; use `replace_all()` from `stdlib/string` |
 | Transpiler experimental | `codegen` does not support arrays, try/catch, or import |
+| `chr()` ASCII only | Range 0–127; no full Unicode support |
