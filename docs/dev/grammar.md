@@ -1,5 +1,12 @@
 # Nolqu Language Grammar — v1.0.0
 
+> [!NOTE]
+> **Development documentation — Nolqu v1.1.x (alpha)**
+> This document describes features in the current alpha series.
+> Some features listed here do not exist in the v1.0.0 stable release.
+> For stable documentation see [`docs/stable/`](../stable/).
+
+
 Formal EBNF grammar specification for the Nolqu programming language.
 
 For a readable, example-based language reference see [language.md](language.md).

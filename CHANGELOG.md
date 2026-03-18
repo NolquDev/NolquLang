@@ -39,9 +39,24 @@ they are looking at an alpha version, with a link to the stable v1.0.0 release:
 
 ### Documentation
 
-- `docs/stdlib.md` — all new functions documented with examples and version tags
-- `docs/language.md` — built-in reference tables updated with new stdlib entries
+- `docs/dev/stdlib.md` — all new functions documented with examples and version tags
+- `docs/dev/language.md` — built-in reference tables updated with new stdlib entries
 - `ROADMAP.md` — a4 added to history, criteria updated
+
+### Documentation Structure Reorganised
+
+The `docs/` folder is now split into two tracks:
+
+- **`docs/stable/`** — snapshot of v1.0.0 documentation.
+  Accurate for the stable release. Includes a Known Limitations table
+  that links each limitation to the version that fixed it.
+
+- **`docs/dev/`** — current development docs (v1.1.x).
+  Updated with every alpha release. Each file carries a banner
+  noting it describes an alpha version.
+
+- **`docs/README.md`** — index with a version comparison table and
+  guidance on which track to read.
 
 ---
 
@@ -65,17 +80,17 @@ All documents updated to reflect the current state of the language:
 - **`README.md`** — quick start uses `for-in` example; features list includes
   `for item in array` and compound assignment; stdlib count updated to 10.
 
-- **`docs/grammar.md`** — added `for_stmt` and `compound_assign_stmt` to the
+- **`docs/dev/grammar.md`** — added `for_stmt` and `compound_assign_stmt` to the
   statement grammar; `for` and `in` added to keyword list; compound assignment
   operators documented; import deduplication note corrected (was "re-executes",
   now "no-op after first load").
 
-- **`docs/language.md`** — removed stale limitation "import re-executes" (fixed
+- **`docs/dev/language.md`** — removed stale limitation "import re-executes" (fixed
   in v1.1.1a2); added "accessing undefined variable" and "assigning to undeclared
   variable" to the "What throws" table; `replace()` limitation clarified to
   point to `replace_all()` in `stdlib/string`.
 
-- **`docs/vm_design.md`** — `OP_CONST` updated to show 16-bit index `[hi, lo]`;
+- **`docs/dev/vm_design.md`** — `OP_CONST` updated to show 16-bit index `[hi, lo]`;
   constant pool limit updated 256 → 65535; new section documenting the `for-in`
   desugaring and `break`/`continue` invariants.
 
@@ -179,9 +194,9 @@ All documents updated to reflect the current state of the language:
 - **`.github/PULL_REQUEST_TEMPLATE.md`**
 
 ### Documentation
-- `docs/language.md` — added `break`/`continue` section, removed from Known Limitations
-- `docs/grammar.md` — `break_stmt`, `continue_stmt` added to grammar, keywords updated
-- `docs/stdlib.md` — all 5 new modules documented with examples
+- `docs/dev/language.md` — added `break`/`continue` section, removed from Known Limitations
+- `docs/dev/grammar.md` — `break_stmt`, `continue_stmt` added to grammar, keywords updated
+- `docs/dev/stdlib.md` — all 5 new modules documented with examples
 
 ---
 
@@ -216,8 +231,8 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 - **Documentation completed:**
   - `README.md` — full language tour, all builtins, embed API, project structure
-  - `docs/grammar.md` — complete EBNF, type system, scoping rules, limitations
-  - `docs/vm_design.md` — full instruction set reference, GC phases, error flow
+  - `docs/dev/grammar.md` — complete EBNF, type system, scoping rules, limitations
+  - `docs/dev/vm_design.md` — full instruction set reference, GC phases, error flow
 
 - **Test suite expanded:**
   All four test files (`math_test.nq`, `string_test.nq`, `array_test.nq`,
@@ -271,9 +286,24 @@ they are looking at an alpha version, with a link to the stable v1.0.0 release:
 
 ### Documentation
 
-- `docs/stdlib.md` — all new functions documented with examples and version tags
-- `docs/language.md` — built-in reference tables updated with new stdlib entries
+- `docs/dev/stdlib.md` — all new functions documented with examples and version tags
+- `docs/dev/language.md` — built-in reference tables updated with new stdlib entries
 - `ROADMAP.md` — a4 added to history, criteria updated
+
+### Documentation Structure Reorganised
+
+The `docs/` folder is now split into two tracks:
+
+- **`docs/stable/`** — snapshot of v1.0.0 documentation.
+  Accurate for the stable release. Includes a Known Limitations table
+  that links each limitation to the version that fixed it.
+
+- **`docs/dev/`** — current development docs (v1.1.x).
+  Updated with every alpha release. Each file carries a banner
+  noting it describes an alpha version.
+
+- **`docs/README.md`** — index with a version comparison table and
+  guidance on which track to read.
 
 ---
 
@@ -297,17 +327,17 @@ All documents updated to reflect the current state of the language:
 - **`README.md`** — quick start uses `for-in` example; features list includes
   `for item in array` and compound assignment; stdlib count updated to 10.
 
-- **`docs/grammar.md`** — added `for_stmt` and `compound_assign_stmt` to the
+- **`docs/dev/grammar.md`** — added `for_stmt` and `compound_assign_stmt` to the
   statement grammar; `for` and `in` added to keyword list; compound assignment
   operators documented; import deduplication note corrected (was "re-executes",
   now "no-op after first load").
 
-- **`docs/language.md`** — removed stale limitation "import re-executes" (fixed
+- **`docs/dev/language.md`** — removed stale limitation "import re-executes" (fixed
   in v1.1.1a2); added "accessing undefined variable" and "assigning to undeclared
   variable" to the "What throws" table; `replace()` limitation clarified to
   point to `replace_all()` in `stdlib/string`.
 
-- **`docs/vm_design.md`** — `OP_CONST` updated to show 16-bit index `[hi, lo]`;
+- **`docs/dev/vm_design.md`** — `OP_CONST` updated to show 16-bit index `[hi, lo]`;
   constant pool limit updated 256 → 65535; new section documenting the `for-in`
   desugaring and `break`/`continue` invariants.
 
@@ -411,9 +441,9 @@ All documents updated to reflect the current state of the language:
 - **`.github/PULL_REQUEST_TEMPLATE.md`**
 
 ### Documentation
-- `docs/language.md` — added `break`/`continue` section, removed from Known Limitations
-- `docs/grammar.md` — `break_stmt`, `continue_stmt` added to grammar, keywords updated
-- `docs/stdlib.md` — all 5 new modules documented with examples
+- `docs/dev/language.md` — added `break`/`continue` section, removed from Known Limitations
+- `docs/dev/grammar.md` — `break_stmt`, `continue_stmt` added to grammar, keywords updated
+- `docs/dev/stdlib.md` — all 5 new modules documented with examples
 
 ---
 

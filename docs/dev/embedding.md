@@ -1,5 +1,12 @@
 # Embedding Nolqu — v1.0.0
 
+> [!NOTE]
+> **Development documentation — Nolqu v1.1.x (alpha)**
+> This document describes features in the current alpha series.
+> Some features listed here do not exist in the v1.0.0 stable release.
+> For stable documentation see [`docs/stable/`](../stable/).
+
+
 Nolqu can be embedded into any C or C++ application using the public API
 defined in `include/nolqu.h`.
 

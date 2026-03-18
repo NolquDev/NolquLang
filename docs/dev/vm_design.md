@@ -1,5 +1,12 @@
 # Nolqu VM Design — v1.0.0
 
+> [!NOTE]
+> **Development documentation — Nolqu v1.1.x (alpha)**
+> This document describes features in the current alpha series.
+> Some features listed here do not exist in the v1.0.0 stable release.
+> For stable documentation see [`docs/stable/`](../stable/).
+
+
 Internal architecture reference for contributors and embedders.
 
 For the language reference see [language.md](language.md).

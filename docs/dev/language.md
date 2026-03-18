@@ -1,5 +1,12 @@
 # Nolqu Language Reference — v1.0.0
 
+> [!NOTE]
+> **Development documentation — Nolqu v1.1.x (alpha)**
+> This document describes features in the current alpha series.
+> Some features listed here do not exist in the v1.0.0 stable release.
+> For stable documentation see [`docs/stable/`](../stable/).
+
+
 Complete reference for the Nolqu programming language.
 For the formal grammar see [grammar.md](grammar.md).
 For VM internals see [vm_design.md](vm_design.md).

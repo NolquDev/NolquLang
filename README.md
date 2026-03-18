@@ -137,11 +137,9 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 
 | Document | Contents |
 |---|---|
-| [docs/language.md](docs/language.md) | Full language reference — syntax, types, all built-ins, modules |
-| [docs/grammar.md](docs/grammar.md) | Formal EBNF grammar specification |
-| [docs/stdlib.md](docs/stdlib.md) | Standard library modules reference (10 modules, 80+ functions) |
-| [docs/embedding.md](docs/embedding.md) | Embed Nolqu in C / C++ via `nolqu.h` |
-| [docs/vm_design.md](docs/vm_design.md) | VM internals, bytecode reference, GC algorithm |
+| [docs/README.md](docs/README.md) | **Documentation index** — stable vs dev guide, version comparison |
+| [docs/stable/](docs/stable/) | All docs for **v1.0.0 stable** |
+| [docs/dev/](docs/dev/) | All docs for **v1.1.x alpha** (current) |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 
 ---
