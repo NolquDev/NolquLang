@@ -24,6 +24,8 @@ statement   → let_stmt
             | try_stmt
             | break_stmt
             | continue_stmt
+            | for_stmt
+            | compound_assign_stmt
             | expr_stmt
             | NEWLINE
 ```
@@ -69,6 +71,12 @@ try_stmt         → "try" NEWLINE
 break_stmt       → "break" NEWLINE
 
 continue_stmt    → "continue" NEWLINE
+
+for_stmt         → "for" IDENT "in" expr NEWLINE
+                     statement*
+                   "end" NEWLINE
+
+compound_assign_stmt → IDENT ( "+=" | "-=" | "*=" | "/=" | "..=" ) expr NEWLINE
 
 expr_stmt        → expr NEWLINE
 ```
@@ -153,7 +161,7 @@ Comments run from `#` to the end of the line. Block comments are not supported.
 
 ### Keywords
 ```
-let  print  if  else  loop  function  return
+let  print  if  else  loop  for  in  function  return
 import  try  catch  end
 true  false  nil
 and  or  not
@@ -165,6 +173,8 @@ break  continue
 +   -   *   /   %           arithmetic
 ==  !=  <   >   <=  >=      comparison
 =                           assignment
++=   -=   *=   /=          compound assignment (arithmetic)
+..=                         compound assignment (concat)
 ..                          string concatenation
 !                           prefix logical not (same as 'not')
 [   ]                       array indexing
@@ -252,7 +262,7 @@ import "path/to/module"
 - The path is relative to the current working directory (not the script file).
 - File extension `.nq` is added automatically.
 - Importing a module executes it in the global scope — all top-level declarations become global.
-- Re-importing a module that has already been loaded **re-executes** it (no deduplication in v1.0.0).
+- Re-importing a module that has already been loaded is a **no-op** — each module is compiled and run at most once per program execution (deduplication added in v1.1.1a2).
 
 **Built-in modules (in `stdlib/`):**
 ```nolqu

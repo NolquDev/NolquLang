@@ -879,16 +879,10 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 if (!tableGet(&vm->globals, name, &val)) {
                     const char* suggestion = didYouMean(vm, name->chars);
                     if (suggestion)
-                        vmRuntimeError(vm,
-                            "Undefined variable '%s'. Did you mean '%s'?\n"
-                            "  Hint: Use 'let %s = ...' to declare a variable.",
-                            name->chars, suggestion, name->chars);
+                        THROW_ERROR("Undefined variable '%s'. Did you mean '%s'?",
+                            name->chars, suggestion);
                     else
-                        vmRuntimeError(vm,
-                            "Undefined variable '%s'.\n"
-                            "  Hint: Use 'let %s = ...' to declare it first.",
-                            name->chars, name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
+                        THROW_ERROR("Undefined variable '%s'.", name->chars);
                 }
                 push(vm, val);
                 break;
@@ -897,11 +891,8 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 ObjString* name = AS_STRING(READ_CONST());
                 if (tableSet(&vm->globals, name, peek(vm, 0))) {
                     tableDelete(&vm->globals, name);
-                    vmRuntimeError(vm,
-                        "Variable '%s' is not declared.\n"
-                        "  Hint: Use 'let %s = ...' to declare it first.",
+                    THROW_ERROR("Variable '%s' is not declared. Use 'let %s = ...' first.",
                         name->chars, name->chars);
-                    return INTERPRET_RUNTIME_ERROR;
                 }
                 break;
             }

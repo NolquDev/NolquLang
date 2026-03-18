@@ -2,6 +2,45 @@
 
 ---
 
+## v1.1.1a3 — Alpha 3 (2026)
+
+### Bug Fixes
+
+- **Undefined variable access is now catchable** — `OP_GET_GLOBAL` on an
+  undefined name previously called `vmRuntimeError` which bypassed
+  `try/catch`. Now uses `THROW_ERROR` and can be caught.
+  Affects: `let x = undefined_name`, compound assign on undeclared variable.
+
+- **Undeclared variable assignment is now catchable** — `OP_SET_GLOBAL` on a
+  name that was never declared with `let` now throws a catchable error instead
+  of aborting.
+
+### Documentation — Accuracy Pass
+
+All documents updated to reflect the current state of the language:
+
+- **`README.md`** — quick start uses `for-in` example; features list includes
+  `for item in array` and compound assignment; stdlib count updated to 10.
+
+- **`docs/grammar.md`** — added `for_stmt` and `compound_assign_stmt` to the
+  statement grammar; `for` and `in` added to keyword list; compound assignment
+  operators documented; import deduplication note corrected (was "re-executes",
+  now "no-op after first load").
+
+- **`docs/language.md`** — removed stale limitation "import re-executes" (fixed
+  in v1.1.1a2); added "accessing undefined variable" and "assigning to undeclared
+  variable" to the "What throws" table; `replace()` limitation clarified to
+  point to `replace_all()` in `stdlib/string`.
+
+- **`docs/vm_design.md`** — `OP_CONST` updated to show 16-bit index `[hi, lo]`;
+  constant pool limit updated 256 → 65535; new section documenting the `for-in`
+  desugaring and `break`/`continue` invariants.
+
+- **`ROADMAP.md`** — all released versions listed with accurate status;
+  criteria for promoting a3 → stable v1.1.1 documented.
+
+---
+
 ## v1.1.1a2 — Alpha 2 (2026)
 
 > **Alpha release** — all features are functional and tested.
@@ -149,6 +188,45 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.1.1a3 — Alpha 3 (2026)
+
+### Bug Fixes
+
+- **Undefined variable access is now catchable** — `OP_GET_GLOBAL` on an
+  undefined name previously called `vmRuntimeError` which bypassed
+  `try/catch`. Now uses `THROW_ERROR` and can be caught.
+  Affects: `let x = undefined_name`, compound assign on undeclared variable.
+
+- **Undeclared variable assignment is now catchable** — `OP_SET_GLOBAL` on a
+  name that was never declared with `let` now throws a catchable error instead
+  of aborting.
+
+### Documentation — Accuracy Pass
+
+All documents updated to reflect the current state of the language:
+
+- **`README.md`** — quick start uses `for-in` example; features list includes
+  `for item in array` and compound assignment; stdlib count updated to 10.
+
+- **`docs/grammar.md`** — added `for_stmt` and `compound_assign_stmt` to the
+  statement grammar; `for` and `in` added to keyword list; compound assignment
+  operators documented; import deduplication note corrected (was "re-executes",
+  now "no-op after first load").
+
+- **`docs/language.md`** — removed stale limitation "import re-executes" (fixed
+  in v1.1.1a2); added "accessing undefined variable" and "assigning to undeclared
+  variable" to the "What throws" table; `replace()` limitation clarified to
+  point to `replace_all()` in `stdlib/string`.
+
+- **`docs/vm_design.md`** — `OP_CONST` updated to show 16-bit index `[hi, lo]`;
+  constant pool limit updated 256 → 65535; new section documenting the `for-in`
+  desugaring and `break`/`continue` invariants.
+
+- **`ROADMAP.md`** — all released versions listed with accurate status;
+  criteria for promoting a3 → stable v1.1.1 documented.
 
 ---
 

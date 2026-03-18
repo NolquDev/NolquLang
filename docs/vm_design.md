@@ -175,7 +175,7 @@ All opcodes are 1 byte. Operands follow immediately.
 ### Literals
 | Opcode | Operands | Stack effect |
 |---|---|---|
-| `OP_CONST` | `[idx]` | `→ constants[idx]` |
+| `OP_CONST` | `[hi, lo]` | `→ constants[idx]` — 16-bit index (max 65535) |
 | `OP_NIL` | — | `→ nil` |
 | `OP_TRUE` | — | `→ true` |
 | `OP_FALSE` | — | `→ false` |
@@ -288,6 +288,36 @@ not `malloc`, so the memory tracker stays accurate.
 
 ---
 
+
+## Compiler: `for-in` Desugaring
+
+```nolqu
+for item in iterable
+  body
+end
+```
+
+Is compiled as if written:
+
+```
+[outer scope]
+  let __for_arr__ = <iterable>    ← evaluated once
+  let __for_idx__ = 0             ← hidden index
+  loop __for_idx__ < len(__for_arr__)
+    [inner scope]
+    let <item> = __for_arr__[__for_idx__]
+    <body>
+    __for_idx__ = __for_idx__ + 1
+  end
+[end outer scope]
+```
+
+Key invariants:
+- `__for_arr__` and `__for_idx__` are hidden locals (compiler-generated names).
+- `break` pops all locals back to before `__for_arr__` (`outer_local_count`).
+- `continue` jumps to the increment step (forward-patched at emit time).
+- After a `break`, the outer scope's `endScope` pops `__for_arr__` and `__for_idx__` normally.
+
 ## "Did You Mean?" Suggestions
 
 When `OP_GET_GLOBAL` fails (undefined variable), the VM runs a linear scan of
@@ -308,6 +338,6 @@ Undefined variable 'lenght'. Did you mean 'length'?
 | Call frames | 64 |
 | Try/catch nesting | 64 |
 | Locals per function | 256 |
-| Constants per chunk | 256 |
+| Constants per chunk | 65535 (16-bit index) |
 | Jump offset | 65535 bytes |
 | Host-registered natives (`nq_register`) | 64 |

@@ -488,6 +488,8 @@ All of these throw catchable errors:
 | Non-number index | `"Array index must be a number."` |
 | File read / write failure | `"file_read: cannot open 'path'"` etc. |
 | Calling a non-function | `"Only functions can be called, not <type>."` |
+| Accessing undefined variable | `"Undefined variable 'name'."` |
+| Assigning to undeclared variable | `"Variable 'name' is not declared."` |
 | `pop` on empty array | `"pop: cannot pop from an empty array"` |
 | `len` on wrong type | `"len: expected string or array, got <type>"` |
 
@@ -694,9 +696,8 @@ Rules summary:
 | No closures | Functions cannot capture variables from enclosing scopes |
 | No hash maps | Only arrays and strings are built-in collections |
 | No integer type | All numbers are 64-bit floats |
-| `import` re-executes | Importing a file twice runs it twice |
 | No cycle detection | Circular imports loop forever |
 | No string mutation | All string operations return new strings |
 | Single-pass compiler | No forward references to functions within a file |
-| `replace` first only | Replaces only the first occurrence, not all |
+| `replace()` first only | The built-in replaces only the first occurrence; use `replace_all()` from `stdlib/string` for all occurrences |
 | Transpiler experimental | `codegen` does not support arrays, try/catch, or import |
