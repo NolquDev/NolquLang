@@ -1,0 +1,271 @@
+# stdlib/fmt.nq — String formatting utilities
+#
+# Import:
+#   import "stdlib/fmt"
+#
+# Provides printf-style formatting for Nolqu.
+# Since Nolqu has no variadic functions, format() takes an array
+# of arguments rather than individual parameters.
+#
+# Format mini-language:
+#   {}       insert next argument as a string (auto-convert)
+#   {0}      insert argument at index 0
+#   {1}      insert argument at index 1  (etc.)
+#   {:d}     format next argument as an integer
+#   {:f}     format next argument as a float (2 decimal places)
+#   {:s}     format next argument as a string (explicit)
+#   {{       literal {
+#   }}       literal }
+#
+# Quick reference:
+#   fmt(template, args)         format template with args array
+#   fmt_num(n, decimals)        format number with fixed decimal places
+#   fmt_pad(s, width, char)     pad string to width with char
+#   fmt_table(rows, widths)     render a simple text table
+#   printf(template, args)      fmt() then print
+
+# ─── Internal helpers ──────────────────────────────────────────────────
+
+# _fmt_value(v) — convert any value to its display string
+function _fmt_value(v)
+  if is_nil(v)
+    return "nil"
+  end
+  if is_bool(v)
+    if v
+      return "true"
+    end
+    return "false"
+  end
+  return str(v)
+end
+
+# _fmt_int(n) — format a number as an integer (no decimal point)
+function _fmt_int(n)
+  return str(floor(n))
+end
+
+# _fmt_float(n, places) — format a number with fixed decimal places
+function _fmt_float_p(n, places)
+  let factor = pow(10, places)
+  let rounded = floor(n * factor + 0.5) / factor
+  let int_part = floor(rounded)
+  let frac = floor((rounded - int_part) * factor + 0.5)
+  let frac_str = str(frac)
+  loop len(frac_str) < places
+    frac_str = "0" .. frac_str
+  end
+  return str(int_part) .. "." .. frac_str
+end
+
+# ─── fmt_num ──────────────────────────────────────────────────────────
+
+# fmt_num(n, decimals) — format a number with a fixed number of decimal places
+#
+# Examples:
+#   fmt_num(3.14159, 2)   # "3.14"
+#   fmt_num(42, 3)        # "42.000"
+#   fmt_num(0.5, 0)       # "1"  (rounded)
+function fmt_num(n, decimals)
+  if decimals <= 0
+    return str(floor(n + 0.5))
+  end
+  return _fmt_float_p(n, decimals)
+end
+
+# ─── fmt_pad ──────────────────────────────────────────────────────────
+
+# fmt_pad(s, width, pad_char) — pad string to width using pad_char
+#
+# Pads on the left (right-align). Use pad_char " " for text,
+# "0" for zero-padded numbers.
+#
+# Examples:
+#   fmt_pad("42",    6, " ")  # "    42"
+#   fmt_pad("42",    6, "0")  # "000042"
+#   fmt_pad("hello", 3, " ")  # "hello"   (already wider)
+function fmt_pad(s, width, pad_char)
+  let result = s
+  loop len(result) < width
+    result = pad_char .. result
+  end
+  return result
+end
+
+# ─── fmt (core) ────────────────────────────────────────────────────────
+
+# fmt(template, args) — format a template string with an array of values
+#
+# Placeholders:
+#   {}    next positional argument (auto-string)
+#   {0}   argument at index 0
+#   {1}   argument at index 1
+#   {:d}  next argument as integer
+#   {:f}  next argument as float (2 decimal places)
+#   {:s}  next argument as string
+#   {{    literal left brace
+#   }}    literal right brace
+#
+# Examples:
+#   fmt("Hello, {}!", ["Alice"])            # "Hello, Alice!"
+#   fmt("{} + {} = {}", [1, 2, 3])          # "1 + 2 = 3"
+#   fmt("Score: {:d}", [99])               # "Score: 99"
+#   fmt("Pi: {:f}", [3.14159])             # "Pi: 3.14"
+#   fmt("{0} and {0}", ["echo"])           # "echo and echo"
+#   fmt("{{braces}}", [])                  # "{braces}"
+function fmt(template, args)
+  let result = ""
+  let i = 0
+  let auto_idx = 0
+  let n = len(template)
+
+  loop i < n
+    let ch = template[i]
+
+    if ch == "{"
+      # Check for escaped {{
+      if i + 1 < n and template[i + 1] == "{"
+        result = result .. "{"
+        i = i + 2
+      else
+        # Find closing }
+        let j = i + 1
+        let spec = ""
+        loop j < n and template[j] != "}"
+          spec = spec .. template[j]
+          j = j + 1
+        end
+        i = j + 1   # skip past }
+
+        # Determine which argument to use
+        let arg_idx = auto_idx
+        let fmt_type = "s"
+
+        if spec == ""
+          arg_idx = auto_idx
+          auto_idx = auto_idx + 1
+        else
+          if spec == ":d"
+            fmt_type = "d"
+            arg_idx = auto_idx
+            auto_idx = auto_idx + 1
+          else
+            if spec == ":f"
+              fmt_type = "f"
+              arg_idx = auto_idx
+              auto_idx = auto_idx + 1
+            else
+              if spec == ":s"
+                fmt_type = "s"
+                arg_idx = auto_idx
+                auto_idx = auto_idx + 1
+              else
+                # Numeric index like {0} or {1}
+                let parsed = num(spec)
+                if not is_nil(parsed)
+                  arg_idx = parsed
+                end
+              end
+            end
+          end
+        end
+
+        # Get value
+        let val = nil
+        if arg_idx < len(args)
+          val = args[arg_idx]
+        end
+
+        # Format value
+        if fmt_type == "d"
+          let dval = 0
+          if not is_nil(val)
+            dval = val
+          end
+          result = result .. _fmt_int(dval)
+        else
+          if fmt_type == "f"
+            let fval = 0
+            if not is_nil(val)
+              fval = val
+            end
+            result = result .. fmt_num(fval, 2)
+          else
+            result = result .. _fmt_value(val)
+          end
+        end
+      end
+    else
+      if ch == "}" and i + 1 < n and template[i + 1] == "}"
+        result = result .. "}"
+        i = i + 2
+      else
+        result = result .. ch
+        i = i + 1
+      end
+    end
+  end
+
+  return result
+end
+
+# ─── printf ───────────────────────────────────────────────────────────
+
+# printf(template, args) — fmt() then print the result
+#
+# Example:
+#   printf("Hello, {}! You are {} years old.\n", ["Alice", 30])
+function printf(template, args)
+  print fmt(template, args)
+end
+
+# ─── fmt_table ────────────────────────────────────────────────────────
+
+# fmt_table(rows, col_widths) — render a plain-text table
+#
+# rows       — array of arrays, each inner array is one row of columns
+# col_widths — array of column widths (0 = auto-fit to header width)
+#
+# Example:
+#   let headers = ["Name", "Score", "Grade"]
+#   let data = [
+#     ["Alice", "98",  "A"],
+#     ["Bob",   "74",  "B"],
+#     ["Carol", "100", "A"]
+#   ]
+#   let all_rows = [headers]
+#   push(all_rows, ["----", "-----", "-----"])
+#   let i = 0
+#   loop i < len(data)
+#     push(all_rows, data[i])
+#     i = i + 1
+#   end
+#   print fmt_table(all_rows, [10, 7, 6])
+function fmt_table(rows, col_widths)
+  let result = ""
+  let r = 0
+  loop r < len(rows)
+    let row = rows[r]
+    let line = ""
+    let c = 0
+    loop c < len(row)
+      let cell = _fmt_value(row[c])
+      let w = 8
+      if c < len(col_widths)
+        w = col_widths[c]
+      end
+      let padded = cell
+      loop len(padded) < w
+        padded = padded .. " "
+      end
+      line = line .. padded
+      c = c + 1
+    end
+    if r > 0
+      result = result .. "\n"
+    end
+    result = result .. line
+    r = r + 1
+  end
+  return result
+end

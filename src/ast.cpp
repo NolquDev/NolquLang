@@ -59,6 +59,15 @@ void freeNode(ASTNode* node) {
             free(node->data.assign.name);
             freeNode(node->data.assign.value);
             break;
+        case NODE_COMPOUND_ASSIGN:
+            free(node->data.compound_assign.name);
+            freeNode(node->data.compound_assign.value);
+            break;
+        case NODE_FOR:
+            free(node->data.for_loop.item);
+            freeNode(node->data.for_loop.iterable);
+            freeNode(node->data.for_loop.body);
+            break;
 
         case NODE_PRINT:
             freeNode(node->data.print.expr);

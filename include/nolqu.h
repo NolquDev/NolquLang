@@ -142,10 +142,13 @@ void nq_set_gc_threshold(NqState* nq, size_t bytes);
 /* ─────────────────────────────────────────────
  *  Version
  * ───────────────────────────────────────────── */
+/* Version is defined in src/common.h — included transitively. */
+#ifndef NQ_VERSION_MAJOR
 #define NQ_VERSION_MAJOR 1
-#define NQ_VERSION_MINOR 0
-#define NQ_VERSION_PATCH 0
-#define NQ_VERSION_STRING "1.0.0-rc1"
+#define NQ_VERSION_MINOR 1
+#define NQ_VERSION_PATCH 1
+#endif
+#define NQ_VERSION_STRING NQ_VERSION
 
 #ifdef __cplusplus
 }

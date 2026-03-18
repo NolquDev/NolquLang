@@ -28,16 +28,16 @@
 
 /* ── Version ─────────────────────────────────────────────────────── */
 #define NQ_VERSION_MAJOR 1
-#define NQ_VERSION_MINOR 0
-#define NQ_VERSION_PATCH 0
-#define NQ_VERSION       "1.0.0"
+#define NQ_VERSION_MINOR 1
+#define NQ_VERSION_PATCH 1
+#define NQ_VERSION       "1.1.1a2"
 #define NQ_LANG_NAME     "Nolqu"
 
 /* ── VM limits ───────────────────────────────────────────────────── */
 #define NQ_STACK_MAX    512   /* maximum values on the operand stack  */
 #define NQ_FRAMES_MAX   64    /* maximum call-frame depth             */
 #define NQ_LOCALS_MAX   256   /* maximum locals per function scope    */
-#define NQ_CONSTS_MAX   256   /* maximum constants per chunk          */
+#define NQ_CONSTS_MAX   65535 /* maximum constants per chunk (16-bit index) */
 
 /* ── Dynamic-array helpers ───────────────────────────────────────── */
 /*

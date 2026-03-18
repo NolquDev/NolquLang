@@ -68,11 +68,11 @@ static int jumpInstruction(const char* name, int sign, Chunk* chunk, int offset)
 }
 
 static int constantInstruction(const char* name, Chunk* chunk, int offset) {
-    uint8_t idx = chunk->code[offset + 1];
+    uint16_t idx = (uint16_t)((chunk->code[offset + 1] << 8) | chunk->code[offset + 2]);
     printf("%-20s %4d  (", name, idx);
     printValue(chunk->constants.values[idx]);
     printf(")\n");
-    return offset + 2;
+    return offset + 3;   /* opcode + 2 index bytes */
 }
 
 void disassembleChunk(Chunk* chunk, const char* name) {

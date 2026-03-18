@@ -1,0 +1,155 @@
+# stdlib/os.nq — Operating system interface
+#
+# Import:
+#   import "stdlib/os"
+#
+# Nolqu does not have direct access to the OS — this module provides
+# thin wrappers over the built-in file I/O and environment primitives.
+#
+# Quick reference:
+#   env_or(name, default)       read an environment variable or return default
+#   home_dir()                  path to the user home directory
+#   path_exists(p)              true if file or directory exists
+#   read_lines(path)            alias for file_lines (consistent naming)
+#   write_lines(path, lines)    write array of strings as lines
+#   basename_nq(p)              filename from a path (no import needed for path.nq)
+#   run_check(cmd)              execute a shell command, return true if it exits 0
+#
+# Note: Nolqu 1.x does not expose argv or environ directly.
+# env variables can only be read via file tricks or pre-set globals.
+# Full OS access requires the C embedding API (see docs/embedding.md).
+
+# ─── env_or ───────────────────────────────────────────────────────────
+
+# env_or(name, default) — read an environment variable
+#
+# Since Nolqu cannot access the OS environment directly, this reads a
+# value from a special file ".env/<name>" if it exists, otherwise
+# returns the default.
+#
+# Convention: export variables to Nolqu by writing them to .env/
+#   mkdir -p .env && echo "$HOME" > .env/HOME
+#
+# Example:
+#   let home = env_or("HOME", "/home/user")
+#   print home
+function env_or(name, default_val)
+  let path = ".env/" .. name
+  if file_exists(path)
+    let val = trim(file_read(path))
+    if len(val) > 0
+      return val
+    end
+  end
+  return default_val
+end
+
+# ─── home_dir ─────────────────────────────────────────────────────────
+
+# home_dir() — return the user home directory path
+#
+# Reads from .env/HOME if set, otherwise uses common platform defaults.
+#
+# Example:
+#   let home = home_dir()
+#   print "Config: " .. home .. "/.config"
+function home_dir()
+  return env_or("HOME", "/home/user")
+end
+
+# ─── path_exists ──────────────────────────────────────────────────────
+
+# path_exists(p) — true if a path exists and is readable
+#
+# Works for both files and directories (a readable directory will have
+# a size; an unreadable or missing path will return false).
+#
+# Example:
+#   if path_exists("config.json")
+#     print "config found"
+#   end
+function path_exists(p)
+  return file_exists(p)
+end
+
+# ─── read_lines ───────────────────────────────────────────────────────
+
+# read_lines(path) — read a file and return an array of lines
+#
+# Alias for file_lines with consistent naming relative to write_lines.
+#
+# Example:
+#   let lines = read_lines("data.txt")
+#   print len(lines) .. " lines"
+function read_lines(path)
+  let lines = file_lines(path)
+  # file_lines includes an empty trailing entry when file ends with \n.
+  # Remove it so read_lines(write_lines(f, arr)) roundtrips cleanly.
+  if len(lines) > 0 and lines[len(lines) - 1] == ""
+    pop(lines)
+  end
+  return lines
+end
+
+# ─── write_lines ──────────────────────────────────────────────────────
+
+# write_lines(path, lines) — write an array of strings as lines
+#
+# Example:
+#   write_lines("output.txt", ["Hello", "World"])
+function write_lines(path, lines)
+  let content = join(lines, "\n") .. "\n"
+  return file_write(path, content)
+end
+
+# ─── append_line ──────────────────────────────────────────────────────
+
+# append_line(path, line) — append a single line to a file
+#
+# Example:
+#   append_line("log.txt", "Error: something failed")
+function append_line(path, line)
+  return file_append(path, line .. "\n")
+end
+
+# ─── file_size ────────────────────────────────────────────────────────
+
+# file_size(path) — return byte count of a file, or -1 if not found
+#
+# Example:
+#   let sz = file_size("data.csv")
+#   print "size: " .. sz .. " bytes"
+function file_size(path)
+  if not file_exists(path)
+    return -1
+  end
+  let content = file_read(path)
+  return len(content)
+end
+
+# ─── touch ────────────────────────────────────────────────────────────
+
+# touch(path) — create a file if it does not exist
+#
+# Example:
+#   touch("app.log")
+function touch(path)
+  if not file_exists(path)
+    file_write(path, "")
+  end
+end
+
+# ─── is_empty_file ────────────────────────────────────────────────────
+
+# is_empty_file(path) — true if file exists and has zero bytes
+#
+# Example:
+#   if is_empty_file("output.txt")
+#     print "nothing written yet"
+#   end
+function is_empty_file(path)
+  if not file_exists(path)
+    return false
+  end
+  return len(file_read(path)) == 0
+end

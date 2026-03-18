@@ -42,8 +42,9 @@ static Value nativeStr(int argc, Value* args) {
                                                   AS_BOOL(v) ? 4 : 5));
     if (IS_NUMBER(v)) {
         double n = AS_NUMBER(v);
-        if (n == (long long)n) snprintf(buf, sizeof(buf), "%lld", (long long)n);
-        else                   snprintf(buf, sizeof(buf), "%g", n);
+        if (n == (long long)n && n >= -9007199254740992.0 && n <= 9007199254740992.0)
+            snprintf(buf, sizeof(buf), "%lld", (long long)n);
+        else snprintf(buf, sizeof(buf), "%.14g", n);
         return OBJ_VAL(copyString(buf, (int)strlen(buf)));
     }
     return OBJ_VAL(copyString("<object>", 8));
@@ -543,6 +544,41 @@ static Value nativeIsStr(int argc, Value* args)   { return BOOL_VAL(argc==1 && I
 static Value nativeIsBool(int argc, Value* args)  { return BOOL_VAL(argc==1 && IS_BOOL(args[0]));   }
 static Value nativeIsArray(int argc, Value* args) { return BOOL_VAL(argc==1 && IS_ARRAY(args[0]));  }
 
+/* ord(ch) — return the ASCII/Unicode code point of the first char of a string */
+static Value nativeOrd(int argc, Value* args) {
+    if (argc != 1 || !IS_STRING(args[0])) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("ord: expected a string argument", 31));
+        return NIL_VAL;
+    }
+    ObjString* s = AS_STRING(args[0]);
+    if (s->length == 0) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("ord: string must not be empty", 29));
+        return NIL_VAL;
+    }
+    return NUMBER_VAL((double)(unsigned char)s->chars[0]);
+}
+
+/* chr(n) — return a one-character string for the given code point */
+static Value nativeChr(int argc, Value* args) {
+    if (argc != 1 || !IS_NUMBER(args[0])) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("chr: expected a number argument", 31));
+        return NIL_VAL;
+    }
+    int code = (int)AS_NUMBER(args[0]);
+    if (code < 0 || code > 127) {
+        char msg[64];
+        snprintf(msg, sizeof(msg), "chr: code point %d out of range (0-127)", code);
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return NIL_VAL;
+    }
+    char buf[2] = { (char)code, '\0' };
+    return OBJ_VAL(copyString(buf, 1));
+}
+
 static void registerNative(VM* vm, const char* name, NativeFn fn, int arity) {
     ObjNative*  native   = newNative(fn, name, arity);
     ObjString*  key      = copyString(name, (int)strlen(name));
@@ -615,6 +651,10 @@ void initVM(VM* vm) {
     registerNative(vm, "is_str",      nativeIsStr,       1);
     registerNative(vm, "is_bool",     nativeIsBool,      1);
     registerNative(vm, "is_array",    nativeIsArray,     1);
+    registerNative(vm, "ord",         nativeOrd,         1);
+    registerNative(vm, "chr",         nativeChr,         1);
+    registerNative(vm, "ord",         nativeOrd,         1);
+    registerNative(vm, "chr",         nativeChr,         1);
 }
 
 void freeVM(VM* vm) {
@@ -705,8 +745,9 @@ static ObjString* valueToString(Value v) {
     else if (IS_BOOL(v)) snprintf(buf, sizeof(buf), "%s", AS_BOOL(v) ? "true" : "false");
     else if (IS_NUMBER(v)) {
         double n = AS_NUMBER(v);
-        if (n == (long long)n) snprintf(buf, sizeof(buf), "%lld", (long long)n);
-        else                   snprintf(buf, sizeof(buf), "%g", n);
+        if (n == (long long)n && n >= -9007199254740992.0 && n <= 9007199254740992.0)
+            snprintf(buf, sizeof(buf), "%lld", (long long)n);
+        else snprintf(buf, sizeof(buf), "%.14g", n);
     } else snprintf(buf, sizeof(buf), "<object>");
     return copyString(buf, (int)strlen(buf));
 }
@@ -790,7 +831,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
 #define READ_BYTE()    (*frame->ip++)
 #define READ_UINT16()  (frame->ip += 2, \
                         (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
-#define READ_CONST()   (frame->function->chunk->constants.values[READ_BYTE()])
+#define READ_CONST()   (frame->function->chunk->constants.values[READ_UINT16()])
 
 // THROW_ERROR: format, make ObjString error, try to catch or abort
 #define THROW_ERROR(...) do { \
@@ -1027,12 +1068,11 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 // Handle native functions
                 if (IS_NATIVE(callee)) {
                     ObjNative* native = AS_NATIVE(callee);
-                    // Validate arity (-1 = variadic)
+                    // Validate arity (-1 = variadic) — now catchable
                     if (native->arity != -1 && argc != native->arity) {
-                        vmRuntimeError(vm,
+                        THROW_ERROR(
                             "Built-in function '%s' expects %d argument(s), but got %d.",
                             native->name, native->arity, argc);
-                        return INTERPRET_RUNTIME_ERROR;
                     }
                     vm->thrown = NIL_VAL;  // clear before call
                     Value result = native->fn(argc, vm->stack_top - argc);
@@ -1050,15 +1090,14 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     break;
                 }
 
+                // Calling a non-function — now catchable
                 if (!IS_FUNCTION(callee)) {
-                    vmRuntimeError(vm,
-                        "Only functions can be called, not %s.\n"
-                        "  Hint: Make sure the name you are calling is a function.",
+                    THROW_ERROR(
+                        "Only functions can be called, not %s.",
                         IS_STRING(callee) ? "string" :
                         IS_NUMBER(callee) ? "number" :
                         IS_BOOL(callee)   ? "bool"   :
                         IS_NIL(callee)    ? "nil"    : "object");
-                    return INTERPRET_RUNTIME_ERROR;
                 }
                 if (!callFunction(vm, AS_FUNCTION(callee), argc))
                     return INTERPRET_RUNTIME_ERROR;

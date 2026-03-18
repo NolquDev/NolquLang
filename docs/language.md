@@ -99,6 +99,27 @@ Prefix the name with `_` to explicitly mark it as intentionally unused:
 let _ignored = some_call()   # no warning
 ```
 
+### Compound assignment
+
+`+=` `-=` `*=` `/=` `..=` modify a variable in place.
+
+```nolqu
+let score = 0
+score += 10     # score = score + 10
+score -= 2      # score = score - 2
+score *= 3      # score = score * 3
+score /= 6      # score = score / 6
+print score     # 4
+
+let msg = "hello"
+msg ..= " world"   # msg = msg .. " world"
+print msg           # hello world
+```
+
+Works on both local and global variables.
+
+---
+
 ---
 
 ## 3. Data Types
@@ -549,6 +570,8 @@ All file operations throw catchable errors on failure.
 
 | Function | Returns |
 |---|---|
+| `ord(ch)` | Code point of first character (0–127) |
+| `chr(n)` | Single-character string for code point `n` (0–127) |
 | `is_nil(v)` | `true` if `v` is `nil` |
 | `is_num(v)` | `true` if `v` is a number |
 | `is_str(v)` | `true` if `v` is a string |

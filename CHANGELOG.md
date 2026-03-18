@@ -2,6 +2,60 @@
 
 ---
 
+## v1.1.1a2 — Alpha 2 (2026)
+
+> **Alpha release** — all features are functional and tested.
+> Syntax is stable. Not yet recommended for production.
+
+### Language — New Features
+
+- **`for item in array ... end`** — range-based loop over arrays.
+  `break` and `continue` work correctly inside `for`, including after
+  nested `if` blocks and across sequential `for` loops.
+- **Compound assignment: `+=` `-=` `*=` `/=` `..=`** — modify a variable
+  in place. Works on both local and global variables.
+- **`ord(ch)`** — return the ASCII code point (0–127) of the first character.
+- **`chr(n)`** — return a one-character string for code point `n` (0–127).
+
+### Bug Fixes
+
+- **Non-function call is now catchable** — calling a string/number/nil as
+  a function previously aborted with an uncatchable runtime error. Now
+  it goes through `THROW_ERROR` and can be caught with `try/catch`.
+- **Builtin arity error is now catchable** — `sqrt()` with wrong number of
+  arguments previously aborted. Now catchable.
+- **Import deduplication** — `import "stdlib/math"` twice no longer
+  re-executes the module. Tracked per `compile()` call; REPL-safe.
+- **Constant pool limit raised from 256 → 65535** — the pool index is now
+  16-bit. Files with >256 global variables or string constants no longer
+  crash with "Too many constants". Disassembler and VM reader updated.
+- **`str()` precision** — `str(3.14159265358979)` now returns
+  `"3.14159265358979"` (14 significant digits) instead of `"3.14159"`.
+  Uses `%.14g` format; integers are still formatted without decimal point.
+- **`for-in` break/continue stack corruption** — `break` inside a `for`
+  loop now correctly cleans up the hidden `__for_arr__` and `__for_idx__`
+  locals before jumping, preventing stack corruption in subsequent loops.
+  `continue` inside `for` correctly increments the index before looping.
+- **`loop_stack` reset per `compile()` call** — a leftover loop context
+  from one REPL input could bleed into the next. Fixed.
+
+### Standard Library — New Modules
+
+- **`stdlib/os.nq`** — file-system utilities: `env_or`, `home_dir`,
+  `path_exists`, `read_lines`, `write_lines`, `append_line`,
+  `file_size`, `touch`, `is_empty_file`.
+- **`stdlib/fmt.nq`** — printf-style formatting: `fmt(template, args)`,
+  `printf`, `fmt_num`, `fmt_pad`, `fmt_table`.
+
+### Internal
+
+- `LoopCtx` in `compiler.cpp` extended with `continue_target`,
+  `outer_local_count`, `scope_depth`, `continue_patches` fields.
+- `include/nolqu.h` version macros guarded with `#ifndef` to prevent
+  redefinition warnings when included alongside `src/common.h`.
+
+---
+
 ## v1.1.0 — Extended Standard Library (2026)
 
 ### Language
@@ -95,6 +149,60 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.1.1a2 — Alpha 2 (2026)
+
+> **Alpha release** — all features are functional and tested.
+> Syntax is stable. Not yet recommended for production.
+
+### Language — New Features
+
+- **`for item in array ... end`** — range-based loop over arrays.
+  `break` and `continue` work correctly inside `for`, including after
+  nested `if` blocks and across sequential `for` loops.
+- **Compound assignment: `+=` `-=` `*=` `/=` `..=`** — modify a variable
+  in place. Works on both local and global variables.
+- **`ord(ch)`** — return the ASCII code point (0–127) of the first character.
+- **`chr(n)`** — return a one-character string for code point `n` (0–127).
+
+### Bug Fixes
+
+- **Non-function call is now catchable** — calling a string/number/nil as
+  a function previously aborted with an uncatchable runtime error. Now
+  it goes through `THROW_ERROR` and can be caught with `try/catch`.
+- **Builtin arity error is now catchable** — `sqrt()` with wrong number of
+  arguments previously aborted. Now catchable.
+- **Import deduplication** — `import "stdlib/math"` twice no longer
+  re-executes the module. Tracked per `compile()` call; REPL-safe.
+- **Constant pool limit raised from 256 → 65535** — the pool index is now
+  16-bit. Files with >256 global variables or string constants no longer
+  crash with "Too many constants". Disassembler and VM reader updated.
+- **`str()` precision** — `str(3.14159265358979)` now returns
+  `"3.14159265358979"` (14 significant digits) instead of `"3.14159"`.
+  Uses `%.14g` format; integers are still formatted without decimal point.
+- **`for-in` break/continue stack corruption** — `break` inside a `for`
+  loop now correctly cleans up the hidden `__for_arr__` and `__for_idx__`
+  locals before jumping, preventing stack corruption in subsequent loops.
+  `continue` inside `for` correctly increments the index before looping.
+- **`loop_stack` reset per `compile()` call** — a leftover loop context
+  from one REPL input could bleed into the next. Fixed.
+
+### Standard Library — New Modules
+
+- **`stdlib/os.nq`** — file-system utilities: `env_or`, `home_dir`,
+  `path_exists`, `read_lines`, `write_lines`, `append_line`,
+  `file_size`, `touch`, `is_empty_file`.
+- **`stdlib/fmt.nq`** — printf-style formatting: `fmt(template, args)`,
+  `printf`, `fmt_num`, `fmt_pad`, `fmt_table`.
+
+### Internal
+
+- `LoopCtx` in `compiler.cpp` extended with `continue_target`,
+  `outer_local_count`, `scope_depth`, `continue_patches` fields.
+- `include/nolqu.h` version macros guarded with `#ifndef` to prevent
+  redefinition warnings when included alongside `src/common.h`.
 
 ---
 

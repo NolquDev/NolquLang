@@ -155,6 +155,26 @@ static ASTNode* parseLoopStmt(Parser* p) {
     return n;
 }
 
+/* for item in iterable
+     body
+   end  */
+static ASTNode* parseForStmt(Parser* p) {
+    int line = p->previous.line;
+    expect(p, TK_IDENT, "Expected a variable name after 'for'. Example: for item in list");
+    char* item = dupStr(p->previous.start, p->previous.length);
+    expect(p, TK_IN, "Expected 'in' after loop variable. Example: for item in list");
+    ASTNode* iterable = parseExpr(p);
+    expectNewline(p);
+    ASTNode* body = parseBlock(p);
+    expect(p, TK_END, "Expected 'end' to close 'for' block");
+    expectNewline(p);
+    ASTNode* n = makeNode(NODE_FOR, line);
+    n->data.for_loop.item     = item;
+    n->data.for_loop.iterable = iterable;
+    n->data.for_loop.body     = body;
+    return n;
+}
+
 static ASTNode* parseFunctionDecl(Parser* p) {
     int line = p->previous.line;
     expect(p, TK_IDENT, "Expected a function name after 'function'");
@@ -261,6 +281,7 @@ static ASTNode* parseStmt(Parser* p) {
         case TK_PRINT:    return parsePrintStmt(p);
         case TK_IF:       return parseIfStmt(p);
         case TK_LOOP:     return parseLoopStmt(p);
+        case TK_FOR:      return parseForStmt(p);
         case TK_FUNCTION: return parseFunctionDecl(p);
         case TK_RETURN:   return parseReturnStmt(p);
         case TK_IMPORT:   return parseImportStmt(p);
@@ -284,6 +305,28 @@ static ASTNode* parseStmt(Parser* p) {
                 ASTNode* n = makeNode(NODE_ASSIGN, line);
                 n->data.assign.name  = name;
                 n->data.assign.value = val;
+                return n;
+            }
+            /* Compound assignment: name op= expr */
+            if (check(p, TK_PLUS_EQ)  || check(p, TK_MINUS_EQ) ||
+                check(p, TK_STAR_EQ)  || check(p, TK_SLASH_EQ) ||
+                check(p, TK_DOTDOT_EQ)) {
+                int line = tok.line;
+                char* name = dupStr(tok.start, tok.length);
+                /* Map op= token to its binary operator token */
+                TokenType compound_tok = p->current.type;
+                TokenType op = (compound_tok == TK_PLUS_EQ)   ? TK_PLUS  :
+                               (compound_tok == TK_MINUS_EQ)  ? TK_MINUS :
+                               (compound_tok == TK_STAR_EQ)   ? TK_STAR  :
+                               (compound_tok == TK_SLASH_EQ)  ? TK_SLASH :
+                                                                 TK_DOTDOT;
+                advance(p); /* consume the op= token */
+                ASTNode* rhs = parseExpr(p);
+                expectNewline(p);
+                ASTNode* n = makeNode(NODE_COMPOUND_ASSIGN, line);
+                n->data.compound_assign.name  = name;
+                n->data.compound_assign.op    = op;
+                n->data.compound_assign.value = rhs;
                 return n;
             }
             // arr[i] = val  (index assignment)

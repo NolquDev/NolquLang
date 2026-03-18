@@ -334,6 +334,8 @@ static void printHelp(void) {
     printf("  I/O:      input([prompt])  print\n");
     printf("  Type:     str(v)  num(v)  type(v)\n");
     printf("            is_nil  is_num  is_str  is_bool  is_array\n");
+    printf("            ord(ch)  chr(n)\n");
+    printf("  Char:     ord(ch)  chr(n)\n");
     printf("  Math:     sqrt  floor  ceil  round  abs  pow  min  max\n");
     printf("  String:   upper  lower  slice  trim  replace  split\n");
     printf("            startswith  endswith  index  repeat  join\n");
@@ -346,17 +348,27 @@ static void printHelp(void) {
     printf("  Memory:   mem_usage()  gc_collect()\n");
     printf("\n");
     printf(NQ_COLOR_BOLD "Stdlib:" NQ_COLOR_RESET "\n");
-    printf("  import \"stdlib/math\"    clamp  lerp  sign\n");
+    printf("  import \"stdlib/math\"    clamp  lerp  sign  PI  E  sin  cos  tan  log\n");
     printf("  import \"stdlib/array\"   map  filter  reduce  reverse\n");
+    printf("  import \"stdlib/string\"  is_empty  lines  words  count  replace_all  pad_left  center\n");
+    printf("  import \"stdlib/path\"    path_join  basename  dirname  ext  normalize\n");
+    printf("  import \"stdlib/json\"    json_object  json_stringify  json_parse\n");
+    printf("  import \"stdlib/time\"    now  millis  sleep  format_duration  benchmark\n");
+    printf("  import \"stdlib/os\"      args  env  cwd  exit_code\n");
+    printf("  import \"stdlib/fmt\"     format  printf\n");
+    printf("  import \"stdlib/test\"    suite  expect  expect_eq  expect_err  done\n");
     printf("  import \"stdlib/file\"    read_or_default  write_lines  count_lines\n");
     printf("\n");
     printf(NQ_COLOR_BOLD "Syntax quick-ref:" NQ_COLOR_RESET "\n");
-    printf("  let x = 42\n");
+    printf("  let x = 42            # declare variable\n");
+    printf("  x += 10               # compound assign: += -= *= /= ..=\n");
     printf("  if x > 10  ...  else  ...  end\n");
-    printf("  loop i < 10  ...  end\n");
+    printf("  loop i < 10  ...  end          # while-style\n");
+    printf("  for item in array  ...  end    # range-based\n");
+    printf("  break  continue               # loop control\n");
     printf("  function add(a, b)  return a + b  end\n");
     printf("  try  error(\"oops\")  catch err  print err  end\n");
-    printf("  not  and  or  !  !=  ..  (string concat)\n");
+    printf("  not  and  or  !  !=  ..  ..=  (concat/concat-assign)\n");
     printf("\n");
 }
 

@@ -382,3 +382,67 @@ Output:
 ```
 
 **Functions:** `suite(name)` · `expect(cond, label)` · `expect_eq(actual, expected, label)` · `expect_err(fn, label)` · `done()`
+
+---
+
+## stdlib/os
+
+OS-level utilities: file existence, line-oriented I/O, environment variables via `.env/`.
+
+```nolqu
+import "stdlib/os"
+
+# File operations
+touch("app.log")
+assert(path_exists("app.log"), "exists")
+assert(is_empty_file("app.log"), "empty")
+
+write_lines("names.txt", ["Alice", "Bob", "Carol"])
+let names = read_lines("names.txt")   # strips trailing blank line
+print len(names)   # 3
+
+append_line("names.txt", "Dave")
+print file_size("names.txt")   # bytes
+
+# Environment (via .env/ directory convention)
+let home = env_or("HOME", "/home/user")
+```
+
+**Functions:** `env_or` · `home_dir` · `path_exists` · `read_lines` · `write_lines` · `append_line` · `file_size` · `touch` · `is_empty_file`
+
+---
+
+## stdlib/fmt
+
+Printf-style string formatting.
+
+```nolqu
+import "stdlib/fmt"
+
+# {} positional placeholders
+print fmt("Hello, {}!", ["Alice"])          # Hello, Alice!
+print fmt("{} + {} = {}", [1, 2, 3])        # 1 + 2 = 3
+
+# Indexed placeholders
+print fmt("{0} and {0}", ["echo"])           # echo and echo
+
+# Type specifiers
+print fmt("Score: {:d}", [99.9])            # Score: 99
+print fmt("Pi: {:f}", [3.14159])            # Pi: 3.14
+
+# Escape braces
+print fmt("{{not a placeholder}}", [])      # {not a placeholder}
+
+# fmt_num — fixed decimal places
+print fmt_num(3.14159, 2)    # 3.14
+print fmt_num(42, 3)         # 42.000
+
+# fmt_pad — left-pad to width
+print fmt_pad("42", 6, " ")  #     42
+print fmt_pad("42", 6, "0")  # 000042
+
+# printf — fmt + print
+printf("{} items at ${:f} each", [3, 9.99])
+```
+
+**Functions:** `fmt(template, args)` · `printf(template, args)` · `fmt_num(n, decimals)` · `fmt_pad(s, width, char)` · `fmt_table(rows, col_widths)`

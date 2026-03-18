@@ -58,6 +58,12 @@ typedef enum {
     NODE_BREAK,         /* break    — exit the nearest loop           */
     NODE_CONTINUE,      /* continue — jump to next loop iteration     */
 
+    /* Compound assignment: name += expr  name -= expr  etc. */
+    NODE_COMPOUND_ASSIGN,
+
+    /* for item in array — range-based loop */
+    NODE_FOR,
+
     NODE_COUNT          /* sentinel                                   */
 } NodeType;
 
@@ -90,6 +96,12 @@ struct ASTNode {
 
         /* NODE_ASSIGN: name = value */
         struct { char* name; ASTNode* value; } assign;
+
+        /* NODE_COMPOUND_ASSIGN: name op= value  (op = TK_PLUS, TK_MINUS, etc.) */
+        struct { char* name; TokenType op; ASTNode* value; } compound_assign;
+
+        /* NODE_FOR: for item in iterable body end */
+        struct { char* item; ASTNode* iterable; ASTNode* body; } for_loop;
 
         /* NODE_PRINT: print expr */
         struct { ASTNode* expr; } print;

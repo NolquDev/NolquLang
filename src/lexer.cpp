@@ -22,6 +22,8 @@ static Keyword keywords[] = {
     {"not",      3, TK_NOT},
     {"break",    5, TK_BREAK},
     {"continue", 8, TK_CONTINUE},
+    {"for",      3, TK_FOR},
+    {"in",       2, TK_IN},
     {NULL,       0, TK_IDENT},
 };
 
@@ -128,10 +130,10 @@ Token nextToken(Lexer* lex) {
 
     switch (c) {
         case '\n': lex->line++; return makeToken(lex, TK_NEWLINE);
-        case '+':  return makeToken(lex, TK_PLUS);
-        case '-':  return makeToken(lex, TK_MINUS);
-        case '*':  return makeToken(lex, TK_STAR);
-        case '/':  return makeToken(lex, TK_SLASH);
+        case '+':  return makeToken(lex, matchChar(lex, '=') ? TK_PLUS_EQ  : TK_PLUS);
+        case '-':  return makeToken(lex, matchChar(lex, '=') ? TK_MINUS_EQ : TK_MINUS);
+        case '*':  return makeToken(lex, matchChar(lex, '=') ? TK_STAR_EQ  : TK_STAR);
+        case '/':  return makeToken(lex, matchChar(lex, '=') ? TK_SLASH_EQ : TK_SLASH);
         case '%':  return makeToken(lex, TK_PERCENT);
         case '(':  return makeToken(lex, TK_LPAREN);
         case ')':  return makeToken(lex, TK_RPAREN);
@@ -143,9 +145,12 @@ Token nextToken(Lexer* lex) {
         case '>':  return makeToken(lex, matchChar(lex, '=') ? TK_GTEQ  : TK_GT);
         case '!':
             if (matchChar(lex, '=')) return makeToken(lex, TK_BANGEQ);
-            return makeToken(lex, TK_BANG);  // standalone ! = logical not
+            return makeToken(lex, TK_BANG);
         case '.':
-            if (matchChar(lex, '.')) return makeToken(lex, TK_DOTDOT);
+            if (matchChar(lex, '.')) {
+                if (matchChar(lex, '=')) return makeToken(lex, TK_DOTDOT_EQ);
+                return makeToken(lex, TK_DOTDOT);
+            }
             return errorToken(lex, "Invalid character '.'. Did you mean '..' for string concatenation?");
         case '"':
             return scanString(lex);
@@ -182,26 +187,33 @@ const char* tokenTypeName(TokenType t) {
         case TK_NOT:      return "not";
         case TK_BREAK:    return "break";
         case TK_CONTINUE: return "continue";
-        case TK_PLUS:     return "+";
-        case TK_MINUS:    return "-";
-        case TK_STAR:     return "*";
-        case TK_SLASH:    return "/";
-        case TK_PERCENT:  return "%";
-        case TK_EQ:       return "=";
-        case TK_EQEQ:     return "==";
-        case TK_BANGEQ:   return "!=";
-        case TK_BANG:     return "!";
-        case TK_LT:       return "<";
-        case TK_GT:       return ">";
-        case TK_LTEQ:     return "<=";
-        case TK_GTEQ:     return ">=";
-        case TK_DOTDOT:   return "..";
-        case TK_LPAREN:   return "(";
-        case TK_RPAREN:   return ")";
-        case TK_COMMA:    return ",";
-        case TK_NEWLINE:  return "NEWLINE";
-        case TK_EOF:      return "EOF";
-        case TK_ERROR:    return "ERROR";
+        case TK_FOR:      return "for";
+        case TK_IN:       return "in";
+        case TK_PLUS:      return "+";
+        case TK_MINUS:     return "-";
+        case TK_STAR:      return "*";
+        case TK_SLASH:     return "/";
+        case TK_PERCENT:   return "%";
+        case TK_PLUS_EQ:   return "+=";
+        case TK_MINUS_EQ:  return "-=";
+        case TK_STAR_EQ:   return "*=";
+        case TK_SLASH_EQ:  return "/=";
+        case TK_DOTDOT_EQ: return "..=";
+        case TK_EQ:        return "=";
+        case TK_EQEQ:      return "==";
+        case TK_BANGEQ:    return "!=";
+        case TK_BANG:      return "!";
+        case TK_LT:        return "<";
+        case TK_GT:        return ">";
+        case TK_LTEQ:      return "<=";
+        case TK_GTEQ:      return ">=";
+        case TK_DOTDOT:    return "..";
+        case TK_LPAREN:    return "(";
+        case TK_RPAREN:    return ")";
+        case TK_COMMA:     return ",";
+        case TK_NEWLINE:   return "NEWLINE";
+        case TK_EOF:       return "EOF";
+        case TK_ERROR:     return "ERROR";
         default:          return "???";
     }
 }

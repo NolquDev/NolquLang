@@ -6,24 +6,35 @@
 #include <string.h>
 #include <stdio.h>
 #include <vector>
+#include <unordered_set>
+#include <string>
 
-static CompilerCtx* current         = NULL;
+static CompilerCtx* current           = NULL;
 static bool         had_compile_error = false;
-static const char*  src_path        = NULL;
+static const char*  src_path          = NULL;
 
 /*
  * Loop context — tracks information needed to compile break and continue.
- *
- * loop_start:    bytecode offset of the loop condition (for continue).
- * break_patches: list of OP_JUMP offsets emitted by break statements,
- *                patched to jump past the loop once compilation finishes.
  */
 struct LoopCtx {
     int               loop_start;
+    int               continue_target; /* -1 = use forward patches (for-in) */
+    int               scope_depth;     /* scope depth at loop entry */
+    int               local_count;     /* locals at body entry (continue cleanup) */
+    int               outer_local_count; /* locals before loop scope (break cleanup) */
     std::vector<int>  break_patches;
+    std::vector<int>  continue_patches;
 };
 
-static std::vector<LoopCtx> loop_stack;
+static std::vector<LoopCtx>        loop_stack;
+
+/*
+ * Import deduplication — tracks resolved module paths that have already
+ * been compiled in this compilation session.  Prevents re-executing
+ * modules loaded more than once (e.g. two stdlib users both importing
+ * "stdlib/math").
+ */
+static std::unordered_set<std::string> imported_modules;
 
 static void compileError(int line, const char* fmt, ...) {
     had_compile_error = true;
@@ -57,18 +68,25 @@ static void emitLoop(int loop_start, int line) {
     emit(offset & 0xFF,        line);
 }
 
+/* emit a 16-bit constant index (hi byte, lo byte) */
+static void emitUint16(uint16_t val, int line) {
+    emit((uint8_t)((val >> 8) & 0xFF), line);
+    emit((uint8_t)(val & 0xFF),         line);
+}
+
 static int emitConst(Value val, int line) {
     int idx = addConstant(currentChunk(), val);
-    if (idx > 255) { compileError(line, "Too many constants in one function."); return 0; }
-    emit2(OP_CONST, (uint8_t)idx, line);
+    if (idx > 65535) { compileError(line, "Too many constants in one function (max 65535)."); return 0; }
+    emit(OP_CONST, line);
+    emitUint16((uint16_t)idx, line);
     return idx;
 }
 
-static uint8_t identConst(const char* name, int line) {
+static uint16_t identConst(const char* name, int line) {
     ObjString* s = copyString(name, (int)strlen(name));
     int idx = addConstant(currentChunk(), OBJ_VAL(s));
-    if (idx > 255) { compileError(line, "Too many global variable names."); return 0; }
-    return (uint8_t)idx;
+    if (idx > 65535) { compileError(line, "Too many global variable names (max 65535)."); return 0; }
+    return (uint16_t)idx;
 }
 
 static int resolveLocal(CompilerCtx* ctx, const char* name) {
@@ -157,7 +175,7 @@ static void compileExpr(ASTNode* node) {
             const char* name = node->data.ident.name;
             int slot = resolveLocal(current, name);
             if (slot >= 0) emit2(OP_GET_LOCAL,  (uint8_t)slot,          line);
-            else           emit2(OP_GET_GLOBAL, identConst(name, line), line);
+            else           { emit(OP_GET_GLOBAL, line); emitUint16(identConst(name, line), line); }
             break;
         }
         case NODE_UNARY:
@@ -247,7 +265,7 @@ static void compileNode(ASTNode* node) {
                 addLocal(name, line);
                 current->locals[current->local_count - 1].initialized = true;
             } else {
-                emit2(OP_DEFINE_GLOBAL, identConst(name, line), line);
+                { emit(OP_DEFINE_GLOBAL, line); emitUint16(identConst(name, line), line); }
             }
             break;
         }
@@ -256,7 +274,35 @@ static void compileNode(ASTNode* node) {
             compileExpr(node->data.assign.value);
             int slot = resolveLocal(current, name);
             if (slot >= 0) emit2(OP_SET_LOCAL,  (uint8_t)slot,          line);
-            else           emit2(OP_SET_GLOBAL, identConst(name, line), line);
+            else           { emit(OP_SET_GLOBAL, line); emitUint16(identConst(name, line), line); }
+            emit(OP_POP, line);
+            break;
+        }
+        case NODE_COMPOUND_ASSIGN: {
+            /*
+             * name op= rhs  is sugar for  name = name op rhs
+             * Compile: GET name, compile rhs, emit op, SET name, POP
+             */
+            const char* name = node->data.compound_assign.name;
+            TokenType   op   = node->data.compound_assign.op;
+            int slot = resolveLocal(current, name);
+            /* GET current value */
+            if (slot >= 0) emit2(OP_GET_LOCAL, (uint8_t)slot, line);
+            else { emit(OP_GET_GLOBAL, line); emitUint16(identConst(name, line), line); }
+            /* RHS */
+            compileExpr(node->data.compound_assign.value);
+            /* Binary op */
+            switch (op) {
+                case TK_PLUS:   emit(OP_ADD,    line); break;
+                case TK_MINUS:  emit(OP_SUB,    line); break;
+                case TK_STAR:   emit(OP_MUL,    line); break;
+                case TK_SLASH:  emit(OP_DIV,    line); break;
+                case TK_DOTDOT: emit(OP_CONCAT, line); break;
+                default: compileError(line, "Unsupported compound assignment operator."); break;
+            }
+            /* SET result back */
+            if (slot >= 0) emit2(OP_SET_LOCAL, (uint8_t)slot, line);
+            else { emit(OP_SET_GLOBAL, line); emitUint16(identConst(name, line), line); }
             emit(OP_POP, line);
             break;
         }
@@ -283,9 +329,12 @@ static void compileNode(ASTNode* node) {
             break;
         }
         case NODE_LOOP: {
-            /* Push a new loop context so break/continue know where to go. */
             LoopCtx lctx;
-            lctx.loop_start = currentChunk()->count;
+            lctx.loop_start        = currentChunk()->count;
+            lctx.continue_target   = lctx.loop_start;
+            lctx.scope_depth       = current->scope_depth;
+            lctx.local_count       = current->local_count;
+            lctx.outer_local_count = current->local_count;
             loop_stack.push_back(lctx);
 
             compileExpr(node->data.loop.cond);
@@ -295,15 +344,10 @@ static void compileNode(ASTNode* node) {
             compileBlock(node->data.loop.body);
             endScope(line);
             emitLoop(loop_stack.back().loop_start, line);
-
-            /* Patch the condition exit jump to land here. */
             patchJumpAt(exit_jump);
             emit(OP_POP, line);
-
-            /* Patch all break jumps to land here (after the loop). */
             for (int patch : loop_stack.back().break_patches)
                 patchJumpAt(patch);
-
             loop_stack.pop_back();
             break;
         }
@@ -312,13 +356,11 @@ static void compileNode(ASTNode* node) {
                 compileError(line, "'break' used outside of a loop.");
                 break;
             }
-            /* Pop any locals in scope before jumping out. */
-            int depth = current->scope_depth;
-            for (int i = current->local_count - 1; i >= 0; i--) {
-                if (current->locals[i].depth < depth) break;
+            /* Pop ALL locals back to before the loop scope (including hidden
+             * __for_arr__ / __for_idx__ locals in for-in loops). */
+            int target = loop_stack.back().outer_local_count;
+            for (int i = current->local_count - 1; i >= target; i--)
                 emit(OP_POP, line);
-            }
-            /* Emit a forward jump — will be patched when the loop ends. */
             int patch = emitJump(OP_JUMP, line);
             loop_stack.back().break_patches.push_back(patch);
             break;
@@ -328,14 +370,116 @@ static void compileNode(ASTNode* node) {
                 compileError(line, "'continue' used outside of a loop.");
                 break;
             }
-            /* Pop any locals in scope before jumping back. */
-            int depth = current->scope_depth;
-            for (int i = current->local_count - 1; i >= 0; i--) {
-                if (current->locals[i].depth < depth) break;
+            /* Pop all locals down to the loop body entry level so the
+             * stack is clean before jumping to the increment / condition. */
+            int target_locals = loop_stack.back().local_count;
+            for (int i = current->local_count - 1; i >= target_locals; i--)
                 emit(OP_POP, line);
+            if (loop_stack.back().continue_target == -1) {
+                /* for-in: forward jump to increment (patched after body) */
+                int patch = emitJump(OP_JUMP, line);
+                loop_stack.back().continue_patches.push_back(patch);
+            } else {
+                /* regular loop: backward jump to condition */
+                emitLoop(loop_stack.back().continue_target, line);
             }
-            /* Jump back to the loop condition. */
+            break;
+        }
+        case NODE_FOR: {
+            /*
+             * Desugars to:
+             *   let __i = 0
+             *   let __arr = <iterable>   ← evaluated once
+             *   loop __i < len(__arr)
+             *     let <item> = __arr[__i]
+             *     <body>
+             *     __i = __i + 1
+             *   end
+             *
+             * All variables are locals — no globals polluted.
+             * break/continue work naturally via loop_stack.
+             */
+            int outer_locals = current->local_count;  /* before ANY for scope */
+            beginScope();
+
+            /* Evaluate the iterable once and store in a hidden local. */
+            compileExpr(node->data.for_loop.iterable);
+            /* Hidden local __arr (name "" so no warnings) */
+            int arr_slot = current->local_count;
+            addLocal("__for_arr__", line);
+            current->locals[current->local_count - 1].initialized = true;
+            current->locals[current->local_count - 1].used = true;
+
+            /* Hidden index local __i = 0 */
+            emitConst(NUMBER_VAL(0), line);
+            int idx_slot = current->local_count;
+            addLocal("__for_idx__", line);
+            current->locals[current->local_count - 1].initialized = true;
+            current->locals[current->local_count - 1].used = true;
+
+            /* Loop start: condition  __i < len(__arr)
+             *
+             * Stack for OP_CALL: [callee, arg1, ...]
+             * We need: __i on stack, then len(__arr) result.
+             * Emit: GET_LOCAL idx, GET_GLOBAL "len", GET_LOCAL arr, CALL 1, LT
+             */
+            LoopCtx lctx;
+            lctx.loop_start        = currentChunk()->count;
+            lctx.continue_target   = -1;
+            lctx.scope_depth       = 0;
+            lctx.local_count       = 0;
+            lctx.outer_local_count = outer_locals;  /* break pops all the way here */
+            loop_stack.push_back(lctx);
+
+            emit2(OP_GET_LOCAL, (uint8_t)idx_slot, line);
+            { emit(OP_GET_GLOBAL, line); emitUint16(identConst("len", line), line); }
+            emit2(OP_GET_LOCAL, (uint8_t)arr_slot, line);
+            emit2(OP_CALL, 1, line);
+            emit(OP_LT, line);
+
+            int exit_jump = emitJump(OP_JUMP_IF_FALSE, line);
+            emit(OP_POP, line);
+
+            beginScope();
+            emit2(OP_GET_LOCAL, (uint8_t)arr_slot, line);
+            emit2(OP_GET_LOCAL, (uint8_t)idx_slot, line);
+            emit(OP_GET_INDEX, line);
+            addLocal(node->data.for_loop.item, line);
+            current->locals[current->local_count - 1].initialized = true;
+            current->locals[current->local_count - 1].used = true;
+
+            /* Record scope/locals AFTER item is declared.
+             * continue must pop back to here so item is cleaned up. */
+            loop_stack.back().scope_depth = current->scope_depth;
+            loop_stack.back().local_count = current->local_count;
+
+            compileBlock(node->data.for_loop.body);
+
+            /* Patch all continue jumps to land here (before increment). */
+            for (int patch : loop_stack.back().continue_patches)
+                patchJumpAt(patch);
+
+            /* Increment __i */
+            emit2(OP_GET_LOCAL, (uint8_t)idx_slot, line);
+            emitConst(NUMBER_VAL(1), line);
+            emit(OP_ADD, line);
+            emit2(OP_SET_LOCAL, (uint8_t)idx_slot, line);
+            emit(OP_POP, line);
+
+            endScope(line);   /* pops item local */
             emitLoop(loop_stack.back().loop_start, line);
+
+            patchJumpAt(exit_jump);
+            emit(OP_POP, line);   /* pop condition false (normal exit) */
+
+            endScope(line);   /* pops __arr and __idx (normal exit) */
+
+            /* Break patches land HERE — after endScope has emitted its POPs in
+             * the normal path. The break handler already popped everything
+             * manually via outer_local_count, so it jumps directly to here. */
+            for (int patch : loop_stack.back().break_patches)
+                patchJumpAt(patch);
+            loop_stack.pop_back();
             break;
         }
         case NODE_FUNCTION: {
@@ -356,8 +500,8 @@ static void compileNode(ASTNode* node) {
             compileBlock(node->data.function.body);
             ObjFunction* compiled_fn = endCompilerCtx();
             int fn_idx = addConstant(currentChunk(), OBJ_VAL(compiled_fn));
-            emit2(OP_CONST, (uint8_t)fn_idx, line);
-            emit2(OP_DEFINE_GLOBAL, identConst(node->data.function.name, line), line);
+            emit(OP_CONST, line); emitUint16((uint16_t)fn_idx, line);
+            { emit(OP_DEFINE_GLOBAL, line); emitUint16(identConst(node->data.function.name, line), line); }
             break;
         }
         case NODE_RETURN:
@@ -438,6 +582,12 @@ static void compileNode(ASTNode* node) {
                 break;
             }
 
+            /* Deduplication: skip if this exact resolved path was already imported. */
+            if (imported_modules.count(std::string(resolved))) {
+                break;   /* already compiled — silently skip */
+            }
+            imported_modules.insert(std::string(resolved));
+
             // Read file
             FILE* f = fopen(resolved, "rb");
             if (!f) { compileError(line, "Cannot open module '%s'.", resolved); break; }
@@ -473,7 +623,7 @@ static void compileNode(ASTNode* node) {
             ObjFunction* compiled_mod = endCompilerCtx();
 
             int fn_idx = addConstant(currentChunk(), OBJ_VAL(compiled_mod));
-            emit2(OP_CONST, (uint8_t)fn_idx, line);
+            emit(OP_CONST, line); emitUint16((uint16_t)fn_idx, line);
             emit2(OP_CALL, 0, line);
             emit(OP_POP, line);
             break;
@@ -500,6 +650,9 @@ static void compileBlock(ASTNode* block) {
 CompileResult compile(ASTNode* ast, const char* source_path) {
     had_compile_error = false;
     src_path          = source_path;
+    /* Reset per-compilation state so REPL calls start clean. */
+    loop_stack.clear();
+    imported_modules.clear();
     ObjFunction* script = newFunction();
     script->name = NULL;
     CompilerCtx ctx;

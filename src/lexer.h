@@ -46,6 +46,8 @@ typedef enum {
     TK_NOT,         /* not      */
     TK_BREAK,       /* break    */
     TK_CONTINUE,    /* continue */
+    TK_FOR,         /* for      */
+    TK_IN,          /* in       */
 
     /* Arithmetic operators */
     TK_PLUS,        /* +  */
@@ -56,6 +58,11 @@ typedef enum {
 
     /* Relational / equality */
     TK_EQ,          /* =   (assignment)       */
+    TK_PLUS_EQ,     /* +=  (add-assign)       */
+    TK_MINUS_EQ,    /* -=  (sub-assign)       */
+    TK_STAR_EQ,     /* *=  (mul-assign)       */
+    TK_SLASH_EQ,    /* /=  (div-assign)       */
+    TK_DOTDOT_EQ,   /* ..= (concat-assign)    */
     TK_EQEQ,        /* ==  (equality test)    */
     TK_BANGEQ,      /* !=                     */
     TK_BANG,        /* !   (prefix not)       */
