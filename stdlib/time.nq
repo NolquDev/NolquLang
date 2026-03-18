@@ -1,0 +1,132 @@
+# stdlib/time.nq — Time and duration utilities
+#
+# Import:
+#   import "stdlib/time"
+#
+# Note on clock():
+#   Nolqu's built-in clock() measures CPU seconds consumed by the process,
+#   not wall-clock time. For short scripts the difference is negligible.
+#   For wall-clock timestamps a native extension is required.
+#
+# Quick reference:
+#   now()                    seconds since program start
+#   millis()                 milliseconds since program start
+#   elapsed(start)           seconds since a recorded start time
+#   sleep(seconds)           busy-wait pause (consumes CPU)
+#   format_duration(secs)    "1h 2m 3s" style string
+#   benchmark(label, fn)     time a function call and print the result
+
+# ─── now ──────────────────────────────────────────────────────────────
+
+# now() — seconds elapsed since program start (CPU time, float)
+#
+# Example:
+#   let t = now()
+#   print "started at " .. t .. "s"
+function now()
+  return clock()
+end
+
+# ─── millis ───────────────────────────────────────────────────────────
+
+# millis() — milliseconds elapsed since program start (integer)
+#
+# Useful for timing short operations with more precision.
+#
+# Example:
+#   let t0 = millis()
+#   # ... do work ...
+#   print "took " .. (millis() - t0) .. "ms"
+function millis()
+  return floor(clock() * 1000)
+end
+
+# ─── elapsed ──────────────────────────────────────────────────────────
+
+# elapsed(start) — seconds since the given start time
+#
+# Pattern:
+#   let t = now()
+#   do_something()
+#   print "done in " .. elapsed(t) .. "s"
+function elapsed(start)
+  return clock() - start
+end
+
+# ─── sleep ────────────────────────────────────────────────────────────
+
+# sleep(seconds) — pause for approximately the given duration
+#
+# Uses a busy-wait loop — this keeps the CPU occupied.
+# Suitable for short delays in scripts. For long waits,
+# prefer a native sleep extension.
+#
+# Example:
+#   sleep(0.5)    # pause ~500ms
+#   sleep(2)      # pause ~2 seconds
+function sleep(seconds)
+  let target = clock() + seconds
+  loop clock() < target
+  end
+end
+
+# ─── format_duration ──────────────────────────────────────────────────
+
+# format_duration(total_seconds) — human-readable duration string
+#
+# Formats a duration in seconds as hours, minutes, and seconds.
+# Omits leading zero components.
+#
+# Examples:
+#   format_duration(0)      → "0s"
+#   format_duration(45)     → "45s"
+#   format_duration(90)     → "1m 30s"
+#   format_duration(3725)   → "1h 2m 5s"
+#   format_duration(7200)   → "2h 0m 0s"
+function format_duration(total_seconds)
+  let s = floor(abs(total_seconds))
+  if s == 0
+    return "0s"
+  end
+
+  let h   = floor(s / 3600)
+  let m   = floor((s - h * 3600) / 60)
+  let sec = s - h * 3600 - m * 60
+
+  if h > 0
+    return str(h) .. "h " .. str(m) .. "m " .. str(sec) .. "s"
+  end
+  if m > 0
+    return str(m) .. "m " .. str(sec) .. "s"
+  end
+  return str(sec) .. "s"
+end
+
+# ─── benchmark ────────────────────────────────────────────────────────
+
+# benchmark(label, fn) — call fn(), measure how long it takes, print result
+#
+# fn is called with no arguments. The elapsed time is printed and returned.
+#
+# Example:
+#   function fib(n)
+#     if n <= 1
+#       return n
+#     end
+#     return fib(n-1) + fib(n-2)
+#   end
+#
+#   function run_fib()
+#     fib(30)
+#   end
+#
+#   benchmark("fib(30)", run_fib)
+#   # → fib(30): 0.142s
+function benchmark(label, fn)
+  let start = clock()
+  fn()
+  let took = clock() - start
+  let result = label .. ": " .. took .. "s"
+  print result
+  return took
+end

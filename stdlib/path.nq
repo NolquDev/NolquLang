@@ -1,0 +1,196 @@
+# stdlib/path.nq — File path manipulation utilities
+#
+# Import:
+#   import "stdlib/path"
+#
+# All functions use forward slash (/) as the separator.
+# Works correctly on Linux, macOS, and Android (Termux).
+# On Windows, paths using backslashes (\) are not handled automatically.
+#
+# Quick reference:
+#   path_join(a, b)    join two segments — handles trailing/leading slashes
+#   basename(p)        filename: last component after the final /
+#   dirname(p)         directory: everything before the final /
+#   ext(p)             extension: ".md", ".nq", "" if none
+#   strip_ext(p)       remove the extension from a path
+#   is_absolute(p)     true if path begins with /
+#   normalize(p)       collapse double slashes, remove trailing slash
+#
+# Note: These functions work purely on strings — they do not touch
+# the filesystem. Use file_exists() to check if a path actually exists.
+
+# ─── path_join ────────────────────────────────────────────────────────
+
+# path_join(a, b) — join two path segments with a single /
+#
+# Handles trailing slash on a and leading slash on b cleanly.
+# If b is an absolute path it is appended directly (preserving the /).
+#
+# Examples:
+#   path_join("usr/local", "bin")      # "usr/local/bin"
+#   path_join("usr/local/", "bin")     # "usr/local/bin"
+#   path_join("",           "bin")     # "bin"
+#   path_join("usr",        "/bin")    # "usr/bin"
+function path_join(a, b)
+  if len(a) == 0
+    return b
+  end
+  if len(b) == 0
+    return a
+  end
+  if a[len(a) - 1] == "/"
+    a = slice(a, 0, len(a) - 1)
+  end
+  if b[0] == "/"
+    b = slice(b, 1)
+  end
+  return a .. "/" .. b
+end
+
+# ─── basename ─────────────────────────────────────────────────────────
+
+# basename(p) — return the last path component (filename or directory name)
+#
+# Examples:
+#   basename("docs/readme.md")    # "readme.md"
+#   basename("/usr/local/bin")    # "bin"
+#   basename("file.txt")          # "file.txt"
+#   basename("/")                 # ""
+function basename(p)
+  let pos = -1
+  let i = len(p) - 1
+  let found = false
+  loop i >= 0 and not found
+    if p[i] == "/"
+      pos = i
+      found = true
+    else
+      i = i - 1
+    end
+  end
+  if pos == -1
+    return p
+  end
+  return slice(p, pos + 1)
+end
+
+# ─── dirname ──────────────────────────────────────────────────────────
+
+# dirname(p) — return the directory portion of a path
+#
+# Returns "." if there is no directory component.
+# Returns "/" if the file is directly under the root.
+#
+# Examples:
+#   dirname("docs/readme.md")    # "docs"
+#   dirname("/usr/local/bin")    # "/usr/local"
+#   dirname("file.txt")          # "."
+#   dirname("/file.txt")         # "/"
+function dirname(p)
+  let pos = -1
+  let i = len(p) - 1
+  let found = false
+  loop i >= 0 and not found
+    if p[i] == "/"
+      pos = i
+      found = true
+    else
+      i = i - 1
+    end
+  end
+  if pos == -1
+    return "."
+  end
+  if pos == 0
+    return "/"
+  end
+  return slice(p, 0, pos)
+end
+
+# ─── ext ──────────────────────────────────────────────────────────────
+
+# ext(p) — return the file extension including the dot
+#
+# Returns "" if there is no extension.
+# A leading dot (hidden files like ".bashrc") is not treated as an extension.
+# Only the last extension is returned for names like "archive.tar.gz".
+#
+# Examples:
+#   ext("readme.md")        # ".md"
+#   ext("archive.tar.gz")   # ".gz"
+#   ext("makefile")         # ""
+#   ext(".bashrc")          # ""
+#   ext("src/main.nq")      # ".nq"
+function ext(p)
+  let base = basename(p)
+  let pos = -1
+  let i = len(base) - 1
+  let found = false
+  loop i > 0 and not found
+    if base[i] == "."
+      pos = i
+      found = true
+    else
+      i = i - 1
+    end
+  end
+  if pos == -1
+    return ""
+  end
+  return slice(base, pos)
+end
+
+# ─── strip_ext ────────────────────────────────────────────────────────
+
+# strip_ext(p) — remove the extension from a path
+#
+# If there is no extension the path is returned unchanged.
+#
+# Examples:
+#   strip_ext("readme.md")      # "readme"
+#   strip_ext("src/main.nq")    # "src/main"
+#   strip_ext("archive.tar.gz") # "archive.tar"
+#   strip_ext("makefile")       # "makefile"
+function strip_ext(p)
+  let e = ext(p)
+  if len(e) == 0
+    return p
+  end
+  return slice(p, 0, len(p) - len(e))
+end
+
+# ─── is_absolute ──────────────────────────────────────────────────────
+
+# is_absolute(p) — true if the path starts with /
+#
+# Examples:
+#   is_absolute("/usr/local")    # true
+#   is_absolute("./docs")        # false
+#   is_absolute("docs/readme")   # false
+function is_absolute(p)
+  return len(p) > 0 and p[0] == "/"
+end
+
+# ─── normalize ────────────────────────────────────────────────────────
+
+# normalize(p) — collapse consecutive slashes and remove trailing slash
+#
+# Does not resolve "." or ".." components — this is purely textual.
+#
+# Examples:
+#   normalize("usr//local//bin")    # "usr/local/bin"
+#   normalize("docs/")              # "docs"
+#   normalize("/")                  # "/"
+#   normalize("a///b//c/")          # "a/b/c"
+function normalize(p)
+  let result = p
+  let has_double = index(result, "//") != -1
+  loop has_double
+    result = replace(result, "//", "/")
+    has_double = index(result, "//") != -1
+  end
+  if len(result) > 1 and result[len(result) - 1] == "/"
+    result = slice(result, 0, len(result) - 1)
+  end
+  return result
+end

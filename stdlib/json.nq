@@ -1,0 +1,526 @@
+# stdlib/json.nq — JSON encode and decode
+#
+# Import:
+#   import "stdlib/json"
+#
+# Since Nolqu has no hash map type, JSON objects are represented as
+# flat key-value arrays:
+#
+#   JSON:   { "name": "Alice", "age": 30 }
+#   Nolqu:  ["name", "Alice", "age", 30]
+#
+# Use the object API to create and access these safely:
+#
+#   json_object()              create an empty object → []
+#   json_set(obj, key, val)    set a key
+#   json_get(obj, key)         get a value (nil if missing)
+#   json_has(obj, key)         true if key exists
+#   json_keys(obj)             array of all keys
+#   json_is_object(v)          true if v looks like a JSON object
+#
+# Encoding:
+#   json_stringify(v)          any Nolqu value → JSON string
+#
+# Decoding:
+#   json_parse(s)              JSON string → Nolqu value
+#
+# Type mapping:
+#   JSON null      ↔  nil
+#   JSON boolean   ↔  bool
+#   JSON number    ↔  number
+#   JSON string    ↔  string
+#   JSON array     ↔  array
+#   JSON object    ↔  flat array ["key", val, ...]
+#
+# ─── Object API ───────────────────────────────────────────────────────
+
+# json_object() — create an empty JSON object
+#
+# Example:
+#   let person = json_object()
+#   json_set(person, "name", "Alice")
+#   json_set(person, "age", 30)
+#   print json_stringify(person)   # {"name":"Alice","age":30}
+function json_object()
+  return []
+end
+
+# json_set(obj, key, val) — set a key in a JSON object
+#
+# If the key already exists its value is updated in-place.
+# If not, the key-value pair is appended.
+#
+# Example:
+#   let obj = json_object()
+#   json_set(obj, "x", 10)
+#   json_set(obj, "x", 99)   # update
+#   print json_get(obj, "x") # 99
+function json_set(obj, key, val)
+  let i = 0
+  loop i < len(obj) - 1
+    if obj[i] == key
+      obj[i + 1] = val
+      return obj
+    end
+    i = i + 2
+  end
+  push(obj, key)
+  push(obj, val)
+  return obj
+end
+
+# json_get(obj, key) — get a value from a JSON object
+#
+# Returns nil if the key is not found.
+#
+# Example:
+#   let obj = json_object()
+#   json_set(obj, "color", "blue")
+#   print json_get(obj, "color")    # blue
+#   print json_get(obj, "missing")  # nil
+function json_get(obj, key)
+  let i = 0
+  loop i < len(obj) - 1
+    if obj[i] == key
+      return obj[i + 1]
+    end
+    i = i + 2
+  end
+  return nil
+end
+
+# json_has(obj, key) — true if the object contains the given key
+#
+# Example:
+#   json_has(person, "name")    # true
+#   json_has(person, "email")   # false
+function json_has(obj, key)
+  let i = 0
+  loop i < len(obj) - 1
+    if obj[i] == key
+      return true
+    end
+    i = i + 2
+  end
+  return false
+end
+
+# json_keys(obj) — return an array of all keys in the object
+#
+# Example:
+#   let obj = json_object()
+#   json_set(obj, "a", 1)
+#   json_set(obj, "b", 2)
+#   print json_keys(obj)    # ["a", "b"]
+function json_keys(obj)
+  let result = []
+  let i = 0
+  loop i < len(obj) - 1
+    push(result, obj[i])
+    i = i + 2
+  end
+  return result
+end
+
+# json_is_object(v) — true if v is a flat key-value array (JSON object)
+#
+# Detection heuristic: even-length array where every even-index element
+# is a string. An empty array [] returns false (treated as empty JSON array).
+#
+# Example:
+#   json_is_object(["a", 1, "b", 2])   # true
+#   json_is_object([1, 2, 3])           # false
+#   json_is_object([])                  # false
+function json_is_object(v)
+  if not is_array(v)
+    return false
+  end
+  let n = len(v)
+  if n == 0 or n % 2 != 0
+    return false
+  end
+  let i = 0
+  let ok = true
+  loop i < n and ok
+    if not is_str(v[i])
+      ok = false
+    end
+    i = i + 2
+  end
+  return ok
+end
+
+# ─── Stringify ─────────────────────────────────────────────────────────
+
+# _json_escape(s) — wrap a Nolqu string in JSON quotes with escaping
+function _json_escape(s)
+  let result = "\""
+  let i = 0
+  loop i < len(s)
+    let ch = s[i]
+    if ch == "\""
+      result = result .. "\\\""
+    else
+      if ch == "\\"
+        result = result .. "\\\\"
+      else
+        if ch == "\n"
+          result = result .. "\\n"
+        else
+          if ch == "\t"
+            result = result .. "\\t"
+          else
+            if ch == "\r"
+              result = result .. "\\r"
+            else
+              result = result .. ch
+            end
+          end
+        end
+      end
+    end
+    i = i + 1
+  end
+  return result .. "\""
+end
+
+# _json_arr_str(arr) — stringify a Nolqu array as a JSON array
+function _json_arr_str(arr)
+  if len(arr) == 0
+    return "[]"
+  end
+  let result = "["
+  let i = 0
+  loop i < len(arr)
+    if i > 0
+      result = result .. ","
+    end
+    result = result .. json_stringify(arr[i])
+    i = i + 1
+  end
+  return result .. "]"
+end
+
+# _json_obj_str(obj) — stringify a flat key-value array as a JSON object
+function _json_obj_str(obj)
+  if len(obj) == 0
+    return "{}"
+  end
+  let result = "{"
+  let i = 0
+  let first = true
+  loop i < len(obj) - 1
+    if not first
+      result = result .. ","
+    end
+    result = result .. _json_escape(obj[i]) .. ":" .. json_stringify(obj[i + 1])
+    first = false
+    i = i + 2
+  end
+  return result .. "}"
+end
+
+# json_stringify(v) — encode any Nolqu value as a JSON string
+#
+# Type mapping:
+#   nil      → "null"
+#   bool     → "true" / "false"
+#   number   → "42" / "3.14"
+#   string   → "\"hello\""
+#   array    → "[1,2,3]"
+#   object   → "{\"key\":\"val\"}"
+#
+# Example:
+#   json_stringify(nil)              # "null"
+#   json_stringify(true)             # "true"
+#   json_stringify(42)               # "42"
+#   json_stringify("hello")          # "\"hello\""
+#   json_stringify([1, "two", nil])  # "[1,\"two\",null]"
+#
+#   let p = json_object()
+#   json_set(p, "name", "Alice")
+#   json_set(p, "scores", [10, 20])
+#   json_stringify(p)   # {"name":"Alice","scores":[10,20]}
+function json_stringify(v)
+  if is_nil(v)
+    return "null"
+  end
+  if is_bool(v)
+    if v
+      return "true"
+    end
+    return "false"
+  end
+  if is_num(v)
+    let n = v
+    if n == floor(n) and n > -999999999999999 and n < 999999999999999
+      return str(floor(n))
+    end
+    return str(n)
+  end
+  if is_str(v)
+    return _json_escape(v)
+  end
+  if is_array(v)
+    if json_is_object(v)
+      return _json_obj_str(v)
+    end
+    return _json_arr_str(v)
+  end
+  return "null"
+end
+
+# ─── Parse ────────────────────────────────────────────────────────────
+#
+# The parser uses global variables to hold state between recursive calls
+# (Nolqu does not support pass-by-reference or closures).
+# _jp_src and _jp_pos are reset by json_parse() before each use.
+# This is NOT thread-safe.
+
+let _jp_src = ""
+let _jp_pos = 0
+let _jp_err = ""
+
+# _jp_peek() — return the character at the current position, or "" at EOF
+function _jp_peek()
+  if _jp_pos >= len(_jp_src)
+    return ""
+  end
+  return _jp_src[_jp_pos]
+end
+
+# _jp_advance() — consume and return the current character
+function _jp_advance()
+  let ch = _jp_peek()
+  _jp_pos = _jp_pos + 1
+  return ch
+end
+
+# _jp_skip_ws() — skip whitespace characters
+function _jp_skip_ws()
+  let going = true
+  loop going and _jp_pos < len(_jp_src)
+    let ch = _jp_peek()
+    if ch == " " or ch == "\t" or ch == "\n" or ch == "\r"
+      _jp_pos = _jp_pos + 1
+    else
+      going = false
+    end
+  end
+end
+
+# _jp_is_digit(ch) — true if ch is a digit or numeric character
+function _jp_is_numchar(ch)
+  if ch == "0" or ch == "1" or ch == "2" or ch == "3" or ch == "4"
+    return true
+  end
+  if ch == "5" or ch == "6" or ch == "7" or ch == "8" or ch == "9"
+    return true
+  end
+  if ch == "." or ch == "e" or ch == "E"
+    return true
+  end
+  return false
+end
+
+# _jp_esc(ch) — map a JSON escape character to its actual character
+function _jp_esc(ch)
+  if ch == "n"
+    return "\n"
+  end
+  if ch == "t"
+    return "\t"
+  end
+  if ch == "r"
+    return "\r"
+  end
+  if ch == "\\" or ch == "\"" or ch == "/"
+    return ch
+  end
+  return "\\" .. ch
+end
+
+# _jp_parse_string() — parse a JSON string starting at current position
+function _jp_parse_string()
+  _jp_pos = _jp_pos + 1   # consume opening "
+  let result = ""
+  let done = false
+  loop not done and _jp_pos < len(_jp_src)
+    let ch = _jp_advance()
+    if ch == "\""
+      done = true
+    else
+      if ch == "\\"
+        result = result .. _jp_esc(_jp_advance())
+      else
+        result = result .. ch
+      end
+    end
+  end
+  return result
+end
+
+# _jp_parse_number() — parse a JSON number starting at current position
+function _jp_parse_number()
+  let s = ""
+  if _jp_peek() == "-"
+    s = s .. _jp_advance()
+  end
+  let going = _jp_pos < len(_jp_src) and _jp_is_numchar(_jp_peek())
+  loop going
+    s = s .. _jp_advance()
+    going = _jp_pos < len(_jp_src) and _jp_is_numchar(_jp_peek())
+  end
+  # Handle exponent sign (e+10 or e-10)
+  if _jp_peek() == "+" or _jp_peek() == "-"
+    s = s .. _jp_advance()
+    let going2 = _jp_pos < len(_jp_src) and _jp_is_numchar(_jp_peek())
+    loop going2
+      s = s .. _jp_advance()
+      going2 = _jp_pos < len(_jp_src) and _jp_is_numchar(_jp_peek())
+    end
+  end
+  let n = num(s)
+  if is_nil(n)
+    _jp_err = "Invalid number: " .. s
+    return 0
+  end
+  return n
+end
+
+# _jp_parse_array() — parse a JSON array
+function _jp_parse_array()
+  _jp_pos = _jp_pos + 1   # consume [
+  _jp_skip_ws()
+  let arr = []
+  if _jp_peek() == "]"
+    _jp_pos = _jp_pos + 1
+    return arr
+  end
+  let going = true
+  loop going
+    push(arr, _jp_parse_value())
+    _jp_skip_ws()
+    let ch = _jp_peek()
+    if ch == "]"
+      _jp_pos = _jp_pos + 1
+      going = false
+    else
+      if ch == ","
+        _jp_pos = _jp_pos + 1
+        _jp_skip_ws()
+      else
+        _jp_err = "Expected , or ] in array"
+        going = false
+      end
+    end
+  end
+  return arr
+end
+
+# _jp_parse_object() — parse a JSON object into a flat key-value array
+function _jp_parse_object()
+  _jp_pos = _jp_pos + 1   # consume {
+  _jp_skip_ws()
+  let obj = json_object()
+  if _jp_peek() == "}"
+    _jp_pos = _jp_pos + 1
+    return obj
+  end
+  let going = true
+  loop going
+    _jp_skip_ws()
+    let key = _jp_parse_string()
+    _jp_skip_ws()
+    _jp_pos = _jp_pos + 1   # consume :
+    _jp_skip_ws()
+    let val = _jp_parse_value()
+    push(obj, key)
+    push(obj, val)
+    _jp_skip_ws()
+    let ch = _jp_peek()
+    if ch == "}"
+      _jp_pos = _jp_pos + 1
+      going = false
+    else
+      if ch == ","
+        _jp_pos = _jp_pos + 1
+      else
+        _jp_err = "Expected , or } in object"
+        going = false
+      end
+    end
+  end
+  return obj
+end
+
+# _jp_parse_value() — parse any JSON value at the current position
+function _jp_parse_value()
+  _jp_skip_ws()
+  let ch = _jp_peek()
+  if ch == "\""
+    return _jp_parse_string()
+  end
+  if ch == "["
+    return _jp_parse_array()
+  end
+  if ch == "{"
+    return _jp_parse_object()
+  end
+  if ch == "t"
+    _jp_pos = _jp_pos + 4   # consume "true"
+    return true
+  end
+  if ch == "f"
+    _jp_pos = _jp_pos + 5   # consume "false"
+    return false
+  end
+  if ch == "n"
+    _jp_pos = _jp_pos + 4   # consume "null"
+    return nil
+  end
+  return _jp_parse_number()
+end
+
+# json_parse(s) — decode a JSON string into a Nolqu value
+#
+# Returns the decoded value on success.
+# Returns nil and sets an internal error on failure.
+# Use json_parse_error() to check for errors.
+#
+# Type mapping:
+#   "null"            → nil
+#   "true"/"false"    → bool
+#   "42" / "3.14"     → number
+#   "\"hello\""       → string
+#   "[1,2,3]"         → array [1, 2, 3]
+#   "{\"k\":\"v\"}"   → object ["k", "v"]
+#
+# Example:
+#   let data = json_parse("{\"name\":\"Alice\",\"age\":30}")
+#   print json_get(data, "name")   # Alice
+#   print json_get(data, "age")    # 30
+#
+#   let nums = json_parse("[1, 2, 3]")
+#   print nums[0]   # 1
+#
+#   let n = json_parse("42")
+#   print n         # 42
+function json_parse(s)
+  _jp_src = s
+  _jp_pos = 0
+  _jp_err = ""
+  let result = _jp_parse_value()
+  return result
+end
+
+# json_parse_error() — return the last parse error message, or "" if none
+#
+# Example:
+#   json_parse("{bad json}")
+#   if json_parse_error() != ""
+#     print "Parse failed: " .. json_parse_error()
+#   end
+function json_parse_error()
+  return _jp_err
+end

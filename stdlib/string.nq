@@ -1,0 +1,260 @@
+# stdlib/string.nq — Extended string utilities
+#
+# Import:
+#   import "stdlib/string"
+#
+# The following are already built-in (no import needed):
+#   trim  upper  lower  replace  split  join
+#   slice  index  repeat  startswith  endswith  len
+#
+# This module adds what is missing:
+#
+#   is_empty(s)               true if nil, empty, or only whitespace
+#   lines(s)                  split string into lines
+#   words(s)                  split on whitespace, skip blanks
+#   count(s, sub)             count non-overlapping occurrences
+#   replace_all(s, old, new)  replace every occurrence (not just first)
+#   lstrip(s)                 remove leading whitespace
+#   rstrip(s)                 remove trailing whitespace
+#   pad_left(s, width)        left-pad with spaces
+#   pad_right(s, width)       right-pad with spaces
+#   center(s, width)          center within width
+#   truncate(s, max_len)      clip with "..." if too long
+
+# ─── is_empty ─────────────────────────────────────────────────────────
+
+# is_empty(s) — true if s is nil, empty, or contains only whitespace
+#
+# Examples:
+#   is_empty("")        # true
+#   is_empty("   ")     # true
+#   is_empty(nil)       # true
+#   is_empty("hello")   # false
+#   is_empty("  x  ")   # false
+function is_empty(s)
+  if is_nil(s)
+    return true
+  end
+  return len(trim(s)) == 0
+end
+
+# ─── lines ────────────────────────────────────────────────────────────
+
+# lines(s) — split a string into an array of lines on "\n"
+#
+# Example:
+#   let ls = lines("one\ntwo\nthree")
+#   print ls[0]   # one
+#   print ls[2]   # three
+#   print len(ls) # 3
+function lines(s)
+  return split(s, "\n")
+end
+
+# ─── words ────────────────────────────────────────────────────────────
+
+# words(s) — split on whitespace, discarding empty segments
+#
+# Handles multiple consecutive spaces and leading/trailing whitespace.
+#
+# Example:
+#   let ws = words("  hello   world  ")
+#   print ws[0]    # hello
+#   print ws[1]    # world
+#   print len(ws)  # 2
+function words(s)
+  let parts = split(trim(s), " ")
+  let result = []
+  let i = 0
+  loop i < len(parts)
+    if not is_empty(parts[i])
+      push(result, parts[i])
+    end
+    i = i + 1
+  end
+  return result
+end
+
+# ─── count ────────────────────────────────────────────────────────────
+
+# count(s, sub) — count non-overlapping occurrences of sub in s
+#
+# Returns 0 if sub is empty or not found.
+#
+# Examples:
+#   count("banana", "an")   # 2
+#   count("hello",  "l")    # 2
+#   count("aaaa",   "aa")   # 2  (non-overlapping)
+#   count("hello",  "xyz")  # 0
+function count(s, sub)
+  if len(sub) == 0
+    return 0
+  end
+  let n = 0
+  let rest = s
+  let searching = len(rest) >= len(sub)
+  loop searching
+    let pos = index(rest, sub)
+    if pos == -1
+      searching = false
+    else
+      n = n + 1
+      rest = slice(rest, pos + len(sub))
+      searching = len(rest) >= len(sub)
+    end
+  end
+  return n
+end
+
+# ─── replace_all ──────────────────────────────────────────────────────
+
+# replace_all(s, old, new_s) — replace every occurrence of old with new_s
+#
+# The built-in replace() only changes the first match.
+# replace_all() changes all of them.
+#
+# Examples:
+#   replace_all("a.b.c.d", ".", "-")   # "a-b-c-d"
+#   replace_all("aabbcc",  "b",  "X")  # "aaXXcc"
+#   replace_all("hello",   "x",  "y")  # "hello"  (no match)
+function replace_all(s, old, new_s)
+  if len(old) == 0
+    return s
+  end
+  let result = ""
+  let rest = s
+  let searching = len(rest) >= len(old)
+  loop searching
+    let pos = index(rest, old)
+    if pos == -1
+      # No more matches — append the remaining tail and stop
+      result = result .. rest
+      searching = false
+    else
+      result = result .. slice(rest, 0, pos) .. new_s
+      rest = slice(rest, pos + len(old))
+      if len(rest) < len(old)
+        # Tail is shorter than the pattern — no more matches possible
+        result = result .. rest
+        searching = false
+      end
+    end
+  end
+  return result
+end
+
+# ─── lstrip / rstrip ──────────────────────────────────────────────────
+
+# lstrip(s) — remove leading whitespace only
+#
+# Unlike trim(), lstrip() leaves trailing whitespace untouched.
+#
+# Example:
+#   lstrip("  hello  ")   # "hello  "
+#   lstrip("\t\n  hi")    # "hi"
+function lstrip(s)
+  let i = 0
+  let done = false
+  loop i < len(s) and not done
+    let ch = s[i]
+    if ch == " " or ch == "\t" or ch == "\n" or ch == "\r"
+      i = i + 1
+    else
+      done = true
+    end
+  end
+  return slice(s, i)
+end
+
+# rstrip(s) — remove trailing whitespace only
+#
+# Unlike trim(), rstrip() leaves leading whitespace untouched.
+#
+# Example:
+#   rstrip("  hello  ")   # "  hello"
+#   rstrip("hi\n\n")      # "hi"
+function rstrip(s)
+  let i = len(s) - 1
+  let done = false
+  loop i >= 0 and not done
+    let ch = s[i]
+    if ch == " " or ch == "\t" or ch == "\n" or ch == "\r"
+      i = i - 1
+    else
+      done = true
+    end
+  end
+  return slice(s, 0, i + 1)
+end
+
+# ─── pad_left / pad_right ─────────────────────────────────────────────
+
+# pad_left(s, width) — left-pad with spaces until string reaches width
+#
+# If s is already width or wider, s is returned unchanged.
+#
+# Example:
+#   pad_left("42",    6)   # "    42"
+#   pad_left("hello", 3)   # "hello"   (already wider)
+function pad_left(s, width)
+  let result = s
+  loop len(result) < width
+    result = " " .. result
+  end
+  return result
+end
+
+# pad_right(s, width) — right-pad with spaces until string reaches width
+#
+# Example:
+#   pad_right("name",  10)   # "name      "
+#   pad_right("hello",  3)   # "hello"   (already wider)
+function pad_right(s, width)
+  let result = s
+  loop len(result) < width
+    result = result .. " "
+  end
+  return result
+end
+
+# ─── center ───────────────────────────────────────────────────────────
+
+# center(s, width) — center s within width, padding both sides with spaces
+#
+# If the padding does not divide evenly, the extra space goes on the right.
+# If s is already width or wider, s is returned unchanged.
+#
+# Example:
+#   center("hi",    8)   # "   hi   "
+#   center("nolqu", 3)   # "nolqu"   (already wider)
+#   center("*", 5)       # "  *  "
+function center(s, width)
+  let gap = width - len(s)
+  if gap <= 0
+    return s
+  end
+  let left_pad  = floor(gap / 2)
+  let right_pad = gap - left_pad
+  return repeat(" ", left_pad) .. s .. repeat(" ", right_pad)
+end
+
+# ─── truncate ─────────────────────────────────────────────────────────
+
+# truncate(s, max_len) — clip string to max_len, appending "..." if cut
+#
+# If len(s) <= max_len, s is returned unchanged.
+# The "..." counts toward max_len, so the result is always <= max_len chars.
+#
+# Example:
+#   truncate("Hello, World!", 8)    # "Hello..."
+#   truncate("Hello, World!", 20)   # "Hello, World!"
+#   truncate("Hi", 1)               # "H"   (max_len too small for ...)
+function truncate(s, max_len)
+  if len(s) <= max_len
+    return s
+  end
+  if max_len <= 3
+    return slice(s, 0, max_len)
+  end
+  return slice(s, 0, max_len - 3) .. "..."
+end
