@@ -1,0 +1,22 @@
+# ───────────────────────────────────────────
+#  input.nq — User input example (new in v0.2.0)
+# ───────────────────────────────────────────
+
+let name = input("Enter your name: ")
+print "Hello, " .. name .. "!"
+
+let age_str = input("Enter your age: ")
+let age = num(age_str)
+
+if age == nil
+  print "That is not a valid number."
+else
+  if age >= 18
+    print "You are an adult."
+  else
+    print "You are a minor."
+  end
+end
+
+print "Your name is of type: " .. type(name)
+print "Your age is of type:  " .. type(age)

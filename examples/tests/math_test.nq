@@ -1,0 +1,35 @@
+# math_test.nq — arithmetic and math builtins
+
+assert(1 + 1 == 2,          "addition")
+assert(10 - 3 == 7,         "subtraction")
+assert(2 * 6 == 12,         "multiplication")
+assert(10 / 4 == 2.5,       "division")
+assert(10 % 3 == 1,         "modulo")
+assert(abs(-5) == 5,        "abs")
+assert(sqrt(9) == 3,        "sqrt")
+assert(pow(2, 8) == 256,    "pow")
+assert(max(3, 7) == 7,      "max")
+assert(min(3, 7) == 3,      "min")
+assert(floor(3.9) == 3,     "floor")
+assert(ceil(3.1) == 4,      "ceil")
+assert(round(3.5) == 4,     "round")
+
+# division by zero is catchable
+let dzero = false
+try
+  let _x = 10 / 0
+catch _e
+  dzero = true
+end
+assert(dzero, "div/0 caught")
+
+# modulo by zero
+let mzero = false
+try
+  let _y = 10 % 0
+catch _e
+  mzero = true
+end
+assert(mzero, "mod/0 caught")
+
+print "math tests OK"

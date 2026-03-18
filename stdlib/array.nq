@@ -1,0 +1,44 @@
+# stdlib/array.nq — Array helpers
+# Usage: import "stdlib/array"
+
+function map(arr, fn)
+  let result = []
+  let i = 0
+  loop i < len(arr)
+    push(result, fn(arr[i]))
+    i = i + 1
+  end
+  return result
+end
+
+function filter(arr, fn)
+  let result = []
+  let i = 0
+  loop i < len(arr)
+    if fn(arr[i])
+      push(result, arr[i])
+    end
+    i = i + 1
+  end
+  return result
+end
+
+function reduce(arr, fn, initial)
+  let acc = initial
+  let i = 0
+  loop i < len(arr)
+    acc = fn(acc, arr[i])
+    i = i + 1
+  end
+  return acc
+end
+
+function reverse(arr)
+  let result = []
+  let i = len(arr) - 1
+  loop i >= 0
+    push(result, arr[i])
+    i = i - 1
+  end
+  return result
+end

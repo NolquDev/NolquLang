@@ -1,0 +1,59 @@
+# error_test.nq — error handling
+
+# basic try/catch
+let caught = false
+try
+  error("boom")
+catch _err
+  caught = true
+end
+assert(caught, "basic catch")
+
+# error message propagates
+let msg = ""
+try
+  error("hello error")
+catch e
+  msg = e
+end
+assert(msg == "hello error", "error message")
+
+# assert pass (no throw)
+assert(true,     "assert true")
+assert(1 == 1,   "assert 1==1")
+
+# assert fail is catchable
+let afail = false
+try
+  assert(1 == 2, "intentional failure")
+catch _e
+  afail = true
+end
+assert(afail, "assert fail caught")
+
+# nested try/catch
+let outer = false
+let inner = false
+try
+  try
+    error("inner")
+  catch _e
+    inner = true
+  end
+  outer = true
+catch _e
+  outer = false
+end
+assert(inner, "nested inner catch")
+assert(outer, "nested outer continues")
+
+# uncaught error from nested does not bleed
+let clean = false
+try
+  error("test")
+catch _e
+  clean = true
+end
+assert(clean, "clean after catch")
+
+print "error tests OK"

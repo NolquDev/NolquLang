@@ -1,0 +1,30 @@
+# ───────────────────────────────────────────
+#  stdlib.nq — Standard library demo (new in v0.3.0)
+# ───────────────────────────────────────────
+
+# ── Math ────────────────────────────────────
+print "--- Math ---"
+print sqrt(144)
+print pow(2, 8)
+print abs(-99)
+print floor(3.7)
+print ceil(3.2)
+print round(2.5)
+print max(10, 20)
+print min(10, 20)
+
+# ── String ──────────────────────────────────
+print "--- String ---"
+let greeting = "  Hello, Nolqu!  "
+print trim(greeting)
+print upper("hello")
+print lower("WORLD")
+print slice("programming", 0, 4)
+print replace("I love cats", "cats", "Nolqu")
+print startswith("Nolqu", "No")
+print endswith("Nolqu", "qu")
+
+let csv = "one,two,three"
+let words = split(csv, ",")
+print words
+print len(words)

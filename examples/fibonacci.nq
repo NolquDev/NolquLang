@@ -1,0 +1,18 @@
+# ───────────────────────────────────────────
+#  fibonacci.nq — Fibonacci sequence
+# ───────────────────────────────────────────
+
+function fibonacci(n)
+  if n <= 1
+    return n
+  end
+  return fibonacci(n - 1) + fibonacci(n - 2)
+end
+
+print "Fibonacci sequence:"
+
+let i = 0
+loop i < 10
+  print fibonacci(i)
+  i = i + 1
+end
