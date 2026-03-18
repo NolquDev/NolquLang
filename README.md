@@ -1,13 +1,20 @@
 # Nolqu
 
-```
-  _   _       _
- | \ | | ___ | | __ _ _   _
- |  \| |/ _ \| |/ _` | | | |
- | |\  | (_) | | (_| | |_| |
- |_| \_|\___/|_|\__, |\__,_|
-                |___/
-```
+<p align="center">
+  <img src="assets/Banner.png" width="100%">
+</p>
+
+![version](https://img.shields.io/github/v/tag/Nadzil123/Nolqu?include_prereleases&label=version)
+![status](https://img.shields.io/badge/status-active-success)
+![license](https://img.shields.io/github/license/Nadzil123/Nolqu)
+
+> [!WARNING]
+> **This is an alpha release (v1.1.1a4).** The API and syntax are stable
+> but this version has not been fully validated across all platforms.
+> For production use, stick with the **[v1.0.0 stable release](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**.
+>
+> ⚠️ This README describes the **1.1.x development series**.
+> Development is ongoing — see [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 **A small, fast scripting language with its own bytecode VM.**
 
@@ -31,6 +38,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - 40+ built-in functions — math, string, array, random, time, memory
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
+- Current version: **v1.1.1a4** (alpha) — stable: **v1.0.0**
 
 ---
 
@@ -131,7 +139,7 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 |---|---|
 | [docs/language.md](docs/language.md) | Full language reference — syntax, types, all built-ins, modules |
 | [docs/grammar.md](docs/grammar.md) | Formal EBNF grammar specification |
-| [docs/stdlib.md](docs/stdlib.md) | Standard library modules reference (10 modules) |
+| [docs/stdlib.md](docs/stdlib.md) | Standard library modules reference (10 modules, 80+ functions) |
 | [docs/embedding.md](docs/embedding.md) | Embed Nolqu in C / C++ via `nolqu.h` |
 | [docs/vm_design.md](docs/vm_design.md) | VM internals, bytecode reference, GC algorithm |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |

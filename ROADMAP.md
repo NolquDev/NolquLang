@@ -13,7 +13,8 @@
 | **v1.0.0** | **First stable release** |
 | v1.1.0 | break/continue, 5 stdlib modules, project health files |
 | v1.1.1a2 | for-in loop, compound assign +=, bug fixes, stdlib/os+fmt |
-| **v1.1.1a3** | **Undefined var catchable, docs accuracy pass ← current** |
+| v1.1.1a3 | Undefined var catchable, docs accuracy pass |
+| **v1.1.1a4** | **Stdlib expanded, alpha banner, docs updated ← current** |
 
 ---
 
@@ -21,7 +22,7 @@
 
 ### v1.1.1 — Stable patch release 🎯
 
-Criteria to promote a3 → stable v1.1.1:
+Criteria to promote a4 → stable v1.1.1:
 - [ ] All known bugs closed
 - [ ] Full test suite green (currently 27/27 ✅)
 - [ ] ASan + UBSan clean ✅

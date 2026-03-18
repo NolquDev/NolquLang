@@ -2,6 +2,49 @@
 
 ---
 
+## v1.1.1a4 — Alpha 4 (2026)
+
+### Standard Library — Expanded
+
+**`stdlib/array.nq`** — 9 new functions:
+- `sum(arr)` — sum all numbers
+- `min_arr(arr)` · `max_arr(arr)` — smallest / largest element
+- `any(arr, fn)` · `all(arr, fn)` — predicate tests across all elements
+- `flatten(arr)` — one-level deep flatten of nested arrays
+- `unique(arr)` — remove duplicates, preserve insertion order
+- `zip(a, b)` — pair two arrays element-wise into `[[a0,b0], ...]`
+- `chunk(arr, size)` — split into fixed-size sub-arrays
+
+**`stdlib/string.nq`** — 3 new functions:
+- `char_at(s, i)` — character at index with bounds-checking error
+- `contains_str(s, sub)` — readable alias for `index(s,sub) != -1`
+- `title_case(s)` — capitalise the first letter of each word
+
+**`stdlib/math.nq`** — 5 new functions:
+- `is_nan(n)` — IEEE 754 NaN check via self-inequality
+- `is_inf(n)` — infinity check
+- `hypot(a, b)` — Euclidean distance `sqrt(a²+b²)`
+- `gcd(a, b)` — greatest common divisor (Euclidean algorithm)
+- `lcm(a, b)` — least common multiple
+
+### README — Alpha Warning
+
+Added a prominent warning banner to `README.md` so readers immediately know
+they are looking at an alpha version, with a link to the stable v1.0.0 release:
+
+```
+⚠️ This README describes the 1.1.x development series.
+   For production use, stick with v1.0.0 stable.
+```
+
+### Documentation
+
+- `docs/stdlib.md` — all new functions documented with examples and version tags
+- `docs/language.md` — built-in reference tables updated with new stdlib entries
+- `ROADMAP.md` — a4 added to history, criteria updated
+
+---
+
 ## v1.1.1a3 — Alpha 3 (2026)
 
 ### Bug Fixes
@@ -188,6 +231,49 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.1.1a4 — Alpha 4 (2026)
+
+### Standard Library — Expanded
+
+**`stdlib/array.nq`** — 9 new functions:
+- `sum(arr)` — sum all numbers
+- `min_arr(arr)` · `max_arr(arr)` — smallest / largest element
+- `any(arr, fn)` · `all(arr, fn)` — predicate tests across all elements
+- `flatten(arr)` — one-level deep flatten of nested arrays
+- `unique(arr)` — remove duplicates, preserve insertion order
+- `zip(a, b)` — pair two arrays element-wise into `[[a0,b0], ...]`
+- `chunk(arr, size)` — split into fixed-size sub-arrays
+
+**`stdlib/string.nq`** — 3 new functions:
+- `char_at(s, i)` — character at index with bounds-checking error
+- `contains_str(s, sub)` — readable alias for `index(s,sub) != -1`
+- `title_case(s)` — capitalise the first letter of each word
+
+**`stdlib/math.nq`** — 5 new functions:
+- `is_nan(n)` — IEEE 754 NaN check via self-inequality
+- `is_inf(n)` — infinity check
+- `hypot(a, b)` — Euclidean distance `sqrt(a²+b²)`
+- `gcd(a, b)` — greatest common divisor (Euclidean algorithm)
+- `lcm(a, b)` — least common multiple
+
+### README — Alpha Warning
+
+Added a prominent warning banner to `README.md` so readers immediately know
+they are looking at an alpha version, with a link to the stable v1.0.0 release:
+
+```
+⚠️ This README describes the 1.1.x development series.
+   For production use, stick with v1.0.0 stable.
+```
+
+### Documentation
+
+- `docs/stdlib.md` — all new functions documented with examples and version tags
+- `docs/language.md` — built-in reference tables updated with new stdlib entries
+- `ROADMAP.md` — a4 added to history, criteria updated
 
 ---
 

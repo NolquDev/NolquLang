@@ -623,6 +623,13 @@ All file operations throw catchable errors on failure.
 | `remove(arr, idx)` | Remove element at `idx`, return removed value |
 | `contains(arr, val)` | `true` if `val` is in `arr` |
 | `sort(arr)` | Sort in-place (numbers then strings), return `arr` |
+| `sum(arr)` ⁺ | Sum of all numbers in an array |
+| `min_arr(arr)` · `max_arr(arr)` | Smallest / largest element |
+| `any(arr, fn)` · `all(arr, fn)` | True if any / all elements satisfy predicate |
+| `flatten(arr)` | Flatten one level of nested arrays |
+| `unique(arr)` | Remove duplicates, preserve order |
+| `zip(a, b)` | Pair elements into `[[a0,b0], [a1,b1], ...]` |
+| `chunk(arr, size)` | Split into sub-arrays of given size |
 
 ### File I/O
 

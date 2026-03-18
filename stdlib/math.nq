@@ -133,3 +133,59 @@ end
 function log10(x)
   return log(x) / log(10)
 end
+
+# ─── Extended math functions (added v1.1.1a4) ────────────────────────
+
+# is_nan(n) — true if n is the IEEE 754 "not a number" value
+#
+# Example:
+#   is_nan(sqrt(-1))   # true  (sqrt of negative is NaN in IEEE 754)
+#   is_nan(42)         # false
+function is_nan(n)
+  return not (n == n)
+end
+
+# is_inf(n) — true if n is positive or negative infinity
+#
+# Example:
+#   is_inf(1 / 0)   # NOTE: Nolqu throws on /0. Use with care.
+#   is_inf(1e309)   # true  (overflow to inf)
+function is_inf(n)
+  return n > 999999999999999999999999999 or n < -999999999999999999999999999
+end
+
+# hypot(a, b) — Euclidean distance sqrt(a² + b²)
+#
+# Example:
+#   hypot(3, 4)   # 5.0
+function hypot(a, b)
+  return sqrt(a * a + b * b)
+end
+
+# gcd(a, b) — greatest common divisor (Euclidean algorithm)
+#
+# Example:
+#   gcd(12, 8)   # 4
+#   gcd(100, 75) # 25
+function gcd(a, b)
+  a = abs(floor(a))
+  b = abs(floor(b))
+  loop b > 0
+    let t = b
+    b = a % b
+    a = t
+  end
+  return a
+end
+
+# lcm(a, b) — least common multiple
+#
+# Example:
+#   lcm(4, 6)    # 12
+#   lcm(12, 18)  # 36
+function lcm(a, b)
+  if a == 0 or b == 0
+    return 0
+  end
+  return abs(a * b) / gcd(a, b)
+end

@@ -42,3 +42,167 @@ function reverse(arr)
   end
   return result
 end
+
+# ─── Extended array functions (added v1.1.1a4) ────────────────────────
+
+# sum(arr) — return the sum of all numbers in an array
+#
+# Example:
+#   sum([1, 2, 3, 4, 5])   # 15
+#   sum([])                 # 0
+function sum(arr)
+  let total = 0
+  for n in arr
+    total += n
+  end
+  return total
+end
+
+# min_arr(arr) — return the smallest number in an array
+#
+# Example:
+#   min_arr([3, 1, 4, 1, 5])   # 1
+function min_arr(arr)
+  if len(arr) == 0
+    error("min_arr: array must not be empty")
+  end
+  let m = arr[0]
+  for n in arr
+    if n < m
+      m = n
+    end
+  end
+  return m
+end
+
+# max_arr(arr) — return the largest number in an array
+#
+# Example:
+#   max_arr([3, 1, 4, 1, 5])   # 5
+function max_arr(arr)
+  if len(arr) == 0
+    error("max_arr: array must not be empty")
+  end
+  let m = arr[0]
+  for n in arr
+    if n > m
+      m = n
+    end
+  end
+  return m
+end
+
+# any(arr, fn) — true if fn(item) is truthy for at least one element
+#
+# Example:
+#   function is_neg(x)
+#     return x < 0
+#   end
+#   any([1, -2, 3], is_neg)   # true
+#   any([1, 2, 3],  is_neg)   # false
+function any(arr, fn)
+  for item in arr
+    if fn(item)
+      return true
+    end
+  end
+  return false
+end
+
+# all(arr, fn) — true if fn(item) is truthy for every element
+#
+# Example:
+#   function is_pos(x)
+#     return x > 0
+#   end
+#   all([1, 2, 3], is_pos)   # true
+#   all([1, -2, 3], is_pos)  # false
+function all(arr, fn)
+  for item in arr
+    if not fn(item)
+      return false
+    end
+  end
+  return true
+end
+
+# flatten(arr) — recursively flatten one level of nested arrays
+#
+# Example:
+#   flatten([[1, 2], [3, 4], [5]])   # [1, 2, 3, 4, 5]
+#   flatten([1, [2, 3], 4])          # [1, 2, 3, 4]
+function flatten(arr)
+  let result = []
+  for item in arr
+    if is_array(item)
+      for inner in item
+        push(result, inner)
+      end
+    else
+      push(result, item)
+    end
+  end
+  return result
+end
+
+# unique(arr) — return a new array with duplicates removed (order preserved)
+#
+# Example:
+#   unique([1, 2, 1, 3, 2, 4])   # [1, 2, 3, 4]
+#   unique(["a", "b", "a"])      # ["a", "b"]
+function unique(arr)
+  let result = []
+  for item in arr
+    if not contains(result, item)
+      push(result, item)
+    end
+  end
+  return result
+end
+
+# zip(a, b) — pair elements from two arrays into an array of 2-element arrays
+#
+# Stops at the shorter array.
+#
+# Example:
+#   zip([1, 2, 3], ["a", "b", "c"])
+#   # [[1,"a"], [2,"b"], [3,"c"]]
+function zip(a, b)
+  let result = []
+  let n = len(a)
+  if len(b) < n
+    n = len(b)
+  end
+  let i = 0
+  loop i < n
+    push(result, [a[i], b[i]])
+    i += 1
+  end
+  return result
+end
+
+# chunk(arr, size) — split array into sub-arrays of a given size
+#
+# The last chunk may be smaller if the array does not divide evenly.
+#
+# Example:
+#   chunk([1, 2, 3, 4, 5], 2)   # [[1,2], [3,4], [5]]
+#   chunk([1, 2, 3, 4], 2)      # [[1,2], [3,4]]
+function chunk(arr, size)
+  if size <= 0
+    error("chunk: size must be greater than 0")
+  end
+  let result = []
+  let i = 0
+  loop i < len(arr)
+    let group = []
+    let j = 0
+    loop j < size and i + j < len(arr)
+      push(group, arr[i + j])
+      j += 1
+    end
+    push(result, group)
+    i += size
+  end
+  return result
+end

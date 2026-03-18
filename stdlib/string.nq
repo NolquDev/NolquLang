@@ -258,3 +258,54 @@ function truncate(s, max_len)
   end
   return slice(s, 0, max_len - 3) .. "..."
 end
+
+# ─── Extended string functions (added v1.1.1a4) ───────────────────────
+
+# char_at(s, i) — return character at index i (supports negative indexing)
+#
+# Alias for s[i] with a descriptive name and bounds-checked error message.
+#
+# Example:
+#   char_at("hello", 0)    # "h"
+#   char_at("hello", -1)   # "o"
+function char_at(s, i)
+  let n = len(s)
+  if i < 0
+    i = n + i
+  end
+  if i < 0 or i >= n
+    error("char_at: index " .. str(i) .. " out of range for string of length " .. str(n))
+  end
+  return s[i]
+end
+
+# contains_str(s, sub) — true if s contains the substring sub
+#
+# More readable than index(s, sub) != -1.
+#
+# Example:
+#   contains_str("hello world", "world")   # true
+#   contains_str("hello", "xyz")           # false
+function contains_str(s, sub)
+  return index(s, sub) != -1
+end
+
+# title_case(s) — capitalise the first letter of each word
+#
+# Splits on spaces; other whitespace is preserved as-is.
+#
+# Example:
+#   title_case("hello world")      # "Hello World"
+#   title_case("the quick fox")    # "The Quick Fox"
+function title_case(s)
+  let ws = split(s, " ")
+  let result = []
+  for w in ws
+    if len(w) == 0
+      push(result, w)
+    else
+      push(result, upper(slice(w, 0, 1)) .. lower(slice(w, 1)))
+    end
+  end
+  return join(result, " ")
+end

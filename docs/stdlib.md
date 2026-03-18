@@ -270,7 +270,8 @@ print center("hi", 8)        # "   hi   "
 print truncate("Hello, World!", 8)   # "Hello..."
 ```
 
-**Functions:** `is_empty` · `lines` · `words` · `count` · `replace_all` · `lstrip` · `rstrip` · `pad_left` · `pad_right` · `center` · `truncate`
+**Functions:** `is_empty` · `lines` · `words` · `count` · `replace_all` · `lstrip` · `rstrip` · `pad_left` · `pad_right` · `center` · `truncate`  
+**New in v1.1.1a4:** `char_at(s,i)` · `contains_str(s,sub)` · `title_case(s)`
 
 ---
 
@@ -345,7 +346,8 @@ print log2(8)        # ~3.0
 print log10(1000)    # ~3.0
 ```
 
-**New:** `PI` · `TAU` · `E` · `sin` · `cos` · `tan` · `degrees` · `radians` · `log` · `log2` · `log10`
+**New in v1.1.0:** `PI` · `TAU` · `E` · `sin` · `cos` · `tan` · `degrees` · `radians` · `log` · `log2` · `log10`  
+**New in v1.1.1a4:** `is_nan(n)` · `is_inf(n)` · `hypot(a,b)` · `gcd(a,b)` · `lcm(a,b)`
 
 ---
 
