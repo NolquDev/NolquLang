@@ -2,6 +2,65 @@
 
 ---
 
+## v1.2.0-rc2 — Release Candidate 2 (2026)
+
+Stability-only pass. No new features.
+
+### Critical Bug Fixes
+
+**Comparison chaining caused heap crash (memory corruption)**
+
+`1 < x < 10` and even `a < x < b` with simple identifiers caused a
+`free(): double free detected` crash at runtime. Root cause: the middle
+operand AST node was shared (same pointer) between two binary nodes in the
+generated AND-chain. When `freeNode` freed the left subtree, then the right
+subtree, the shared node was freed twice → heap corruption.
+
+Fix: comparison chaining is **removed**. `parseComparison` reverted to a
+simple left-to-right loop with no chaining. Use `a < x and x < 10` instead.
+
+**`import X as Y` was a silent no-op**
+
+The alias was never created. `import stdlib/math as m` would run the module
+(PI, sin etc. became global) but `m` itself was undefined. Now produces a
+clear compile error:
+```
+'import X as Y' is not supported — Nolqu has no module namespaces.
+  Use:  import "stdlib/math"
+  Then access its functions directly: PI, sin, cos, ...
+```
+
+**`from X import Y` imported everything, not just Y**
+
+`from stdlib/math import sin` imported the entire module (PI, cos, etc all
+became global), ignoring the names listed. Now produces a clear compile error:
+```
+'from X import Y' is not supported.
+  Use:  import "stdlib/math"
+  All module definitions become available globally after import.
+```
+
+### Documentation
+
+- `README.md` — added prominent `[!IMPORTANT]` falsy/truthy warning before
+  the feature list. Version updated to rc2.
+- `docs/dev/language.md` — import section updated (removed `as`/`from`
+  examples, added error note); const clarified with array mutation example;
+  comparison chaining limitation updated to say "not supported".
+- `docs/dev/semantics.md` — falsy section upgraded to `[!IMPORTANT]` callout;
+  const/array mutation section expanded with explicit note about lack of
+  freeze mechanism; comparison chaining marked "Not supported" in summary.
+- `docs/dev/grammar.md` — import rule simplified; `as`/`from` removed from
+  keywords list with note they are reserved.
+
+### Also fixed
+
+- `import stdlib/path as X` path-parsing bug: the unquoted path scanner was
+  consuming `as` as part of the module path (resulting in `stdlib/pathas` or
+  similar). Fixed by stopping at the first token that isn't preceded by `/`.
+
+---
+
 ## v1.2.0-rc1 — Release Candidate (2026)
 
 Stabilization pass before the v1.2.0 stable release.
@@ -371,6 +430,65 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.0-rc2 — Release Candidate 2 (2026)
+
+Stability-only pass. No new features.
+
+### Critical Bug Fixes
+
+**Comparison chaining caused heap crash (memory corruption)**
+
+`1 < x < 10` and even `a < x < b` with simple identifiers caused a
+`free(): double free detected` crash at runtime. Root cause: the middle
+operand AST node was shared (same pointer) between two binary nodes in the
+generated AND-chain. When `freeNode` freed the left subtree, then the right
+subtree, the shared node was freed twice → heap corruption.
+
+Fix: comparison chaining is **removed**. `parseComparison` reverted to a
+simple left-to-right loop with no chaining. Use `a < x and x < 10` instead.
+
+**`import X as Y` was a silent no-op**
+
+The alias was never created. `import stdlib/math as m` would run the module
+(PI, sin etc. became global) but `m` itself was undefined. Now produces a
+clear compile error:
+```
+'import X as Y' is not supported — Nolqu has no module namespaces.
+  Use:  import "stdlib/math"
+  Then access its functions directly: PI, sin, cos, ...
+```
+
+**`from X import Y` imported everything, not just Y**
+
+`from stdlib/math import sin` imported the entire module (PI, cos, etc all
+became global), ignoring the names listed. Now produces a clear compile error:
+```
+'from X import Y' is not supported.
+  Use:  import "stdlib/math"
+  All module definitions become available globally after import.
+```
+
+### Documentation
+
+- `README.md` — added prominent `[!IMPORTANT]` falsy/truthy warning before
+  the feature list. Version updated to rc2.
+- `docs/dev/language.md` — import section updated (removed `as`/`from`
+  examples, added error note); const clarified with array mutation example;
+  comparison chaining limitation updated to say "not supported".
+- `docs/dev/semantics.md` — falsy section upgraded to `[!IMPORTANT]` callout;
+  const/array mutation section expanded with explicit note about lack of
+  freeze mechanism; comparison chaining marked "Not supported" in summary.
+- `docs/dev/grammar.md` — import rule simplified; `as`/`from` removed from
+  keywords list with note they are reserved.
+
+### Also fixed
+
+- `import stdlib/path as X` path-parsing bug: the unquoted path scanner was
+  consuming `as` as part of the module path (resulting in `stdlib/pathas` or
+  similar). Fixed by stopping at the first token that isn't preceded by `/`.
 
 ---
 

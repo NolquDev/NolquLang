@@ -17,7 +17,8 @@
 | v1.1.1a4 | Stdlib expanded, alpha banner, docs updated |
 | v1.1.1a5 | null, const, default params, slice, semantics.md |
 | v1.1.1a6 | Typed errors, bool(), import syntax, stdlib/io, real examples |
-| **v1.2.0-rc1** | **Stabilization, help fix, docs cleanup — release candidate ← current** |
+| v1.2.0-rc1 | Stabilization, help fix, docs cleanup |
+| **v1.2.0-rc2** | **Critical crash fix, import/chaining removed, docs — RC2 ← current** |
 
 ---
 

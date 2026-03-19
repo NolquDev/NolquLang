@@ -250,85 +250,70 @@ static ASTNode* parseImportStmt(Parser* p) {
     int line = p->previous.line;
 
     /*
-     * Supported forms:
-     *   import "stdlib/math"              -- original quoted form
-     *   import stdlib/math                -- unquoted: slash-separated
-     *   import stdlib.math                -- dot-separated (alt style)
-     *   import stdlib/math as math        -- alias (no-op: Nolqu has no namespaces)
-     *   from stdlib/math import PI, sin   -- selective (runs module, names already global)
+     * Supported import forms (v1.2.0-rc2):
      *
-     * All forms ultimately compile to the same NODE_IMPORT with the resolved path.
-     * The 'as' and 'from...import' forms parse and discard the alias/names — they
-     * are accepted for readability but have no additional runtime effect since
-     * all module-level declarations become globals after import.
+     *   import "stdlib/math"     ← quoted string path (original form)
+     *   import stdlib/math       ← unquoted slash-separated path
+     *
+     * Removed in rc2 (were silent no-ops / misleading):
+     *   import X as Y            → parse error: use 'import X' directly
+     *   from X import a, b       → parse error: Nolqu has no selective import
+     *
+     * Module caching: each module is compiled and run at most once per
+     * program execution regardless of how many times it is imported.
      */
 
     char* path = NULL;
 
-    /* Handle: from module import name1, name2 */
-    if (p->previous.type == TK_FROM) {
-        /* parse the module path (unquoted ident sequence) */
-        char buf[512] = {0};
-        if (check(p, TK_STRING)) {
-            advance(p);
-            path = extractString(p->previous.start, p->previous.length, NULL);
-        } else {
-            /* collect slash/dot separated identifiers */
-            while (check(p, TK_IDENT) || check(p, TK_SLASH)) {
-                if (check(p, TK_SLASH)) {
-                    advance(p);
-                    strncat(buf, "/", 1);
-                } else {
-                    Token t = p->current; advance(p);
-                    strncat(buf, t.start, (size_t)t.length);
-                }
-            }
-            path = dupStr(buf, (int)strlen(buf));
-        }
-        /* consume 'import name1, name2' — names are ignored (already global) */
-        if (check(p, TK_IMPORT)) {
-            advance(p);
-            while (check(p, TK_IDENT) || check(p, TK_COMMA)) {
-                advance(p);
-            }
-        }
-        expectNewline(p);
-        ASTNode* n = makeNode(NODE_IMPORT, line);
-        n->data.import.path = path;
-        return n;
-    }
-
-    /* Handle: import "quoted/path" or import unquoted/path */
     if (check(p, TK_STRING)) {
         advance(p);
         path = extractString(p->previous.start, p->previous.length, NULL);
     } else {
-        /* collect slash/dot separated identifiers into a path */
+        /*
+         * Unquoted path: read identifier segments separated by '/'.
+         *   import stdlib/math   →  path = "stdlib/math"
+         *   import mymod         →  path = "mymod"
+         *
+         * Stop as soon as the segment after an identifier is not '/'
+         * (e.g. stop before 'as', newline, or anything else).
+         */
         char buf[512] = {0};
         bool got_one = false;
-        while (check(p, TK_IDENT) || (got_one && check(p, TK_SLASH))) {
+        while (check(p, TK_IDENT)) {
+            Token t = p->current; advance(p);
+            strncat(buf, t.start, (size_t)t.length);
+            got_one = true;
             if (check(p, TK_SLASH)) {
                 advance(p);
                 strncat(buf, "/", 1);
             } else {
-                Token t = p->current; advance(p);
-                strncat(buf, t.start, (size_t)t.length);
-                got_one = true;
+                break;   /* no slash follows — end of path */
             }
         }
         if (!got_one) {
             errorAt(p, &p->current,
-                "Expected a module path after 'import'. "
-                "Example: import \"stdlib/math\"  or  import stdlib/math");
+                "Expected a module path after 'import'.\n"
+                "  Examples:  import \"stdlib/math\"\n"
+                "             import stdlib/math");
             return NULL;
         }
         path = dupStr(buf, (int)strlen(buf));
     }
 
-    /* Optional: as alias — parsed and ignored */
+    /* Reject 'import X as Y' with a clear error */
     if (check(p, TK_AS)) {
-        advance(p);
-        if (check(p, TK_IDENT)) advance(p); /* consume alias name */
+        errorAt(p, &p->current,
+            "'import X as Y' is not supported — Nolqu has no module namespaces.\n"
+            "  Use:  import \"stdlib/math\"\n"
+            "  Then access its functions directly: PI, sin, cos, ...");
+        /* consume 'as <alias>' so parser can continue */
+        advance(p);  /* skip 'as' */
+        if (check(p, TK_IDENT)) advance(p);  /* skip alias */
+        expectNewline(p);
+        /* Return a valid import node so compilation can continue */
+        ASTNode* n = makeNode(NODE_IMPORT, line);
+        n->data.import.path = path;
+        return n;
     }
 
     expectNewline(p);
@@ -338,8 +323,21 @@ static ASTNode* parseImportStmt(Parser* p) {
 }
 
 static ASTNode* parseFromImportStmt(Parser* p) {
-    /* 'from' was already consumed by parseStmt — delegate to import handler */
-    return parseImportStmt(p);
+    /*
+     * 'from X import Y' is not supported in v1.2.0.
+     * Nolqu has no selective import — all module declarations become global.
+     * Removed in rc2 because the previous implementation silently imported
+     * everything regardless of the names listed.
+     *
+     * Use:  import "stdlib/math"   (imports all of math's definitions)
+     */
+    errorAt(p, &p->current,
+        "'from X import Y' is not supported.\n"
+        "  Use:  import \"stdlib/math\"\n"
+        "  All module definitions become available globally after import.");
+    /* consume rest of line to allow parser to recover */
+    while (!check(p, TK_NEWLINE) && !check(p, TK_EOF)) advance(p);
+    return NULL;
 }
 
 static ASTNode* parseTryStmt(Parser* p) {
@@ -573,53 +571,30 @@ static ASTNode* parseEquality(Parser* p) {
 }
 
 static ASTNode* parseComparison(Parser* p) {
-    ASTNode* left = parseAddition(p);
-    if (!(check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)))
-        return left;
-
-    /* First comparison */
-    TokenType op1 = p->current.type; advance(p);
-    int line1 = p->previous.line;
-    ASTNode* mid = parseAddition(p);
-
-    ASTNode* first = makeNode(NODE_BINARY, line1);
-    first->data.binary.op    = op1;
-    first->data.binary.left  = left;
-    first->data.binary.right = mid;
-
-    /* If no chaining, return single comparison */
-    if (!(check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)))
-        return first;
-
     /*
-     * Chained comparison: a < b < c  →  (a < b) and (b < c)
-     * 'mid' (b) may be a complex expression. To avoid double evaluation,
-     * only simple identifiers and literals are chained directly.
-     * For complex expressions, we desugar to a single and-chain with
-     * the same AST node (expressions with no side effects).
+     * Simple left-to-right comparison — no chaining.
+     *
+     * Chained comparisons (1 < x < 10) were removed in v1.2.0-rc2 because
+     * the implementation caused a heap double-free crash: the middle operand
+     * AST node was shared between two binary nodes, and freeNode freed it
+     * twice. The safe replacement is the explicit form:
+     *
+     *   1 < x and x < 10   ← use this instead
+     *
+     * A future version may reintroduce chaining with proper AST node cloning.
      */
-    ASTNode* chain_result = first;
-    ASTNode* prev_mid     = mid;
-
+    ASTNode* left = parseAddition(p);
     while (check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)) {
         TokenType op = p->current.type; advance(p);
         int line = p->previous.line;
-        ASTNode* next = parseAddition(p);
-
-        ASTNode* cmp = makeNode(NODE_BINARY, line);
-        cmp->data.binary.op    = op;
-        cmp->data.binary.left  = prev_mid;
-        cmp->data.binary.right = next;
-
-        /* Wrap in AND */
-        ASTNode* and_node = makeNode(NODE_BINARY, line);
-        and_node->data.binary.op    = TK_AND;
-        and_node->data.binary.left  = chain_result;
-        and_node->data.binary.right = cmp;
-        chain_result = and_node;
-        prev_mid     = next;
+        ASTNode* right = parseAddition(p);
+        ASTNode* n = makeNode(NODE_BINARY, line);
+        n->data.binary.op    = op;
+        n->data.binary.left  = left;
+        n->data.binary.right = right;
+        left = n;
     }
-    return chain_result;
+    return left;
 }
 
 static ASTNode* parseAddition(Parser* p) {

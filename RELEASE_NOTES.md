@@ -1,4 +1,4 @@
-# Nolqu v1.2.0-rc1 — Release Notes
+# Nolqu v1.2.0-rc2 — Release Notes
 
 > **Release Candidate.**
 > All planned features for v1.2.0 are implemented and tested.
@@ -87,7 +87,7 @@ All v1.0.0 programs run unchanged unless they:
 
 ---
 
-## Known Limitations (v1.2.0-rc1)
+## Known Limitations (v1.2.0-rc2)
 
 | Limitation | Notes |
 |---|---|
@@ -97,9 +97,9 @@ All v1.0.0 programs run unchanged unless they:
 | Circular imports | Will loop forever — no cycle detection |
 | No string mutation | All string ops return new strings |
 | Single-pass compiler | No forward references to functions |
-| Comparison chaining | Complex middle expression is evaluated twice |
+| No comparison chaining | `1 < x < 10` is not supported; use `1 < x and x < 10` |
 | `chr()` ASCII only | Code points 0–127 only |
-| `import as` no-op | No namespace objects; alias is parsed but has no effect |
+| No `import as` | Not supported — Nolqu has no module namespaces |
 | Transpiler experimental | `codegen` does not support all features |
 
 ---

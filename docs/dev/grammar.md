@@ -1,4 +1,4 @@
-# Nolqu Language Grammar — v1.2.0-rc1
+# Nolqu Language Grammar — v1.2.0-rc2
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -77,10 +77,13 @@ param_decl           → IDENT ( "=" expr )?
 
 return_stmt          → "return" expr? NEWLINE
 
-import_stmt          → "import" ( STRING | module_path ) ( "as" IDENT )? NEWLINE
-                     | "from" module_path "import" IDENT ( "," IDENT )* NEWLINE
+import_stmt          → "import" ( STRING | module_path ) NEWLINE
 
 module_path          → IDENT ( "/" IDENT )*
+
+> **Note:** `import X as Y` and `from X import Y` are not supported and
+> produce a clear compile error. `as` and `from` are reserved words that
+> cannot be used as variable names.
 
 try_stmt             → "try" NEWLINE
                          statement*
@@ -172,7 +175,7 @@ Single-line only. Block comments are not supported.
 
 ```
 let      print    if       else     loop     for      in
-function return   import   from     as       try      catch    end
+function return   import   try      catch    end
 true     false    nil      null     and      or       not      break    continue
 const
 ```
@@ -255,7 +258,7 @@ import "path/to/module"
 
 ---
 
-## Notes and Limitations (v1.2.0-rc1)
+## Notes and Limitations (v1.2.0-rc2)
 
 - No closures — functions cannot capture variables from outer scopes.
 - No hash maps — only arrays and strings are collection types.

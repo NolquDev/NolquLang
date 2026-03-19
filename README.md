@@ -8,12 +8,19 @@
 ![license](https://img.shields.io/github/license/Nadzil123/Nolqu)
 
 > [!NOTE]
-> **This is a release candidate (v1.2.0-rc1).** The language and API are stable
+> **This is a release candidate (v1.2.0-rc2).** The language and API are stable
 > All planned features are in place and tested. Being validated across platforms.
 > For battle-tested production use, stick with **[v1.0.0 stable](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**.
 >
 > See [RELEASE_NOTES.md](RELEASE_NOTES.md) for what's new in v1.2.0.
 > See [CHANGELOG.md](CHANGELOG.md) for the full version history.
+
+
+> [!IMPORTANT]
+> **Falsy values in Nolqu:** `false`, `null`/`nil`, `0`, and `""` (empty string) are falsy.
+> Everything else is truthy — including empty arrays `[]`.
+> This differs from many languages where `0` is truthy.
+> See [docs/dev/semantics.md](docs/dev/semantics.md) for details.
 
 **A small, fast scripting language with its own stack-based bytecode VM.**
 
@@ -41,7 +48,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - 50+ built-in functions — math, string, array, random, time, memory
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
-- Current version: **v1.2.0-rc1** (release candidate) — stable: **[v1.0.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**
+- Current version: **v1.2.0-rc2** (release candidate) — stable: **[v1.0.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**
 
 ---
 

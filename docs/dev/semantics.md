@@ -1,4 +1,4 @@
-# Nolqu Semantics Reference — v1.2.0-rc1
+# Nolqu Semantics Reference — v1.2.0-rc2
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -47,8 +47,11 @@ Everything else is **truthy**, including:
 | Any array | `[]`, `[1, 2, 3]` — even empty arrays are truthy |
 | Any function | |
 
-> **Breaking change from v1.0.0:** In v1.0.0, only `nil` and `false` were falsy.
-> `0` and `""` became falsy in v1.1.1a5.
+> [!IMPORTANT]
+> **`0` and `""` are falsy in Nolqu.** This is different from many languages.
+> In v1.0.0, only `nil` and `false` were falsy.
+> Always use explicit comparisons (`x != 0`, `len(s) > 0`) when you want to
+> check a value rather than just its truthiness.
 
 ### Examples
 
@@ -317,15 +320,20 @@ SIZE += 1     # Compile Error: Cannot reassign const variable 'SIZE'.
 
 ### const with mutable values
 
-`const` makes the **binding** immutable, not the value. An array declared
-with `const` can still have its elements modified.
+`const` makes the **binding** immutable, not the value.
+An array declared with `const` can still have its elements modified.
 
 ```nolqu
 const NUMS = [1, 2, 3]
-NUMS[0] = 99          # OK — modifying the array contents
-push(NUMS, 4)         # OK — pushing to the array
-NUMS = [4, 5, 6]      # Compile Error — rebinding is not allowed
+NUMS[0] = 99          # OK — modifying element
+push(NUMS, 4)         # OK — adding element
+NUMS = [4, 5, 6]      # Compile Error — rebinding
 ```
+
+> This means `const` on an array prevents *rebinding* the name, but does not
+> prevent *mutation* of the array's contents. There is no freeze/immutable-array
+> mechanism in v1.2.0. Use `const` for primitive values (`const PI = 3.14`) and
+> by-convention immutability for arrays.
 
 ### Local const
 
@@ -515,3 +523,4 @@ end
 | `arr[a:b]` | New array/string, `a` inclusive, `b` exclusive |
 | Negative slice index | Counts from end: `-1` = last |
 | Out-of-range slice | Clamped to `[0, len]` — no error |
+| Comparison chaining | **Not supported** — use `a < x and x < b` |
