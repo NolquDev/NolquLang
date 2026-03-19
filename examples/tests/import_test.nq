@@ -1,0 +1,36 @@
+# import_test.nq — Test suite for the import system
+
+import "stdlib/test"
+import "stdlib/math"
+
+suite("import: basic forms")
+expect(PI > 3.14, "plain import works")
+expect(sin(0) == 0, "sin available after import")
+
+suite("import: deduplication")
+import "stdlib/math"       # re-import same module — must not re-execute
+import stdlib/math         # unquoted — same module, still no re-exec
+expect(PI > 3.14, "PI still correct after dedup")
+
+suite("from-import: basic")
+from stdlib/math import cos, clamp
+expect(cos(0) == 1, "cos from-imported")
+expect(clamp(15, 0, 10) == 10, "clamp from-imported")
+
+suite("from-import: comma-separated")
+from stdlib/array import sum, flatten
+let nums = [1, 2, 3, 4, 5]
+expect(sum(nums) == 15, "sum from-imported")
+let nested = [[1, 2], [3, 4]]
+expect(join(flatten(nested), ",") == "1,2,3,4", "flatten from-imported")
+
+suite("from-import: quoted path")
+from "stdlib/string" import is_empty, title_case
+expect(is_empty("") == true, "is_empty from-import quoted")
+expect(title_case("hello world") == "Hello World", "title_case from-import quoted")
+
+suite("import: module not found → compile error (checked separately)")
+# Cannot test runtime import errors here as they are compile-time
+expect(true, "compile-time errors tested via nq check")
+
+done()

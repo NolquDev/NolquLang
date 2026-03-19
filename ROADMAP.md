@@ -19,7 +19,8 @@
 | v1.1.1a6 | Typed errors, bool(), import syntax, stdlib/io, real examples |
 | v1.2.0-rc1 | Stabilization, help fix, docs cleanup |
 | v1.2.0-rc2 | Critical crash fix, import/chaining removed, docs |
-| **v1.2.0** | **Stable release ← current** |
+| v1.2.0 | Stable release |
+| **v1.2.1a1** | **Comparison chaining, from-import, ImportError ← current** |
 
 ---
 

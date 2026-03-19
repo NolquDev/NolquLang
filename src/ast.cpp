@@ -112,6 +112,11 @@ void freeNode(ASTNode* node) {
 
         case NODE_IMPORT:
             free(node->data.import.path);
+            if (node->data.import.names) {
+                for (int i = 0; i < node->data.import.name_count; i++)
+                    free(node->data.import.names[i]);
+                free(node->data.import.names);
+            }
             break;
 
         case NODE_EXPR_STMT:

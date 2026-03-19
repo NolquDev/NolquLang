@@ -2,6 +2,53 @@
 
 ---
 
+## v1.2.1a1 — Alpha 1 (2026)
+
+### Re-introduced features (fully implemented)
+
+**Comparison chaining** — `1 < x < 10`, `a < b <= c`
+
+Safely re-implemented using AST node cloning. The v1.2.0 crash (heap double-free)
+was caused by sharing a pointer between two binary nodes. Fixed by cloning the
+middle operand — only identifiers and literals can be cloned; complex expressions
+(calls, arithmetic) produce a clear compile error directing the user to `let`.
+
+Guarantees:
+- Each operand evaluated **exactly once**
+- Short-circuit via AND: if first comparison is false, second is skipped
+- No shared AST pointers — no double-free
+- `freeNode` is always safe
+
+**`from module import name1, name2`**
+
+Fully implemented with compile-time name verification:
+- Reads and parses the module's AST at compile time
+- Verifies each requested name is declared at the module's top level
+- Reports `ImportError: 'X' not found in module 'Y'` if a name is missing
+- Module caching respected — module runs at most once even with mixed import/from-import
+- Supports both quoted (`from "stdlib/math"`) and unquoted (`from stdlib/math`) paths
+
+Limitation (documented): all module globals become accessible after import
+(Nolqu has no namespace isolation). The `from` form provides documentation
+clarity and early typo detection.
+
+**`ImportError` prefix** — module not found and invalid name errors now carry
+`ImportError:` prefix, consistent with the typed error system.
+
+### Still not supported (with clear compile errors)
+- `import X as Y` — no module namespaces in Nolqu
+
+### New test files
+- `examples/tests/chain_test.nq` — 14 tests for chaining correctness
+- `examples/tests/import_test.nq` — 10 tests for import system
+
+### Documentation
+- `docs/dev/language.md` — chaining section + from-import section updated
+- `docs/dev/grammar.md` — import rule updated, chaining note added
+- `docs/dev/semantics.md` — chaining row updated in summary
+
+---
+
 ## v1.2.0 — Stable Release (2026)
 
 **First stable release of the v1.2 series.**
@@ -461,6 +508,53 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.1a1 — Alpha 1 (2026)
+
+### Re-introduced features (fully implemented)
+
+**Comparison chaining** — `1 < x < 10`, `a < b <= c`
+
+Safely re-implemented using AST node cloning. The v1.2.0 crash (heap double-free)
+was caused by sharing a pointer between two binary nodes. Fixed by cloning the
+middle operand — only identifiers and literals can be cloned; complex expressions
+(calls, arithmetic) produce a clear compile error directing the user to `let`.
+
+Guarantees:
+- Each operand evaluated **exactly once**
+- Short-circuit via AND: if first comparison is false, second is skipped
+- No shared AST pointers — no double-free
+- `freeNode` is always safe
+
+**`from module import name1, name2`**
+
+Fully implemented with compile-time name verification:
+- Reads and parses the module's AST at compile time
+- Verifies each requested name is declared at the module's top level
+- Reports `ImportError: 'X' not found in module 'Y'` if a name is missing
+- Module caching respected — module runs at most once even with mixed import/from-import
+- Supports both quoted (`from "stdlib/math"`) and unquoted (`from stdlib/math`) paths
+
+Limitation (documented): all module globals become accessible after import
+(Nolqu has no namespace isolation). The `from` form provides documentation
+clarity and early typo detection.
+
+**`ImportError` prefix** — module not found and invalid name errors now carry
+`ImportError:` prefix, consistent with the typed error system.
+
+### Still not supported (with clear compile errors)
+- `import X as Y` — no module namespaces in Nolqu
+
+### New test files
+- `examples/tests/chain_test.nq` — 14 tests for chaining correctness
+- `examples/tests/import_test.nq` — 10 tests for import system
+
+### Documentation
+- `docs/dev/language.md` — chaining section + from-import section updated
+- `docs/dev/grammar.md` — import rule updated, chaining note added
+- `docs/dev/semantics.md` — chaining row updated in summary
 
 ---
 

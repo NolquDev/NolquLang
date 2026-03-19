@@ -285,7 +285,7 @@ static ASTNode* parseImportStmt(Parser* p) {
             got_one = true;
             if (check(p, TK_SLASH)) {
                 advance(p);
-                strncat(buf, "/", 1);
+                strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
             } else {
                 break;   /* no slash follows — end of path */
             }
@@ -324,20 +324,80 @@ static ASTNode* parseImportStmt(Parser* p) {
 
 static ASTNode* parseFromImportStmt(Parser* p) {
     /*
-     * 'from X import Y' is not supported in v1.2.0.
-     * Nolqu has no selective import — all module declarations become global.
-     * Removed in v1.2.0 because the previous implementation silently imported
-     * everything regardless of the names listed.
+     * from module import name1, name2, ...    (v1.2.1a1)
      *
-     * Use:  import "stdlib/math"   (imports all of math's definitions)
+     * The module is imported fully (all definitions become global).
+     * The listed names are verified at compile time — typos → ImportError.
+     * See docs/dev/language.md for the full explanation and limitation note.
      */
-    errorAt(p, &p->current,
-        "'from X import Y' is not supported.\n"
-        "  Use:  import \"stdlib/math\"\n"
-        "  All module definitions become available globally after import.");
-    /* consume rest of line to allow parser to recover */
-    while (!check(p, TK_NEWLINE) && !check(p, TK_EOF)) advance(p);
-    return NULL;
+    int line = p->previous.line;
+
+    char* path = NULL;
+    if (check(p, TK_STRING)) {
+        advance(p);
+        path = extractString(p->previous.start, p->previous.length, NULL);
+    } else {
+        char buf[512] = {0};
+        bool got_one = false;
+        while (check(p, TK_IDENT)) {
+            Token t = p->current; advance(p);
+            strncat(buf, t.start, (size_t)t.length);
+            got_one = true;
+            if (check(p, TK_SLASH)) {
+                advance(p);
+                strncat(buf, "/", sizeof(buf) - strlen(buf) - 1);
+            } else {
+                break;
+            }
+        }
+        if (!got_one) {
+            errorAt(p, &p->current,
+                "Expected a module path after 'from'.\n"
+                "  Example: from stdlib/math import PI, sin");
+            return NULL;
+        }
+        path = dupStr(buf, (int)strlen(buf));
+    }
+
+    if (!check(p, TK_IMPORT)) {
+        errorAt(p, &p->current,
+            "Expected 'import' after module path.\n"
+            "  Example: from stdlib/math import PI, sin");
+        free(path);
+        return NULL;
+    }
+    advance(p);
+
+    char** names   = NULL;
+    int    n_names = 0;
+    int    n_cap   = 0;
+
+    while (check(p, TK_IDENT)) {
+        char* name = dupStr(p->current.start, p->current.length);
+        advance(p);
+        if (n_names >= n_cap) {
+            int old = n_cap; n_cap = GROW_CAPACITY(old);
+            names = GROW_ARRAY(char*, names, old, n_cap);
+        }
+        names[n_names++] = name;
+        if (!match(p, TK_COMMA)) break;
+        if (check(p, TK_NEWLINE) || check(p, TK_EOF)) break;
+    }
+
+    if (n_names == 0) {
+        errorAt(p, &p->current,
+            "Expected at least one name to import.\n"
+            "  Example: from stdlib/math import PI, sin");
+        free(path);
+        return NULL;
+    }
+
+    expectNewline(p);
+    ASTNode* n = makeNode(NODE_IMPORT, line);
+    n->data.import.path       = path;
+    n->data.import.names      = names;
+    n->data.import.name_count = n_names;
+    return n;
 }
 
 static ASTNode* parseTryStmt(Parser* p) {
@@ -570,31 +630,125 @@ static ASTNode* parseEquality(Parser* p) {
     return left;
 }
 
+/*
+ * cloneSimpleNode — deep-copy a simple (side-effect-free) expression node.
+ *
+ * Used by comparison chaining to safely reuse a middle operand without sharing
+ * a pointer between two AST nodes (which causes double-free in freeNode).
+ *
+ * Returns NULL for complex expressions that cannot be safely cloned.
+ * Allowed: identifier, number literal, string literal, bool literal, nil/null.
+ */
+static ASTNode* cloneSimpleNode(ASTNode* n) {
+    if (!n) return NULL;
+    ASTNode* c = makeNode(n->type, n->line);
+    switch (n->type) {
+        case NODE_NUMBER:
+            c->data.number.value = n->data.number.value;
+            return c;
+        case NODE_BOOL:
+            c->data.boolean.value = n->data.boolean.value;
+            return c;
+        case NODE_NIL:
+            return c;  /* no payload */
+        case NODE_STRING:
+            c->data.string.value = dupStr(n->data.string.value,
+                                          (int)strlen(n->data.string.value));
+            return c;
+        case NODE_IDENT:
+            c->data.ident.name = dupStr(n->data.ident.name,
+                                        (int)strlen(n->data.ident.name));
+            return c;
+        default:
+            freeNode(c);
+            return NULL;  /* not a simple expression — caller must error */
+    }
+}
+
 static ASTNode* parseComparison(Parser* p) {
     /*
-     * Simple left-to-right comparison — no chaining.
+     * Comparison parsing with optional chaining.
      *
-     * Chained comparisons (1 < x < 10) were removed in v1.2.0 because
-     * the implementation caused a heap double-free crash: the middle operand
-     * AST node was shared between two binary nodes, and freeNode freed it
-     * twice. The safe replacement is the explicit form:
+     * Single comparison (common case):
+     *   a < b   →  NODE_BINARY(LT, a, b)
      *
-     *   1 < x and x < 10   ← use this instead
+     * Chained comparison (v1.2.1a1):
+     *   1 < x < 10  →  (1 < x) and (x < 10)
+     *   a < b <= c  →  (a < b) and (b <= c)
      *
-     * A future version may reintroduce chaining with proper AST node cloning.
+     * Safety: the middle operand appears in TWO comparisons. The original node
+     * lives in the left comparison; a CLONE lives in the right comparison.
+     * Cloning is only allowed for simple expressions (identifiers and literals)
+     * because those have no side effects and are trivially safe to re-evaluate.
+     * Complex middle expressions (calls, arithmetic) produce a compile error
+     * directing the user to use a 'let' variable.
+     *
+     * This design guarantees:
+     *   - No shared AST node pointers (no double-free in freeNode)
+     *   - No double evaluation of side-effecting expressions
+     *   - Correct short-circuit: if first comparison is false, second is skipped
      */
     ASTNode* left = parseAddition(p);
+    if (!(check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)))
+        return left;
+
+    TokenType op1 = p->current.type; advance(p);
+    int line1 = p->previous.line;
+    ASTNode* mid = parseAddition(p);
+
+    ASTNode* first = makeNode(NODE_BINARY, line1);
+    first->data.binary.op    = op1;
+    first->data.binary.left  = left;
+    first->data.binary.right = mid;  /* first owns mid */
+
+    /* No chaining — return the single comparison */
+    if (!(check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)))
+        return first;
+
+    /*
+     * Chaining detected. Build AND-chain, cloning each intermediate operand.
+     * 'result'    = the growing and-chain (first comparison on the left)
+     * 'prev_node' = the node owned by the previous comparison's right side
+     *               (we need a CLONE of this for the next comparison's left)
+     */
+    ASTNode* result    = first;
+    ASTNode* prev_node = mid;   /* owned by first->right */
+
     while (check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)) {
-        TokenType op = p->current.type; advance(p);
-        int line = p->previous.line;
-        ASTNode* right = parseAddition(p);
-        ASTNode* n = makeNode(NODE_BINARY, line);
-        n->data.binary.op    = op;
-        n->data.binary.left  = left;
-        n->data.binary.right = right;
-        left = n;
+        TokenType op  = p->current.type; advance(p);
+        int       line = p->previous.line;
+
+        /* Clone the previous right operand for use as the next left operand. */
+        ASTNode* mid_clone = cloneSimpleNode(prev_node);
+        if (!mid_clone) {
+            errorAt(p, &p->previous,
+                "Chained comparison: middle expression is too complex.\n"
+                "  Evaluate it once with 'let':\n"
+                "    let mid = <expr>\n"
+                "    if a < mid and mid < b ...");
+            /* consume remaining comparison ops to recover cleanly */
+            parseAddition(p);
+            while (check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)) {
+                advance(p); parseAddition(p);
+            }
+            return result;
+        }
+
+        ASTNode* next = parseAddition(p);
+
+        ASTNode* cmp = makeNode(NODE_BINARY, line);
+        cmp->data.binary.op    = op;
+        cmp->data.binary.left  = mid_clone;  /* clone owns this slot */
+        cmp->data.binary.right = next;       /* cmp owns next */
+
+        ASTNode* and_node = makeNode(NODE_BINARY, line);
+        and_node->data.binary.op    = TK_AND;
+        and_node->data.binary.left  = result;
+        and_node->data.binary.right = cmp;
+        result    = and_node;
+        prev_node = next;  /* owned by cmp->right, clone needed for further chaining */
     }
-    return left;
+    return result;
 }
 
 static ASTNode* parseAddition(Parser* p) {

@@ -664,19 +664,81 @@ static void compileNode(ASTNode* node) {
                 if (test) { fclose(test); found = true; }
             }
             if (!found) {
-                compileError(line, "Cannot find module '%s'.", mod_path);
+                compileError(line, "ImportError: module not found: '%s'\n"
+                    "  Make sure the path is correct and the file exists.", mod_path);
                 break;
             }
 
             /* Deduplication: skip if this exact resolved path was already imported. */
-            if (imported_modules.count(std::string(resolved))) {
-                break;   /* already compiled — silently skip */
+            bool already_imported = imported_modules.count(std::string(resolved)) > 0;
+
+            /*
+             * from-import name verification.
+             *
+             * When the user writes `from X import a, b`, we parse the module's
+             * AST at compile time and verify that each requested name is declared
+             * at the top level of the module. This catches typos before runtime.
+             *
+             * Limitation: all module globals become accessible after import
+             * regardless (Nolqu has no namespace isolation). The from-import
+             * form provides documentation + compile-time name validation only.
+             */
+            if (node->data.import.name_count > 0) {
+                /* Read and parse the module to collect its top-level declarations */
+                FILE* f_scan = fopen(resolved, "rb");
+                if (f_scan) {
+                    fseek(f_scan, 0, SEEK_END);
+                    long sz = ftell(f_scan); rewind(f_scan);
+                    char* src_buf = (char*)malloc((size_t)(sz + 1));
+                    size_t nr = fread(src_buf, 1, (size_t)sz, f_scan);
+                    src_buf[nr] = '\0';
+                    fclose(f_scan);
+
+                    Parser scan_p;
+                    initParser(&scan_p, src_buf, resolved);
+                    ASTNode* scan_ast = parse(&scan_p);
+                    free(src_buf);
+
+                    /* Collect top-level declared names from the module */
+                    std::unordered_set<std::string> mod_exports;
+                    if (!scan_p.had_error && scan_ast &&
+                        (scan_ast->type == NODE_BLOCK || scan_ast->type == NODE_PROGRAM)) {
+                        NodeList& stmts = scan_ast->data.block.stmts;
+                        for (int i = 0; i < stmts.count; i++) {
+                            ASTNode* s = stmts.items[i];
+                            if (!s) continue;
+                            if (s->type == NODE_LET)
+                                mod_exports.insert(s->data.let.name);
+                            else if (s->type == NODE_CONST)
+                                mod_exports.insert(s->data.const_decl.name);
+                            else if (s->type == NODE_FUNCTION)
+                                mod_exports.insert(s->data.function.name);
+                        }
+                    }
+                    freeNode(scan_ast);
+
+                    /* Verify each requested name */
+                    for (int i = 0; i < node->data.import.name_count; i++) {
+                        const char* req = node->data.import.names[i];
+                        if (mod_exports.find(std::string(req)) == mod_exports.end()) {
+                            compileError(line,
+                                "ImportError: '%s' not found in module '%s'.\n"
+                                "  Check the name is defined at the top level of the module.\n"
+                                "  Use  import \"%s\"  to see all available names.",
+                                req, mod_path, mod_path);
+                        }
+                    }
+                }
+
+                if (had_compile_error) break;
             }
+
+            if (already_imported) break;  /* already compiled — skip re-execution */
             imported_modules.insert(std::string(resolved));
 
             // Read file
             FILE* f = fopen(resolved, "rb");
-            if (!f) { compileError(line, "Cannot open module '%s'.", resolved); break; }
+            if (!f) { compileError(line, "ImportError: cannot open module '%s'.", resolved); break; }
             fseek(f, 0, SEEK_END);
             long size = ftell(f); rewind(f);
             char* source = (char*)malloc((size_t)(size + 1));
@@ -692,7 +754,7 @@ static void compileNode(ASTNode* node) {
 
             if (mod_parser.had_error) {
                 freeNode(mod_ast);
-                compileError(line, "Errors in module '%s'.", resolved);
+                compileError(line, "ImportError: errors in module '%s'.", resolved);
                 break;
             }
 

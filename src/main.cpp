@@ -360,7 +360,7 @@ static void printHelp(void) {
     printf("\n");
     printf(NQ_COLOR_BOLD "Syntax quick-ref:" NQ_COLOR_RESET "\n");
     printf("  let x = 42            # declare variable\n");
-    printf("  const MAX = 100       # immutable binding\n");
+    printf("  const MAX = 100           # immutable binding\n");
     printf("  x += 10               # compound assign: += -= *= /= ..=\n");
     printf("  if x > 10  ...  else  ...  end\n");
     printf("  loop i < 10  ...  end              # while-style\n");
@@ -369,6 +369,8 @@ static void printHelp(void) {
     printf("  function greet(name = \"world\")  return \"Hi, \" .. name  end\n");
     printf("  try  error(\"oops\")  catch err  print error_type(err)  end\n");
     printf("  arr[1:3]  s[:5]  s[-2:]            # slice\n");
+  printf("  1 < x < 10                         # comparison chaining\n");
+  printf("  from stdlib/math import PI, sin    # selective import\n");
     printf("\n");
 }
 

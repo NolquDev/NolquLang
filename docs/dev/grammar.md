@@ -1,4 +1,4 @@
-# Nolqu Language Grammar — v1.2.0
+# Nolqu Language Grammar — v1.2.1a1
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**
@@ -113,6 +113,11 @@ not_expr     → "not" not_expr
 equality     → comparison ( ( "==" | "!=" ) comparison )*
 
 comparison   → concat ( ( "<" | ">" | "<=" | ">=" ) concat )*
+
+> Comparison chaining is supported for simple middle operands (identifiers
+> and literals): `1 < x < 10` desugars to `(1 < x) and (x < 10)` with
+> the middle operand cloned (no shared pointer, no double-free).
+> Complex middle expressions produce a compile error.
 
 concat       → add ( ".." add )*
 

@@ -141,7 +141,11 @@ struct ASTNode {
         struct { ASTNode* expr; } ret;    /* expr may be NULL         */
 
         /* NODE_IMPORT */
-        struct { char* path; } import;
+        struct {
+            char*  path;
+            char** names;      /* NULL = import all; non-NULL = from-import name list */
+            int    name_count;
+        } import;
 
         /* NODE_EXPR_STMT */
         struct { ASTNode* expr; } expr_stmt;

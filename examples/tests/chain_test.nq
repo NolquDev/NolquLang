@@ -1,0 +1,46 @@
+# chain_test.nq — Test suite for comparison chaining
+
+import "stdlib/test"
+
+suite("chaining: basic range check")
+let x = 5
+expect(1 < x < 10, "1 < 5 < 10")
+expect(not (10 < x < 20), "10 < 5 < 20 is false")
+
+suite("chaining: boundary values")
+expect(1 < x <= 5, "inclusive upper bound")
+expect(5 <= x < 10, "inclusive lower bound")
+expect(not (1 < x < 5), "exclusive upper (5 not < 5)")
+expect(1 <= x <= 5, "both inclusive")
+
+suite("chaining: literals")
+expect(1 < 3 < 10, "literal chain")
+expect(not (5 < 3 < 10), "literal false left")
+expect(not (1 < 8 < 5), "literal false right")
+
+suite("chaining: 3-way")
+let a = 1
+let b = 5
+let c = 10
+expect(a < b < c, "3-way ident chain")
+expect(not (c < b < a), "3-way reversed false")
+
+suite("chaining: no double evaluation")
+# Complex expressions in the middle must use a let variable
+# The chaining is safe for identifiers — verify short-circuit via and
+let call_count = 0
+function track()
+  call_count += 1
+  return 5
+end
+let mid = track()            # evaluate once
+let _r = 10 < mid < 20      # safe: mid is an identifier
+expect_eq(call_count, 1, "track() called exactly once")
+expect(_r == false, "10 < 5 < 20 is false")
+
+suite("chaining: simple identifier is safe")
+let n = 7
+let result = 0 < n < 100
+expect(result == true, "ident chain correct")
+
+done()

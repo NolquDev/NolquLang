@@ -1,4 +1,4 @@
-# Nolqu Language Reference — v1.2.0
+# Nolqu Language Reference — v1.2.1a1
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**
@@ -203,6 +203,34 @@ print not true          # false
 ```
 
 `!` is an alias for `not`.
+
+### Comparison Chaining
+
+Chained comparisons are supported when the middle operand is a simple expression
+(an identifier, number, string, bool, or null):
+
+```nolqu
+let x = 5
+if 1 < x < 10
+  print "in range"
+end
+
+# 3-way chain
+let a = 1
+let b = 5
+let c = 10
+assert(a < b < c, "ascending")
+
+# Complex middle: use a let variable
+let mid = compute_something()
+if 0 < mid < 100
+  print mid
+end
+```
+
+> Chaining evaluates each operand **exactly once**.
+> Short-circuit: if the first comparison is false, the second is not evaluated.
+> Complex middle expressions (calls, arithmetic) produce a compile error.
 
 ### Operator precedence (high → low)
 

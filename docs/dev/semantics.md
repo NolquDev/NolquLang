@@ -1,4 +1,4 @@
-# Nolqu Semantics Reference — v1.2.0
+# Nolqu Semantics Reference — v1.2.1a1
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**
@@ -523,4 +523,4 @@ end
 | `arr[a:b]` | New array/string, `a` inclusive, `b` exclusive |
 | Negative slice index | Counts from end: `-1` = last |
 | Out-of-range slice | Clamped to `[0, len]` — no error |
-| Comparison chaining | **Not supported** — use `a < x and x < b` |
+| Comparison chaining | Supported for simple middle operands; complex → compile error |
