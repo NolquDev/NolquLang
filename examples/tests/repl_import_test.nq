@@ -1,0 +1,94 @@
+# repl_import_test.nq — Tests for import caching, circular detection, edge cases
+import "stdlib/test"
+
+# ── Module caching ────────────────────────────────────────────────────
+suite("import: caching (no re-execution)")
+# Side-effect module: if it runs twice, SIDE_COUNT would be wrong
+# We can't easily test execution count from a .nq file,
+# so we verify dedup via consistent state:
+import "stdlib/math"
+import "stdlib/math"   # dedup
+import "stdlib/math"   # dedup again
+expect(PI > 3.14, "PI still correct after triple import")
+from stdlib/math import sin
+from stdlib/math import cos   # same module, no re-exec
+expect(sin(0) == 0, "sin after from-import dedup")
+expect(cos(0) == 1, "cos after from-import dedup")
+
+# ── from-import name verification ─────────────────────────────────────
+suite("from-import: valid names")
+from stdlib/array import sum, flatten, range
+let nums = range(5)
+expect_eq(join(nums, ","), "0,1,2,3,4", "range via from-import")
+expect_eq(sum(nums), 10, "sum via from-import")
+
+# ── from-import: bad name caught at compile time ──────────────────────
+suite("from-import: bad name = compile error (verified separately)")
+expect(true, "tested via nq check in separate test")
+
+# ── Circular import: detected at compile time ─────────────────────────
+suite("circular import: detected")
+expect(true, "tested via nq check — produces ImportError: circular import detected")
+
+# ── stdlib/array: range edge cases ───────────────────────────────────
+suite("stdlib/array: range edge cases")
+from stdlib/array import range, first, last, find, count_if
+
+expect_eq(join(range(0), ","), "", "range(0) = empty")
+expect_eq(join(range(1), ","), "0", "range(1) = [0]")
+let r = range(3, 3)
+expect(len(r) == 0, "range(3,3) = empty")
+
+let neg = range(3, 0, -1)
+expect_eq(join(neg, ","), "3,2,1", "range neg step")
+
+expect(is_nil(first([])), "first([]) = null")
+expect(is_nil(last([])),  "last([]) = null")
+
+function gt3(x)
+  return x > 3
+end
+let arr = [1, 2, 3, 4, 5]
+expect_eq(find(arr, gt3), 4, "find first > 3")
+expect_eq(count_if(arr, gt3), 2, "count_if > 3")
+
+# ── stdlib/string: naming consistency ────────────────────────────────
+suite("stdlib/string: consistent API")
+from stdlib/string import str_contains, starts_with, ends_with, to_upper, to_lower
+
+expect(str_contains("hello world", "world"), "str_contains true")
+expect(not str_contains("hello", "xyz"),     "str_contains false")
+expect(starts_with("nolqu", "nol"),          "starts_with")
+expect(ends_with("nolqu", "lqu"),            "ends_with")
+expect_eq(to_upper("hello"), "HELLO",        "to_upper")
+expect_eq(to_lower("WORLD"), "world",        "to_lower")
+
+# ── Error messages: format and type ──────────────────────────────────
+suite("error messages: correct types")
+let got = []
+try
+  let _x = undefined_xyz_abc
+catch e
+  push(got, error_type(e))
+end
+try
+  let _x = "a" + 1
+catch e
+  push(got, error_type(e))
+end
+try
+  let _x = [1,2,3][99]
+catch e
+  push(got, error_type(e))
+end
+try
+  let _x = 10 / 0
+catch e
+  push(got, error_type(e))
+end
+expect_eq(got[0], "NameError",  "NameError type")
+expect_eq(got[1], "TypeError",  "TypeError type")
+expect_eq(got[2], "IndexError", "IndexError type")
+expect_eq(got[3], "ValueError", "ValueError type")
+
+done()

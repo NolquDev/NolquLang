@@ -109,11 +109,12 @@ void runREPL(VM* vm) {
 
         Parser p;
         initParser(&p, carry, "<repl>");
+        p.repl_mode = true;
         ASTNode* ast = parse(&p);
 
         if (p.had_error) { freeNode(ast); carry[0] = '\0'; depth = 0; continue; }
 
-        CompileResult result = compile(ast, "<repl>");
+        CompileResult result = compile(ast, "<repl>", true);
         freeNode(ast);
 
         if (!result.had_error && result.function) {

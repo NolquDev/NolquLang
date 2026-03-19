@@ -12,6 +12,7 @@
 static CompilerCtx* current           = NULL;
 static bool         had_compile_error = false;
 static const char*  src_path          = NULL;
+static bool         repl_mode         = false;
 
 /*
  * Loop context — tracks information needed to compile break and continue.
@@ -35,6 +36,14 @@ static std::vector<LoopCtx>        loop_stack;
  * "stdlib/math").
  */
 static std::unordered_set<std::string> imported_modules;
+
+/*
+ * Import stack — tracks the chain of modules currently being compiled.
+ * Used to detect circular imports: if a module appears in this stack
+ * when it is about to be imported, we have a cycle.
+ * e.g. A imports B, B imports A → stack = ["A", "B"] when B tries to import A.
+ */
+static std::vector<std::string> import_stack;
 
 /*
  * Const globals — global variable names declared with 'const'.
@@ -601,7 +610,37 @@ static void compileNode(ASTNode* node) {
             break;
         case NODE_EXPR_STMT:
             compileExpr(node->data.expr_stmt.expr);
-            emit(OP_POP, line);
+            if (repl_mode) {
+                /*
+                 * REPL auto-print: print the expression result if it is not null.
+                 *   OP_DUP        — duplicate top (keep for potential print)
+                 *   OP_NIL        — push nil for comparison
+                 *   OP_EQ         — is it nil/null?
+                 *   JUMP_IF_FALSE → skip_print
+                 *   OP_POP        — discard eq=true (it IS nil, skip)
+                 *   OP_POP        — discard value
+                 *   JUMP → end
+                 * skip_print:
+                 *   OP_POP        — discard eq=false
+                 *   OP_PRINT      — print the duplicated value
+                 * end:
+                 */
+                emit(OP_DUP, line);
+                emit(OP_NIL, line);
+                emit(OP_EQ, line);
+                int skip = emitJump(OP_JUMP_IF_FALSE, line);
+                /* true branch — value is nil, don't print */
+                emit(OP_POP, line);  /* pop eq=true */
+                emit(OP_POP, line);  /* pop duplicated nil */
+                int end = emitJump(OP_JUMP, line);
+                patchJumpAt(skip);
+                /* false branch — value is non-nil, print it */
+                emit(OP_POP, line);  /* pop eq=false */
+                emit(OP_PRINT, line);
+                patchJumpAt(end);
+            } else {
+                emit(OP_POP, line);
+            }
             break;
         case NODE_SET_INDEX:
             compileExpr(node->data.set_index.obj);
@@ -692,15 +731,7 @@ static void compileNode(ASTNode* node) {
             bool already_imported = imported_modules.count(std::string(resolved)) > 0;
 
             /*
-             * from-import name verification.
-             *
-             * When the user writes `from X import a, b`, we parse the module's
-             * AST at compile time and verify that each requested name is declared
-             * at the top level of the module. This catches typos before runtime.
-             *
-             * Limitation: all module globals become accessible after import
-             * regardless (Nolqu has no namespace isolation). The from-import
-             * form provides documentation + compile-time name validation only.
+             * from-import name verification (scan only, before execution check).
              */
             if (node->data.import.name_count > 0) {
                 /* Read and parse the module to collect its top-level declarations */
@@ -752,8 +783,35 @@ static void compileNode(ASTNode* node) {
                 if (had_compile_error) break;
             }
 
-            if (already_imported) break;  /* already compiled — skip re-execution */
-            imported_modules.insert(std::string(resolved));
+            if (had_compile_error) break;
+
+            /* Circular import check: is this module already on the compile stack? */
+            std::string resolved_str(resolved);
+            for (size_t si = 0; si < import_stack.size(); si++) {
+                if (import_stack[si] == resolved_str) {
+                    /* Build the cycle chain string: A -> B -> A */
+                    char chain[1024] = {0};
+                    int chain_pos = 0;
+                    for (size_t ci = si; ci < import_stack.size(); ci++) {
+                        chain_pos += snprintf(chain + chain_pos,
+                            sizeof(chain) - (size_t)chain_pos, "%s -> ",
+                            import_stack[ci].c_str());
+                        if (chain_pos >= (int)sizeof(chain) - 1) break;
+                    }
+                    snprintf(chain + chain_pos, sizeof(chain) - (size_t)chain_pos,
+                        "%s", resolved);
+                    compileError(line,
+                        "ImportError: circular import detected.\n"
+                        "  Cycle: %s", chain);
+                    break;
+                }
+            }
+            if (had_compile_error) break;
+
+            /* Deduplication: skip if already compiled (but NOT if it's in the stack — that's circular) */
+            if (already_imported) break;
+
+            imported_modules.insert(resolved_str);
 
             // Read file
             FILE* f = fopen(resolved, "rb");
@@ -783,7 +841,9 @@ static void compileNode(ASTNode* node) {
             CompilerCtx mod_ctx;
             initCompilerCtx(&mod_ctx, mod_fn);
             mod_ctx.scope_depth = 0;
+            import_stack.push_back(std::string(resolved));
             compileBlock(mod_ast);
+            import_stack.pop_back();
             freeNode(mod_ast);
             emit(OP_NIL, line);
             emit(OP_RETURN, line);
@@ -814,12 +874,14 @@ static void compileBlock(ASTNode* block) {
     }
 }
 
-CompileResult compile(ASTNode* ast, const char* source_path) {
+CompileResult compile(ASTNode* ast, const char* source_path, bool is_repl) {
     had_compile_error = false;
     src_path          = source_path;
+    repl_mode         = is_repl;
     /* Reset per-compilation state so REPL calls start clean. */
     loop_stack.clear();
     imported_modules.clear();
+    import_stack.clear();
     const_globals.clear();
     ObjFunction* script = newFunction();
     script->name = NULL;

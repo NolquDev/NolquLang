@@ -2,6 +2,54 @@
 
 ---
 
+## v1.2.1a4 — Alpha 4 (2026)
+
+### Features
+
+**REPL auto-print expressions**
+
+The REPL now evaluates and prints expression results automatically — no need
+to wrap everything in `print`. Non-null values are displayed; null is silent.
+
+```
+nq > 1 + 2
+3
+nq > "hello"
+hello
+nq > [1, 2, 3]
+[1, 2, 3]
+nq > let x = 99
+nq > x
+99
+nq > null
+nq >
+```
+
+Supported in REPL: number/string/bool/array literals, arithmetic, comparisons,
+function calls, and identifier lookups. Implemented via `repl_mode` flag in
+the parser and compiler; normal scripts are unaffected.
+
+**Circular import detection**
+
+`A → B → A` now produces a clear compile error:
+
+```
+ImportError: circular import detected.
+  Cycle: /path/to/a.nq -> /path/to/b.nq -> /path/to/a.nq
+```
+
+Previously silent (dedup set caused B→A to silently do nothing).
+Fixed by checking the `import_stack` before the `already_imported` dedup skip.
+
+### Bug Fixes
+
+- **Circular check order**: the `already_imported` dedup check was firing before
+  the import_stack cycle check, suppressing cycle detection. Fixed by reordering.
+
+- **strncat warnings** in circular chain builder replaced with `snprintf`.
+
+---
+
 ## v1.2.1a3 — Alpha 3 (2026)
 
 ### Focus: import, CLI, errors, stdlib
@@ -600,6 +648,54 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.1a4 — Alpha 4 (2026)
+
+### Features
+
+**REPL auto-print expressions**
+
+The REPL now evaluates and prints expression results automatically — no need
+to wrap everything in `print`. Non-null values are displayed; null is silent.
+
+```
+nq > 1 + 2
+3
+nq > "hello"
+hello
+nq > [1, 2, 3]
+[1, 2, 3]
+nq > let x = 99
+nq > x
+99
+nq > null
+nq >
+```
+
+Supported in REPL: number/string/bool/array literals, arithmetic, comparisons,
+function calls, and identifier lookups. Implemented via `repl_mode` flag in
+the parser and compiler; normal scripts are unaffected.
+
+**Circular import detection**
+
+`A → B → A` now produces a clear compile error:
+
+```
+ImportError: circular import detected.
+  Cycle: /path/to/a.nq -> /path/to/b.nq -> /path/to/a.nq
+```
+
+Previously silent (dedup set caused B→A to silently do nothing).
+Fixed by checking the `import_stack` before the `already_imported` dedup skip.
+
+### Bug Fixes
+
+- **Circular check order**: the `already_imported` dedup check was firing before
+  the import_stack cycle check, suppressing cycle detection. Fixed by reordering.
+
+- **strncat warnings** in circular chain builder replaced with `snprintf`.
 
 ---
 

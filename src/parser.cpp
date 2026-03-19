@@ -452,6 +452,33 @@ static ASTNode* parseTryStmt(Parser* p) {
 static ASTNode* parseStmt(Parser* p) {
     skipNewlines(p);
     if (check(p, TK_EOF)) return NULL;
+
+    /*
+     * REPL mode: if the current token starts an expression (literal, array,
+     * unary operator) rather than a statement keyword, parse it as a full
+     * expression statement — binary operators and all.
+     *
+     * We do this BEFORE advance() so we can route directly into parseExpr()
+     * which correctly handles operator precedence (1 + 2 * 3, etc.).
+     */
+    if (p->repl_mode) {
+        TokenType cur = p->current.type;
+        bool is_expr_start = (cur == TK_NUMBER || cur == TK_STRING ||
+                              cur == TK_TRUE   || cur == TK_FALSE  ||
+                              cur == TK_NIL    || cur == TK_NULL   ||
+                              cur == TK_LBRACKET || cur == TK_MINUS ||
+                              cur == TK_NOT    || cur == TK_BANG   ||
+                              cur == TK_LPAREN);
+        if (is_expr_start) {
+            int line = p->current.line;
+            ASTNode* expr = parseExpr(p);
+            expectNewline(p);
+            ASTNode* n = makeNode(NODE_EXPR_STMT, line);
+            n->data.expr_stmt.expr = expr;
+            return n;
+        }
+    }
+
     advance(p);
     Token tok = p->previous;
 
@@ -587,6 +614,7 @@ static ASTNode* parseStmt(Parser* p) {
                 if ((int)tok.length == 4 && memcmp(tok.start, "from", 4) == 0)
                     return parseFromImportStmt(p);
             }
+
             char errbuf[128];
             snprintf(errbuf, sizeof(errbuf),
                 "Invalid statement starting with '%s'. "
@@ -912,6 +940,7 @@ void initParser(Parser* p, const char* source, const char* path) {
     initLexer(&p->lexer, source);
     p->had_error   = false;
     p->panic_mode  = false;
+    p->repl_mode   = false;
     p->source_path = path;
     advance(p);
 }

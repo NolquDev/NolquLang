@@ -58,7 +58,7 @@ typedef struct {
  * initialised top-level ObjFunction ready to pass to runVM().
  * On failure, result.had_error is true and result.function is NULL.
  */
-CompileResult compile(ASTNode* ast, const char* source_path);
+CompileResult compile(ASTNode* ast, const char* source_path, bool is_repl = false);
 
 #ifdef __cplusplus
 } /* extern "C" */
