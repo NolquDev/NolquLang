@@ -104,6 +104,7 @@ static ASTNode* parseExpr(Parser* p);
 static ASTNode* parseOr(Parser* p);
 static ASTNode* parseAnd(Parser* p);
 static ASTNode* parseEquality(Parser* p);
+static ASTNode* parseExprWithLeft(Parser* p, ASTNode* left);
 static ASTNode* parseComparison(Parser* p);
 static ASTNode* parseAddition(Parser* p);
 static ASTNode* parseMultiply(Parser* p);
@@ -336,7 +337,7 @@ static ASTNode* parseImportStmt(Parser* p) {
 
 static ASTNode* parseFromImportStmt(Parser* p) {
     /*
-     * from module import name1, name2, ...    (v1.2.1b1)
+     * from module import name1, name2, ...    (v1.2.1b2)
      *
      * The module is imported fully (all definitions become global).
      * The listed names are verified at compile time — typos → ImportError.
@@ -600,9 +601,8 @@ static ASTNode* parseStmt(Parser* p) {
 
             /*
              * REPL mode: if a binary operator follows the identifier (or call),
-             * continue parsing the full expression. This allows:
-             *   x + 1       x * 2       x > 3       a and b
-             *   PI + 1      len(s) > 0  etc.
+             * continue parsing the full expression via parseExprWithLeft —
+             * the single canonical implementation of the binary precedence tower.
              */
             if (p->repl_mode) {
                 bool has_op =
@@ -615,86 +615,7 @@ static ASTNode* parseStmt(Parser* p) {
                     check(p, TK_AND)   || check(p, TK_OR)     ||
                     check(p, TK_LBRACKET);
                 if (has_op) {
-                    /*
-                     * We have a partial expression (expr = ident or call result).
-                     * We need to continue parsing the binary expression from here.
-                     * The simplest approach: pass expr through the precedence
-                     * levels that sit above call (comparison, add, multiply, etc.)
-                     * by calling a helper that finishes parsing from the current
-                     * point.  Since parseExpr starts from scratch, we use the
-                     * existing binary expression infrastructure by treating expr
-                     * as the left-hand side.
-                     *
-                     * parseExpr internally calls parseOr → ... → parseCall →
-                     * parsePrimary. We've already built the "primary" portion (expr).
-                     * We continue through the remaining levels manually.
-                     */
-                    /* Index access */
-                    while (check(p, TK_LBRACKET)) {
-                        int ln = p->current.line; advance(p);
-                        ASTNode* start_e = NULL;
-                        if (!check(p, TK_COLON)) start_e = parseExpr(p);
-                        if (check(p, TK_COLON)) {
-                            advance(p);
-                            ASTNode* end_e = NULL;
-                            if (!check(p, TK_RBRACKET)) end_e = parseExpr(p);
-                            expect(p, TK_RBRACKET, "Expected ']'");
-                            ASTNode* sl = makeNode(NODE_SLICE, ln);
-                            sl->data.slice.obj = expr; sl->data.slice.start = start_e; sl->data.slice.end = end_e;
-                            expr = sl;
-                        } else {
-                            expect(p, TK_RBRACKET, "Expected ']'");
-                            ASTNode* gi = makeNode(NODE_GET_INDEX, ln);
-                            gi->data.get_index.obj = expr; gi->data.get_index.index = start_e;
-                            expr = gi;
-                        }
-                    }
-                    /* Arithmetic, concat */
-                    while (check(p, TK_STAR) || check(p, TK_SLASH) || check(p, TK_PERCENT)) {
-                        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
-                        ASTNode* rhs = parseUnary(p);
-                        ASTNode* n = makeNode(NODE_BINARY, ln);
-                        n->data.binary.op = op; n->data.binary.left = expr; n->data.binary.right = rhs;
-                        expr = n;
-                    }
-                    while (check(p, TK_PLUS) || check(p, TK_MINUS) || check(p, TK_DOTDOT)) {
-                        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
-                        ASTNode* rhs = parseMultiply(p);
-                        ASTNode* n = makeNode(NODE_BINARY, ln);
-                        n->data.binary.op = op; n->data.binary.left = expr; n->data.binary.right = rhs;
-                        expr = n;
-                    }
-                    /* Comparison */
-                    while (check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)) {
-                        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
-                        ASTNode* rhs = parseAddition(p);
-                        ASTNode* n = makeNode(NODE_BINARY, ln);
-                        n->data.binary.op = op; n->data.binary.left = expr; n->data.binary.right = rhs;
-                        expr = n;
-                    }
-                    /* Equality */
-                    while (check(p, TK_EQEQ) || check(p, TK_BANGEQ)) {
-                        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
-                        ASTNode* rhs = parseComparison(p);
-                        ASTNode* n = makeNode(NODE_BINARY, ln);
-                        n->data.binary.op = op; n->data.binary.left = expr; n->data.binary.right = rhs;
-                        expr = n;
-                    }
-                    /* Logical and / or */
-                    while (check(p, TK_AND)) {
-                        advance(p); int ln = p->previous.line;
-                        ASTNode* rhs = parseComparison(p);
-                        ASTNode* n = makeNode(NODE_BINARY, ln);
-                        n->data.binary.op = TK_AND; n->data.binary.left = expr; n->data.binary.right = rhs;
-                        expr = n;
-                    }
-                    while (check(p, TK_OR)) {
-                        advance(p); int ln = p->previous.line;
-                        ASTNode* rhs = parseComparison(p);
-                        ASTNode* n = makeNode(NODE_BINARY, ln);
-                        n->data.binary.op = TK_OR; n->data.binary.left = expr; n->data.binary.right = rhs;
-                        expr = n;
-                    }
+                    expr = parseExprWithLeft(p, expr);
                 }
             }
 
@@ -752,6 +673,85 @@ static ASTNode* parseOr(Parser* p) {
         ASTNode* n = makeNode(NODE_BINARY, line);
         n->data.binary.op = TK_OR; n->data.binary.left = left; n->data.binary.right = right;
         left = n;
+    }
+    return left;
+}
+
+/*
+ * parseExprWithLeft — continue parsing a binary expression whose left-hand
+ * primary has already been built.
+ *
+ * Used by the REPL to handle expressions like `x + 1`, `a < b and b < 10`,
+ * `arr[0]` when `x`, `a`, `arr` have already been consumed as identifiers.
+ *
+ * Walks the same precedence tower as parseOr → parseAnd → parseEquality →
+ * parseComparison → parseAddition → parseMultiply, but starts with `left`
+ * already in hand instead of calling parsePrimary/parseCall.
+ *
+ * This is the single canonical implementation — no duplication.
+ */
+static ASTNode* parseExprWithLeft(Parser* p, ASTNode* left) {
+    /* Index / slice suffixes (same as parseCall does them) */
+    while (check(p, TK_LBRACKET)) {
+        int ln = p->current.line; advance(p);
+        ASTNode* start_e = NULL;
+        if (!check(p, TK_COLON)) start_e = parseExpr(p);
+        if (check(p, TK_COLON)) {
+            advance(p);
+            ASTNode* end_e = NULL;
+            if (!check(p, TK_RBRACKET)) end_e = parseExpr(p);
+            expect(p, TK_RBRACKET, "Expected ']'");
+            ASTNode* sl = makeNode(NODE_SLICE, ln);
+            sl->data.slice.obj = left; sl->data.slice.start = start_e; sl->data.slice.end = end_e;
+            left = sl;
+        } else {
+            expect(p, TK_RBRACKET, "Expected ']'");
+            ASTNode* gi = makeNode(NODE_GET_INDEX, ln);
+            gi->data.get_index.obj = left; gi->data.get_index.index = start_e;
+            left = gi;
+        }
+    }
+    /* Multiply level */
+    while (check(p, TK_STAR) || check(p, TK_SLASH) || check(p, TK_PERCENT)) {
+        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
+        ASTNode* rhs = parseUnary(p);
+        ASTNode* n = makeNode(NODE_BINARY, ln);
+        n->data.binary.op = op; n->data.binary.left = left; n->data.binary.right = rhs; left = n;
+    }
+    /* Addition level */
+    while (check(p, TK_PLUS) || check(p, TK_MINUS) || check(p, TK_DOTDOT)) {
+        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
+        ASTNode* rhs = parseMultiply(p);
+        ASTNode* n = makeNode(NODE_BINARY, ln);
+        n->data.binary.op = op; n->data.binary.left = left; n->data.binary.right = rhs; left = n;
+    }
+    /* Comparison level */
+    while (check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)) {
+        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
+        ASTNode* rhs = parseAddition(p);
+        ASTNode* n = makeNode(NODE_BINARY, ln);
+        n->data.binary.op = op; n->data.binary.left = left; n->data.binary.right = rhs; left = n;
+    }
+    /* Equality level */
+    while (check(p, TK_EQEQ) || check(p, TK_BANGEQ)) {
+        TokenType op = p->current.type; advance(p); int ln = p->previous.line;
+        ASTNode* rhs = parseComparison(p);
+        ASTNode* n = makeNode(NODE_BINARY, ln);
+        n->data.binary.op = op; n->data.binary.left = left; n->data.binary.right = rhs; left = n;
+    }
+    /* And level */
+    while (check(p, TK_AND)) {
+        advance(p); int ln = p->previous.line;
+        ASTNode* rhs = parseEquality(p);
+        ASTNode* n = makeNode(NODE_BINARY, ln);
+        n->data.binary.op = TK_AND; n->data.binary.left = left; n->data.binary.right = rhs; left = n;
+    }
+    /* Or level */
+    while (check(p, TK_OR)) {
+        advance(p); int ln = p->previous.line;
+        ASTNode* rhs = parseAnd(p);
+        ASTNode* n = makeNode(NODE_BINARY, ln);
+        n->data.binary.op = TK_OR; n->data.binary.left = left; n->data.binary.right = rhs; left = n;
     }
     return left;
 }
@@ -822,7 +822,7 @@ static ASTNode* parseComparison(Parser* p) {
      * Single comparison (common case):
      *   a < b   →  NODE_BINARY(LT, a, b)
      *
-     * Chained comparison (v1.2.1b1):
+     * Chained comparison (v1.2.1b2):
      *   1 < x < 10  →  (1 < x) and (x < 10)
      *   a < b <= c  →  (a < b) and (b <= c)
      *

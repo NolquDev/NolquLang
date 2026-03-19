@@ -1,4 +1,4 @@
-# Nolqu Semantics Reference — v1.2.1b1
+# Nolqu Semantics Reference — v1.2.1b2
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**

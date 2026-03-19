@@ -2,6 +2,28 @@
 
 ---
 
+## v1.2.1b2 — Beta 2 (2026)
+
+### Refactor: REPL expression parser (no duplication)
+
+`b1` introduced `parseExprWithLeft()` as a concept but still had a 60-line
+duplicated precedence tower in the `TK_IDENT` case. `b2` completes the
+refactor:
+
+- Added `parseExprWithLeft(Parser* p, ASTNode* left)` — a proper function
+  that accepts an already-built left-hand node and continues through the
+  full precedence chain (index → multiply → add → comparison → equality →
+  and → or).
+- The `TK_IDENT` repl_mode block is now 5 lines: detect operator, call
+  `parseExprWithLeft`.
+- Added forward declaration so the function can be called from `TK_IDENT`
+  case before it is defined.
+
+Behavior is identical to `b1`. This is purely a code quality fix — one place
+to maintain, no duplication, future operators automatically handled.
+
+---
+
 ## v1.2.1b1 — Beta 1 (2026)
 
 **First beta release.** Feature freeze. Only bug fixes until v1.2.1 stable.
@@ -686,6 +708,28 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.1b2 — Beta 2 (2026)
+
+### Refactor: REPL expression parser (no duplication)
+
+`b1` introduced `parseExprWithLeft()` as a concept but still had a 60-line
+duplicated precedence tower in the `TK_IDENT` case. `b2` completes the
+refactor:
+
+- Added `parseExprWithLeft(Parser* p, ASTNode* left)` — a proper function
+  that accepts an already-built left-hand node and continues through the
+  full precedence chain (index → multiply → add → comparison → equality →
+  and → or).
+- The `TK_IDENT` repl_mode block is now 5 lines: detect operator, call
+  `parseExprWithLeft`.
+- Added forward declaration so the function can be called from `TK_IDENT`
+  case before it is defined.
+
+Behavior is identical to `b1`. This is purely a code quality fix — one place
+to maintain, no duplication, future operators automatically handled.
 
 ---
 
