@@ -742,7 +742,7 @@ void vmRuntimeError(VM* vm, const char* fmt, ...) {
                     fn->name->chars);
     }
 
-    fprintf(stderr, NQ_COLOR_RED "  Error: " NQ_COLOR_RESET);
+    fprintf(stderr, NQ_COLOR_RED "  " NQ_COLOR_RESET);
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n\n");
     va_end(args);

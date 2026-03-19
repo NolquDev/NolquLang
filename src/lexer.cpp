@@ -26,8 +26,6 @@ static Keyword keywords[] = {
     {"continue", 8, TK_CONTINUE},
     {"for",      3, TK_FOR},
     {"in",       2, TK_IN},
-    {"as",       2, TK_AS},
-    {"from",     4, TK_FROM},
     {NULL,       0, TK_IDENT},
 };
 

@@ -1,4 +1,16 @@
 #include "parser.h"
+
+/*
+ * Contextual keyword helpers — "as" and "from" are not reserved words.
+ * They are plain identifiers that get special meaning only in import syntax.
+ */
+static bool isContextualKw(Parser* p, const char* kw) {
+    if (p->current.type != TK_IDENT) return false;
+    size_t klen = strlen(kw);
+    return (size_t)p->current.length == klen &&
+           memcmp(p->current.start, kw, klen) == 0;
+}
+
 #include "memory.h"
 #include <string.h>
 
@@ -301,7 +313,7 @@ static ASTNode* parseImportStmt(Parser* p) {
     }
 
     /* Reject 'import X as Y' with a clear error */
-    if (check(p, TK_AS)) {
+    if (isContextualKw(p, "as")) {
         errorAt(p, &p->current,
             "'import X as Y' is not supported — Nolqu has no module namespaces.\n"
             "  Use:  import \"stdlib/math\"\n"
@@ -465,7 +477,7 @@ static ASTNode* parseStmt(Parser* p) {
         case TK_FUNCTION: return parseFunctionDecl(p);
         case TK_RETURN:   return parseReturnStmt(p);
         case TK_IMPORT:   return parseImportStmt(p);
-        case TK_FROM:     return parseFromImportStmt(p);
+        /* "from" is handled as contextual keyword in the default case */
         case TK_TRY:      return parseTryStmt(p);
         case TK_BREAK: {
             expectNewline(p);
@@ -477,6 +489,10 @@ static ASTNode* parseStmt(Parser* p) {
         }
 
         case TK_IDENT: {
+            /* Contextual keyword: "from X import a, b" */
+            if ((int)tok.length == 4 && memcmp(tok.start, "from", 4) == 0)
+                return parseFromImportStmt(p);
+
             if (check(p, TK_EQ)) {
                 int line  = tok.line;
                 char* name = dupStr(tok.start, tok.length);
@@ -566,6 +582,11 @@ static ASTNode* parseStmt(Parser* p) {
             return NULL;
 
         default: {
+            /* Check for contextual keywords not in the dispatch table */
+            if (tok.type == TK_IDENT) {
+                if ((int)tok.length == 4 && memcmp(tok.start, "from", 4) == 0)
+                    return parseFromImportStmt(p);
+            }
             char errbuf[128];
             snprintf(errbuf, sizeof(errbuf),
                 "Invalid statement starting with '%s'. "

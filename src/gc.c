@@ -8,7 +8,7 @@
  *   3. sweep()             — free all unmarked objects; reset mark bits
  *   4. Adjust threshold    — nq_gc_threshold = max(2 × surviving, 1 MB)
  *
- * BUG FIX (v1.0.0-rc1):
+ * BUG FIX:
  *   Previous removeWhiteStrings() used calloc/free directly, bypassing
  *   the nq_realloc tracker.  This caused nq_bytes_allocated to drift,
  *   which made the GC trigger too early or too late.

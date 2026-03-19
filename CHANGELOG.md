@@ -2,6 +2,44 @@
 
 ---
 
+## v1.2.1a2 — Alpha 2 (2026)
+
+### Bug Fixes
+
+**`as` and `from` incorrectly reserved as keywords**
+
+`let as = "x"` and `let from = "y"` produced errors ("Expected a variable name
+after 'let', Found: 'as'"). Fixed by removing `as` and `from` from the keyword
+table. They are now **contextual identifiers** — they get special meaning only
+in import syntax and are freely usable as variable, function, or parameter names.
+
+```nolqu
+let as   = "alias"      # now works
+let from = "source"     # now works
+function route(as, from)
+  return from .. " -> " .. as
+end
+```
+
+**`from X import Y` dispatch broken when `from` is not a keyword**
+
+When `as`/`from` were removed from the keyword table, `from` became `TK_IDENT`
+and the statement dispatcher's `case TK_FROM:` was never reached. Fixed by
+checking for the contextual keyword `"from"` at the start of the `TK_IDENT`
+case in `parseStmt`.
+
+**Runtime error output: redundant `Error:` prefix**
+
+Errors were printed as `Error: IndexError: array index out of bounds` — the
+word "Error:" was redundant since the typed prefix already identifies the
+error type. Now prints: `IndexError: array index out of bounds`.
+
+**Old `v1.0.0-rc1` comments in `object.c` and `gc.c`**
+
+Two inline comments still referenced `v1.0.0-rc1`. Removed.
+
+---
+
 ## v1.2.1a1 — Alpha 1 (2026)
 
 ### Re-introduced features (fully implemented)
@@ -508,6 +546,44 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.1a2 — Alpha 2 (2026)
+
+### Bug Fixes
+
+**`as` and `from` incorrectly reserved as keywords**
+
+`let as = "x"` and `let from = "y"` produced errors ("Expected a variable name
+after 'let', Found: 'as'"). Fixed by removing `as` and `from` from the keyword
+table. They are now **contextual identifiers** — they get special meaning only
+in import syntax and are freely usable as variable, function, or parameter names.
+
+```nolqu
+let as   = "alias"      # now works
+let from = "source"     # now works
+function route(as, from)
+  return from .. " -> " .. as
+end
+```
+
+**`from X import Y` dispatch broken when `from` is not a keyword**
+
+When `as`/`from` were removed from the keyword table, `from` became `TK_IDENT`
+and the statement dispatcher's `case TK_FROM:` was never reached. Fixed by
+checking for the contextual keyword `"from"` at the start of the `TK_IDENT`
+case in `parseStmt`.
+
+**Runtime error output: redundant `Error:` prefix**
+
+Errors were printed as `Error: IndexError: array index out of bounds` — the
+word "Error:" was redundant since the typed prefix already identifies the
+error type. Now prints: `IndexError: array index out of bounds`.
+
+**Old `v1.0.0-rc1` comments in `object.c` and `gc.c`**
+
+Two inline comments still referenced `v1.0.0-rc1`. Removed.
 
 ---
 

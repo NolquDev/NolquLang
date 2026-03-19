@@ -6,7 +6,7 @@
  *   2. Calls nq_realloc so the byte counter is updated
  *   3. Links the new object into nq_all_objects (GC linked list)
  *
- * BUG FIX (v1.0.0-rc1):
+ * BUG FIX:
  *   allocString() previously called free(chars) when an interned copy
  *   already existed, bypassing the tracker.  The string buffer was
  *   allocated via nq_realloc (in copyString), so it must be freed via
