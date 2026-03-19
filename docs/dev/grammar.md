@@ -1,8 +1,8 @@
-# Nolqu Language Grammar — v1.2.0-rc2
+# Nolqu Language Grammar — v1.2.0
 
 > [!NOTE]
-> **Development documentation — Nolqu v1.1.x (alpha)**
-> This grammar describes all syntax available in the current alpha.
+> **Nolqu v1.2.0 — Stable**
+> This grammar describes all syntax available in v1.2.0.
 > For v1.0.0 stable grammar see [`docs/stable/grammar.md`](../stable/grammar.md).
 
 For a readable language reference see [language.md](language.md).
@@ -258,7 +258,7 @@ import "path/to/module"
 
 ---
 
-## Notes and Limitations (v1.2.0-rc2)
+## Notes and Limitations (v1.2.0)
 
 - No closures — functions cannot capture variables from outer scopes.
 - No hash maps — only arrays and strings are collection types.

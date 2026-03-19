@@ -1,8 +1,8 @@
-# Nolqu Language Grammar — v1.0.0 (Stable)
+# Nolqu Language Grammar — v1.2.0 (Stable)
 
 > [!NOTE]
 > **Stable documentation — Nolqu v1.0.0**
-> For the latest alpha grammar see [`docs/dev/grammar.md`](../dev/grammar.md).
+> For the latest grammar see [`docs/dev/grammar.md`](../dev/grammar.md).
 
 ---
 
@@ -73,7 +73,7 @@ import  try  catch  end
 true  false  nil  and  or  not
 ```
 
-> **v1.1.x adds:** `break` `continue` `for` `in`
+> **Available in v1.2.0:** `break` `continue` `for` `in`
 
 ## Operators
 
@@ -86,4 +86,4 @@ true  false  nil  and  or  not
 [   ]                       array indexing
 ```
 
-> **v1.1.x adds:** `+=` `-=` `*=` `/=` `..=`
+> **Available in v1.2.0:** `+=` `-=` `*=` `/=` `..=`

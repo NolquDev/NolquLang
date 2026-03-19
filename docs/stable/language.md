@@ -1,9 +1,9 @@
-# Nolqu Language Reference — v1.0.0 (Stable)
+# Nolqu Language Reference — v1.2.0 (Stable)
 
 > [!NOTE]
-> **Stable documentation — Nolqu v1.0.0**
-> This document describes the v1.0.0 stable release.
-> For the latest alpha features see [`docs/dev/`](../dev/).
+> **Stable documentation — Nolqu v1.2.0**
+> This document describes the v1.2.0 stable release.
+> For the latest features see [`docs/dev/`](../dev/).
 
 Complete reference for Nolqu v1.0.0.
 For the formal grammar see [grammar.md](grammar.md).
@@ -224,7 +224,7 @@ import "my_module"      # loads my_module.nq from CWD
 ```
 
 > **Note:** In v1.0.0, importing a module twice re-executes it.
-> This was fixed in v1.1.1a2.
+> This is fixed in v1.2.0.
 
 ---
 
@@ -283,12 +283,12 @@ end
 | Limitation | Status |
 |---|---|
 | No `break` / `continue` | Fixed in v1.1.0 |
-| No `for item in array` | Added in v1.1.1a2 |
-| No `+=` `-=` `*=` `/=` | Added in v1.1.1a2 |
-| No `ord()` / `chr()` | Added in v1.1.1a2 |
-| `import` re-executes on double import | Fixed in v1.1.1a2 |
-| Constant pool limit 256 | Raised to 65535 in v1.1.1a2 |
-| Accessing undefined variable not catchable | Fixed in v1.1.1a3 |
+| No `for item in array` | Added in v1.2.0 |
+| No `+=` `-=` `*=` `/=` | Added in v1.2.0 |
+| No `ord()` / `chr()` | Added in v1.2.0 |
+| `import` re-executes on double import | Fixed in v1.2.0 |
+| Constant pool limit 256 | Raised to 65535 in v1.2.0 |
+| Accessing undefined variable not catchable | Fixed in v1.2.0 |
 | No closures | Planned for v1.2 |
 | No hash maps | Planned for v2.0 |
 | No integer type | All numbers are 64-bit floats |

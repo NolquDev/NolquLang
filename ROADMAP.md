@@ -18,15 +18,16 @@
 | v1.1.1a5 | null, const, default params, slice, semantics.md |
 | v1.1.1a6 | Typed errors, bool(), import syntax, stdlib/io, real examples |
 | v1.2.0-rc1 | Stabilization, help fix, docs cleanup |
-| **v1.2.0-rc2** | **Critical crash fix, import/chaining removed, docs — RC2 ← current** |
+| v1.2.0-rc2 | Critical crash fix, import/chaining removed, docs |
+| **v1.2.0** | **Stable release ← current** |
 
 ---
 
 ## In Progress
 
-### v1.2.0 — Stable release 🎯
+### v1.2.0 — ✅ Released
 
-Criteria to promote rc1 → stable v1.2.0:
+Promoted from rc2.
 - [ ] All known bugs closed
 - [x] Full test suite green (33/33 ✅)
 - [x] ASan + UBSan clean ✅

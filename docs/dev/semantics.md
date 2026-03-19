@@ -1,7 +1,7 @@
-# Nolqu Semantics Reference — v1.2.0-rc2
+# Nolqu Semantics Reference — v1.2.0
 
 > [!NOTE]
-> **Development documentation — Nolqu v1.1.x (alpha)**
+> **Nolqu v1.2.0 — Stable**
 > This document describes the precise runtime semantics of the language.
 > For syntax see [grammar.md](grammar.md). For a feature overview see [language.md](language.md).
 

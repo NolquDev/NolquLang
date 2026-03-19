@@ -1,11 +1,10 @@
-# Nolqu Language Reference — v1.2.0-rc2
+# Nolqu Language Reference — v1.2.0
 
 > [!NOTE]
-> **Development documentation — Nolqu v1.1.x (alpha)**
-> This document describes the current alpha series.
+> **Nolqu v1.2.0 — Stable**
 > For the v1.0.0 stable reference see [`docs/stable/language.md`](../stable/language.md).
 
-Complete reference for Nolqu v1.2.0-rc2.
+Complete reference for Nolqu v1.2.0.
 For the formal grammar see [grammar.md](grammar.md).
 For VM internals see [vm_design.md](vm_design.md).
 
@@ -80,7 +79,7 @@ count = count + 1
 name  = "Bob"
 ```
 
-### Compound Assignment *(v1.1.1a2+)*
+### Compound Assignment 
 
 Modify a variable in place without repeating the name.
 
@@ -250,7 +249,7 @@ loop i <= 10
 end
 ```
 
-### for / in / end *(v1.1.1a2+)*
+### for / in / end 
 
 Range-based loop — iterate over every element of an array.
 
@@ -338,7 +337,7 @@ let doubled = map(nums, double)
 print join(doubled, ", ")        # 2, 4, 6, 8, 10
 ```
 
-> **Note:** Closures (capturing outer variables) are not supported in v1.1.x.
+> **Note:** Closures (capturing outer variables) are not supported in v1.2.0.
 
 See [semantics.md](semantics.md) for precise semantics of `null`, truthiness, `and`/`or`, `const`, and slices.
 
@@ -365,7 +364,7 @@ print join(a, ", ")
 ### Iterating
 
 ```nolqu
-# preferred in v1.1.x
+# preferred
 for item in a
   print item
 end
@@ -470,7 +469,7 @@ import "my_module"             # custom module from CWD     # loads my_module.nq
 
 - Path is relative to the **working directory** where `nq` is run.
 - `.nq` extension is added automatically.
-- Each module is executed **at most once** per program — re-importing is a no-op. *(fixed in v1.1.1a2)*
+- Each module is executed **at most once** per program — re-importing is a no-op. *(fixed in v1.2.0)*
 - No cycle detection — circular imports will loop forever.
 
 **All built-in modules:**
@@ -629,7 +628,7 @@ print x              # global
 
 ---
 
-## 13. Known Limitations (v1.2.0-rc2)
+## 13. Known Limitations (v1.2.0)
 
 | Limitation | Notes |
 |---|---|

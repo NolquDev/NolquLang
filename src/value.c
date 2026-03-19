@@ -59,7 +59,7 @@ bool valuesEqual(Value a, Value b) {
 bool isTruthy(Value v) {
     if (IS_NIL(v))    return false;
     if (IS_BOOL(v))   return AS_BOOL(v);
-    /* Extended falsy: 0 and "" are falsy (v1.1.1a5) */
+    /* Extended falsy: 0 and "" are falsy */
     if (IS_NUMBER(v)) return AS_NUMBER(v) != 0.0;
     if (IS_STRING(v)) return AS_STRING(v)->length != 0;
     return true;  /* arrays, functions are always truthy */

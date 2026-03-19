@@ -198,7 +198,7 @@ int nq_call(NqState* nq, const char* fn_name,
  * Each registered function gets its own heap-allocated Context that
  * stores the NqState* and the host callback.  A templated trampoline
  * reads the context from a thread-local pointer set just before the
- * call; this avoids the 16-slot macro table from rc1.
+ * call; this avoids the original 16-slot macro table.
  *
  * Max registered natives: MAX_HOST_NATIVES (64).
  */

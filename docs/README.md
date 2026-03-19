@@ -4,10 +4,9 @@ This folder contains two parallel documentation tracks:
 
 ---
 
-## `stable/` — Nolqu v1.0.0 (Stable Release)
+## `stable/` — Nolqu v1.2.0 (Stable)
 
-Documentation for the **current stable release**.
-Use this if you are running the `v1.0.0` binary or following along with the stable tag.
+Documentation for the **v1.2.0 stable release**.
 
 | Document | Contents |
 |---|---|
@@ -19,11 +18,9 @@ Use this if you are running the `v1.0.0` binary or following along with the stab
 
 ---
 
-## `dev/` — Nolqu v1.1.x (Alpha Development)
+## `dev/` — Nolqu v1.2.0 (Primary)
 
-Documentation for the **current development series**.
-These describe features that may not be in v1.0.0 stable.
-Updated with every alpha release.
+The main documentation. Reflects v1.2.0 stable.
 
 | Document | Contents |
 |---|---|
@@ -40,14 +37,14 @@ Updated with every alpha release.
 ```
 Are you using a v1.0.0 stable binary?
   └─ Yes → read docs/stable/
-  └─ No, I cloned the repo / using an alpha build → read docs/dev/
+  └─ No, I want the full/latest docs → read docs/dev/
 ```
 
 ---
 
 ## Version comparison
 
-| Feature | v1.0.0 stable | v1.1.x alpha |
+| Feature | v1.0.0 | v1.2.0 |
 |---|---|---|
 | `break` / `continue` | ✗ | ✓ |
 | `for item in array` | ✗ | ✓ |

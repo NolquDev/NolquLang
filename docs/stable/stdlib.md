@@ -1,8 +1,8 @@
-# Nolqu Standard Library — v1.0.0 (Stable)
+# Nolqu Standard Library — v1.2.0 (Stable)
 
 > [!NOTE]
 > **Stable documentation — Nolqu v1.0.0**
-> For the latest alpha stdlib see [`docs/dev/stdlib.md`](../dev/stdlib.md).
+> For the latest stdlib see [`docs/dev/stdlib.md`](../dev/stdlib.md).
 
 Three modules are included in the stable release.
 
@@ -20,7 +20,7 @@ print sign(-7)             # -1
 
 **Functions:** `clamp(val, lo, hi)` · `lerp(a, b, t)` · `sign(n)`
 
-> **v1.1.x adds:** `PI` `TAU` `E` · trig (`sin` `cos` `tan` `degrees` `radians`) · log (`log` `log2` `log10`) · `is_nan` `is_inf` `hypot` `gcd` `lcm`
+> **Available in v1.2.0:** `PI` `TAU` `E` · trig (`sin` `cos` `tan` `degrees` `radians`) · log (`log` `log2` `log10`) · `is_nan` `is_inf` `hypot` `gcd` `lcm`
 
 ---
 
@@ -39,7 +39,7 @@ print join(map(nums, double), ", ")   # 2, 4, 6, 8, 10
 
 **Functions:** `map(arr, fn)` · `filter(arr, fn)` · `reduce(arr, fn, init)` · `reverse(arr)`
 
-> **v1.1.x adds:** `sum` `min_arr` `max_arr` `any` `all` `flatten` `unique` `zip` `chunk`
+> **Available in v1.2.0:** `sum` `min_arr` `max_arr` `any` `all` `flatten` `unique` `zip` `chunk`
 
 ---
 
@@ -57,9 +57,9 @@ print count_lines("output.txt")   # 2
 
 ---
 
-## New in v1.1.x
+## New in v1.2.0 vs v1.0.0
 
-The following modules are **not** part of v1.0.0 stable:
+The following modules are **not** part of v1.2.0 stable:
 
 | Module | Added in |
 |---|---|
@@ -68,5 +68,5 @@ The following modules are **not** part of v1.0.0 stable:
 | `stdlib/path` | v1.1.0 |
 | `stdlib/json` | v1.1.0 |
 | `stdlib/test` | v1.1.0 |
-| `stdlib/os` | v1.1.1a2 |
-| `stdlib/fmt` | v1.1.1a2 |
+| `stdlib/os` | v1.2.0 |
+| `stdlib/fmt` | v1.2.0 |

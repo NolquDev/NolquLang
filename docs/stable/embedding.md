@@ -1,8 +1,8 @@
-# Embedding Nolqu — v1.0.0 (Stable)
+# Embedding Nolqu — v1.2.0 (Stable)
 
 > [!NOTE]
 > **Stable documentation — Nolqu v1.0.0**
-> The embed API is unchanged in v1.1.x. See [`docs/dev/embedding.md`](../dev/embedding.md)
+> See [`docs/dev/embedding.md`](../dev/embedding.md) for the full embed API.
 > for the most current version of this document.
 
 The v1.0.0 embed API is fully described in [docs/dev/embedding.md](../dev/embedding.md).

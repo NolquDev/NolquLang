@@ -1,8 +1,6 @@
-# Nolqu v1.2.0-rc2 — Release Notes
+# Nolqu v1.2.0 — Release Notes
 
-> **Release Candidate.**
-> All planned features for v1.2.0 are implemented and tested.
-> This release is ready for broader testing before stable promotion.
+> **Stable release.**
 > See [CHANGELOG.md](CHANGELOG.md) for the full version history.
 
 ---
@@ -87,7 +85,7 @@ All v1.0.0 programs run unchanged unless they:
 
 ---
 
-## Known Limitations (v1.2.0-rc2)
+## Known Limitations (v1.2.0)
 
 | Limitation | Notes |
 |---|---|

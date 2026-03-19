@@ -259,7 +259,7 @@ function truncate(s, max_len)
   return slice(s, 0, max_len - 3) .. "..."
 end
 
-# ─── Extended string functions (added v1.1.1a4) ───────────────────────
+# ─── Extended string functions ───────────────────────
 
 # char_at(s, i) — return character at index i (supports negative indexing)
 #

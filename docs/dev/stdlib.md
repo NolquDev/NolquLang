@@ -1,8 +1,8 @@
-# Nolqu Standard Library — v1.2.0-rc1
+# Nolqu Standard Library — v1.2.0
 
 > [!NOTE]
-> **Development documentation — Nolqu v1.1.x (alpha)**
-> Describes all 10 modules available in the current alpha.
+> **Nolqu v1.2.0 — Stable**
+> Describes all 10 modules available in v1.2.0.
 > v1.0.0 stable only includes `stdlib/math`, `stdlib/array`, `stdlib/file`.
 > See [`docs/stable/stdlib.md`](../stable/stdlib.md) for the stable subset.
 

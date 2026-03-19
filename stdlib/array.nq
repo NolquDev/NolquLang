@@ -43,7 +43,7 @@ function reverse(arr)
   return result
 end
 
-# ─── Extended array functions (added v1.1.1a4) ────────────────────────
+# ─── Extended array functions ────────────────────────
 
 # sum(arr) — return the sum of all numbers in an array
 #

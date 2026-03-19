@@ -1,9 +1,9 @@
-# Embedding Nolqu — v1.2.0-rc1
+# Embedding Nolqu — v1.2.0
 
 > [!NOTE]
-> **Development documentation — Nolqu v1.1.x (alpha)**
+> **Nolqu v1.2.0 — Stable**
 > The embed API (`nolqu.h`) is **identical** in all 1.x releases.
-> There are no breaking changes between v1.0.0 and v1.1.x.
+> The embed API is unchanged since v1.0.0.
 > For the stable version see [`docs/stable/embedding.md`](../stable/embedding.md).
 
 Embed the Nolqu interpreter in any C or C++ application using `include/nolqu.h`.

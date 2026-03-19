@@ -250,12 +250,12 @@ static ASTNode* parseImportStmt(Parser* p) {
     int line = p->previous.line;
 
     /*
-     * Supported import forms (v1.2.0-rc2):
+     * Supported import forms (v1.2.0):
      *
      *   import "stdlib/math"     ← quoted string path (original form)
      *   import stdlib/math       ← unquoted slash-separated path
      *
-     * Removed in rc2 (were silent no-ops / misleading):
+     * Removed in v1.2.0 (were silent no-ops / misleading):
      *   import X as Y            → parse error: use 'import X' directly
      *   from X import a, b       → parse error: Nolqu has no selective import
      *
@@ -326,7 +326,7 @@ static ASTNode* parseFromImportStmt(Parser* p) {
     /*
      * 'from X import Y' is not supported in v1.2.0.
      * Nolqu has no selective import — all module declarations become global.
-     * Removed in rc2 because the previous implementation silently imported
+     * Removed in v1.2.0 because the previous implementation silently imported
      * everything regardless of the names listed.
      *
      * Use:  import "stdlib/math"   (imports all of math's definitions)
@@ -574,7 +574,7 @@ static ASTNode* parseComparison(Parser* p) {
     /*
      * Simple left-to-right comparison — no chaining.
      *
-     * Chained comparisons (1 < x < 10) were removed in v1.2.0-rc2 because
+     * Chained comparisons (1 < x < 10) were removed in v1.2.0 because
      * the implementation caused a heap double-free crash: the middle operand
      * AST node was shared between two binary nodes, and freeNode freed it
      * twice. The safe replacement is the explicit form:

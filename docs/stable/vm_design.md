@@ -1,4 +1,4 @@
-# Nolqu VM Design — v1.0.0 (Stable)
+# Nolqu VM Design — v1.2.0 (Stable)
 
 > [!NOTE]
 > **Stable documentation — Nolqu v1.0.0**
@@ -56,11 +56,11 @@ Constants, stack ops, globals, locals, arithmetic, comparison, concat,
 control flow (jump/loop), arrays, error handling (try/throw), functions, halt.
 
 **v1.0.0 constant pool:** 8-bit index, max **256** constants per function.
-(Raised to 16-bit / max 65535 in v1.1.1a2.)
+(Raised to 16-bit / max 65535 in v1.2.0.)
 
 ## Limits
 
-| Resource | v1.0.0 | v1.1.x |
+| Resource | v1.0.0 | v1.2.0 |
 |---|---|---|
 | Operand stack | 512 | 512 |
 | Call frames | 64 | 64 |

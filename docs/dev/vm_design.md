@@ -1,7 +1,7 @@
-# Nolqu VM Design — v1.2.0-rc1
+# Nolqu VM Design — v1.2.0
 
 > [!NOTE]
-> **Development documentation — Nolqu v1.1.x (alpha)**
+> **Nolqu v1.2.0 — Stable**
 > For the v1.0.0 internals see [`docs/stable/vm_design.md`](../stable/vm_design.md).
 
 Internal architecture reference for contributors and embedders.
@@ -294,7 +294,7 @@ keeping only marked strings. All allocations use `NQ_ALLOC`/`FREE_ARRAY`
 
 ## Limits
 
-| Resource | v1.0.0 | v1.1.x |
+| Resource | v1.0.0 | v1.2.0 |
 |---|---|---|
 | Operand stack | 512 | 512 |
 | Call frames | 64 | 64 |

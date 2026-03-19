@@ -2,6 +2,37 @@
 
 ---
 
+## v1.2.0 — Stable Release (2026)
+
+**First stable release of the v1.2 series.**
+
+Promoted from v1.2.0-rc2 with no code changes.
+All rc2 fixes are included. See rc1 and rc2 entries below for details.
+
+### Summary of what's new since v1.0.0
+
+- `for item in array` — range-based loop with `break`/`continue`
+- `+=` `-=` `*=` `/=` `..=` — compound assignment operators
+- `const NAME = value` — compile-time immutable binding
+- `function f(x = default)` — default parameters
+- `arr[1:3]` / `s[1:3]` — slice expressions for arrays and strings
+- `null` keyword — alias for `nil`
+- `bool(v)`, `ord(ch)`, `chr(n)`, `error_type(e)` — new builtins
+- Typed errors: `TypeError:`, `NameError:`, `IndexError:`, `ValueError:`
+- Import: `import stdlib/math` (unquoted path supported)
+- Constant pool raised 256 → 65535
+- All runtime errors now catchable via `try/catch`
+- `str()` precision: 14 significant digits (was 6)
+- 11 stdlib modules, 90+ functions
+
+### Breaking changes from v1.0.0
+
+- `0` and `""` (empty string) are now **falsy**
+- `nil` prints as `"null"`; `type(nil)` returns `"null"`
+- Error messages carry type prefix: `"NameError: ..."` not `"Undefined variable..."`
+
+---
+
 ## v1.2.0-rc2 — Release Candidate 2 (2026)
 
 Stability-only pass. No new features.
@@ -430,6 +461,37 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.0 — Stable Release (2026)
+
+**First stable release of the v1.2 series.**
+
+Promoted from v1.2.0-rc2 with no code changes.
+All rc2 fixes are included. See rc1 and rc2 entries below for details.
+
+### Summary of what's new since v1.0.0
+
+- `for item in array` — range-based loop with `break`/`continue`
+- `+=` `-=` `*=` `/=` `..=` — compound assignment operators
+- `const NAME = value` — compile-time immutable binding
+- `function f(x = default)` — default parameters
+- `arr[1:3]` / `s[1:3]` — slice expressions for arrays and strings
+- `null` keyword — alias for `nil`
+- `bool(v)`, `ord(ch)`, `chr(n)`, `error_type(e)` — new builtins
+- Typed errors: `TypeError:`, `NameError:`, `IndexError:`, `ValueError:`
+- Import: `import stdlib/math` (unquoted path supported)
+- Constant pool raised 256 → 65535
+- All runtime errors now catchable via `try/catch`
+- `str()` precision: 14 significant digits (was 6)
+- 11 stdlib modules, 90+ functions
+
+### Breaking changes from v1.0.0
+
+- `0` and `""` (empty string) are now **falsy**
+- `nil` prints as `"null"`; `type(nil)` returns `"null"`
+- Error messages carry type prefix: `"NameError: ..."` not `"Undefined variable..."`
 
 ---
 

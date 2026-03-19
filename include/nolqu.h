@@ -1,6 +1,6 @@
 /*
  * nolqu.h — Public C/C++ Embedding API
- * Nolqu v1.0.0-rc1
+ * Nolqu v1.2.0
  *
  * Embed the Nolqu interpreter in your C or C++ application.
  *

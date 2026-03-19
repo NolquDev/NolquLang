@@ -134,7 +134,7 @@ function log10(x)
   return log(x) / log(10)
 end
 
-# ─── Extended math functions (added v1.1.1a4) ────────────────────────
+# ─── Extended math functions ────────────────────────
 
 # is_nan(n) — true if n is the IEEE 754 "not a number" value
 #
