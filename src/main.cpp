@@ -396,23 +396,26 @@ int main(int argc, char* argv[]) {
     if (strcmp(cmd, "help")    == 0 || strcmp(cmd, "--help")    == 0 ||
         strcmp(cmd, "-h")      == 0) { printHelp();    return 0; }
 
-    // Two-argument commands
-    if (argc >= 3) {
+    // Two-argument commands — check that a filename was provided
+    if (strcmp(cmd, "run") == 0 || strcmp(cmd, "check") == 0 ||
+        strcmp(cmd, "test") == 0 || strcmp(cmd, "compile") == 0) {
+        if (argc < 3) {
+            fprintf(stderr,
+                NQ_COLOR_RED "[ Error ]" NQ_COLOR_RESET
+                " Missing filename.\n"
+                "  Usage:  nq %s <file.nq>\n"
+                "  Run  " NQ_COLOR_BOLD "nq help" NQ_COLOR_RESET
+                "  for all commands.\n\n", cmd);
+            return 1;
+        }
         if (strcmp(cmd, "run") == 0) {
             VM vm; initVM(&vm);
             int r = runFile(&vm, argv[2]);
             freeVM(&vm); return r;
         }
-        if (strcmp(cmd, "check") == 0) {
-            return checkFile(argv[2]);
-        }
-        if (strcmp(cmd, "test") == 0) {
-            return runTests(argv[2]);
-        }
-        if (strcmp(cmd, "compile") == 0) {
-            // Pass remaining args to compileToC
-            return compileToC(argc - 2, argv + 2);
-        }
+        if (strcmp(cmd, "check") == 0)   return checkFile(argv[2]);
+        if (strcmp(cmd, "test")  == 0)   return runTests(argv[2]);
+        if (strcmp(cmd, "compile") == 0) return compileToC(argc - 2, argv + 2);
     }
 
     // Bare filename

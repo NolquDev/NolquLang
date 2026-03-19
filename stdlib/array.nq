@@ -206,3 +206,93 @@ function chunk(arr, size)
   end
   return result
 end
+
+
+# ─── range / sequence ─────────────────────────────────────────────────────────
+
+# range(n) — return [0, 1, 2, ..., n-1]
+# range(start, stop) — return [start, ..., stop-1]
+# range(start, stop, step) — return stepped sequence
+#
+# Examples:
+#   range(5)           # [0, 1, 2, 3, 4]
+#   range(2, 7)        # [2, 3, 4, 5, 6]
+#   range(0, 10, 2)    # [0, 2, 4, 6, 8]
+#   range(5, 0, -1)    # [5, 4, 3, 2, 1]
+function range(start_or_n, stop, step)
+  let arr = []
+  let start = 0
+  let end_val = 0
+  let s = 1
+
+  if is_nil(stop)
+    start   = 0
+    end_val = start_or_n
+    s       = 1
+  else
+    start   = start_or_n
+    end_val = stop
+    s       = 1
+  end
+
+  if not is_nil(step)
+    s = step
+  end
+
+  if s == 0
+    error("ValueError: range() step cannot be zero")
+  end
+
+  if s > 0
+    let i = start
+    loop i < end_val
+      push(arr, i)
+      i = i + s
+    end
+  else
+    let i = start
+    loop i > end_val
+      push(arr, i)
+      i = i + s
+    end
+  end
+
+  return arr
+end
+
+# first(arr) — return the first element, or null if empty
+function first(arr)
+  if len(arr) == 0
+    return null
+  end
+  return arr[0]
+end
+
+# last(arr) — return the last element, or null if empty
+function last(arr)
+  if len(arr) == 0
+    return null
+  end
+  return arr[len(arr) - 1]
+end
+
+# count_if(arr, fn) — count elements where fn returns truthy
+function count_if(arr, fn)
+  let n = 0
+  for item in arr
+    if fn(item)
+      n += 1
+    end
+  end
+  return n
+end
+
+# find(arr, fn) — return first element where fn returns truthy, or null
+function find(arr, fn)
+  for item in arr
+    if fn(item)
+      return item
+    end
+  end
+  return null
+end

@@ -664,8 +664,27 @@ static void compileNode(ASTNode* node) {
                 if (test) { fclose(test); found = true; }
             }
             if (!found) {
-                compileError(line, "ImportError: module not found: '%s'\n"
-                    "  Make sure the path is correct and the file exists.", mod_path);
+                /* Show which paths were actually searched */
+                char tried[768] = {0};
+                if (src_path) {
+                    const char* sl = strrchr(src_path, '/');
+                    if (!sl) sl = strrchr(src_path, '\\');
+                    if (sl) {
+                        int dl = (int)(sl - src_path + 1);
+                        char rel[512];
+                        snprintf(rel, sizeof(rel), "%.*s%s.nq", dl, src_path, mod_path);
+                        strncat(tried, "\n      ", sizeof(tried) - strlen(tried) - 1);
+                        strncat(tried, rel, sizeof(tried) - strlen(tried) - 1);
+                    }
+                }
+                char cwd_p[512];
+                snprintf(cwd_p, sizeof(cwd_p), "%s.nq", mod_path);
+                strncat(tried, "\n      ", sizeof(tried) - strlen(tried) - 1);
+                strncat(tried, cwd_p, sizeof(tried) - strlen(tried) - 1);
+                compileError(line,
+                    "ImportError: module '%s' not found.\n"
+                    "  Searched:%s",
+                    mod_path, tried);
                 break;
             }
 

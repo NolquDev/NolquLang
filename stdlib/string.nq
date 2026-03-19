@@ -309,3 +309,38 @@ function title_case(s)
   end
   return join(result, " ")
 end
+
+
+# ─── Convenience aliases ──────────────────────────────────────────────────────
+
+# contains(s, sub) — alias for contains_str for consistency with array builtin
+# Use: import "stdlib/string"  then: contains(s, sub)
+# Note: the builtin contains() checks arrays; this checks strings.
+function str_contains(s, sub)
+  return contains_str(s, sub)
+end
+
+# starts_with(s, prefix) — alias for builtin startswith (consistent naming)
+function starts_with(s, prefix)
+  return startswith(s, prefix)
+end
+
+# ends_with(s, suffix) — alias for builtin endswith (consistent naming)
+function ends_with(s, suffix)
+  return endswith(s, suffix)
+end
+
+# to_upper(s) — alias for builtin upper
+function to_upper(s)
+  return upper(s)
+end
+
+# to_lower(s) — alias for builtin lower
+function to_lower(s)
+  return lower(s)
+end
+
+# repeat_str(s, n) — repeat string n times (alias for builtin repeat)
+function repeat_str(s, n)
+  return repeat(s, n)
+end

@@ -336,7 +336,7 @@ static ASTNode* parseImportStmt(Parser* p) {
 
 static ASTNode* parseFromImportStmt(Parser* p) {
     /*
-     * from module import name1, name2, ...    (v1.2.1a1)
+     * from module import name1, name2, ...    (v1.2.1a3)
      *
      * The module is imported fully (all definitions become global).
      * The listed names are verified at compile time — typos → ImportError.
@@ -693,7 +693,7 @@ static ASTNode* parseComparison(Parser* p) {
      * Single comparison (common case):
      *   a < b   →  NODE_BINARY(LT, a, b)
      *
-     * Chained comparison (v1.2.1a1):
+     * Chained comparison (v1.2.1a3):
      *   1 < x < 10  →  (1 < x) and (x < 10)
      *   a < b <= c  →  (a < b) and (b <= c)
      *

@@ -8,7 +8,7 @@
 ![license](https://img.shields.io/github/license/Nadzil123/Nolqu)
 
 > [!WARNING]
-> **This is an alpha release (v1.2.1a2).** For stable use see [v1.2.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.2.0).
+> **This is an alpha release (v1.2.1a3).** For stable use see [v1.2.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.2.0).
 
 > [!IMPORTANT]
 > **Upgrading from v1.0.0?** v1.2.x has one breaking change:
@@ -35,12 +35,12 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - Default function parameters — `function greet(name = "world")`
 - Slice expressions — `arr[1:3]` and `s[1:3]` for arrays and strings
 - `null` keyword — alias for `nil`, with extended falsy (`0`, `""`)
-- Module system — `import "stdlib/math"` or your own `.nq` files
+- Module system — `import "stdlib/math"`, `from stdlib/math import PI, sin`
 - File I/O — read, write, append, split by lines
-- 50+ built-in functions — math, string, array, random, time, memory
+- 50+ built-in functions + `range()` `first()` `last()` `find()` `count_if()` in stdlib
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
-- Current version: **v1.2.1a2** (alpha)
+- Current version: **v1.2.1a3** (alpha)
 
 ---
 

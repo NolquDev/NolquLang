@@ -886,7 +886,11 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
 
 #define BINARY_NUM(op) do { \
     if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
-        THROW_ERROR("TypeError: arithmetic requires numbers."); \
+        THROW_ERROR("TypeError: arithmetic requires numbers, got %s and %s.", \
+            IS_NIL(peek(vm,1)) ? "null" : IS_BOOL(peek(vm,1)) ? "bool" : \
+            IS_STRING(peek(vm,1)) ? "string" : IS_ARRAY(peek(vm,1)) ? "array" : "number", \
+            IS_NIL(peek(vm,0)) ? "null" : IS_BOOL(peek(vm,0)) ? "bool" : \
+            IS_STRING(peek(vm,0)) ? "string" : IS_ARRAY(peek(vm,0)) ? "array" : "number"); \
     } \
     double b = AS_NUMBER(pop(vm)); \
     double a = AS_NUMBER(pop(vm)); \
@@ -917,10 +921,10 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 if (!tableGet(&vm->globals, name, &val)) {
                     const char* suggestion = didYouMean(vm, name->chars);
                     if (suggestion)
-                        THROW_ERROR("NameError: undefined variable '%s'. Did you mean '%s'?",
+                        THROW_ERROR("NameError: '%s' is not defined. Did you mean '%s'?",
                             name->chars, suggestion);
                     else
-                        THROW_ERROR("NameError: undefined variable '%s'.", name->chars);
+                        THROW_ERROR("NameError: '%s' is not defined.", name->chars);
                 }
                 push(vm, val);
                 break;
@@ -929,7 +933,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 ObjString* name = AS_STRING(READ_CONST());
                 if (tableSet(&vm->globals, name, peek(vm, 0))) {
                     tableDelete(&vm->globals, name);
-                    THROW_ERROR("NameError: variable '%s' is not declared. Use 'let %s = ...' first.",
+                    THROW_ERROR("NameError: cannot assign to '%s' — it has not been declared. Use 'let %s = value' first.",
                         name->chars, name->chars);
                 }
                 break;
@@ -945,7 +949,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     THROW_ERROR("TypeError: division requires numbers.");
                 }
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm));
-                if (b == 0.0) { THROW_ERROR("ValueError: division by zero."); }
+                if (b == 0.0) { THROW_ERROR("ValueError: division by zero. Check the divisor before dividing."); }
                 push(vm, NUMBER_VAL(a / b));
                 break;
             }
@@ -961,7 +965,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             case OP_NEGATE: {
                 Value v = peek(vm, 0);
                 if (!IS_NUMBER(v)) {
-                    THROW_ERROR("TypeError: cannot negate a %s — only numbers can be negated.",
+                    THROW_ERROR("TypeError: cannot apply '-' to a %s value. Only numbers can be negated (e.g. let x = -5)",
                         IS_STRING(v) ? "string" : IS_BOOL(v) ? "bool" : IS_NIL(v) ? "nil" : "object");
                 }
                 pop(vm); push(vm, NUMBER_VAL(-AS_NUMBER(v)));
@@ -1019,7 +1023,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     int idx = (int)AS_NUMBER(idx_val);
                     if (idx < 0) idx = arr->count + idx;
                     if (idx < 0 || idx >= arr->count)
-                        THROW_ERROR("IndexError: array index %d out of bounds (length %d).",
+                        THROW_ERROR("IndexError: array index %d is out of bounds (length %d).",
                             (int)AS_NUMBER(idx_val), arr->count);
                     push(vm, arr->items[idx]);
                 } else if (IS_STRING(obj_val)) {
@@ -1029,7 +1033,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     int idx = (int)AS_NUMBER(idx_val);
                     if (idx < 0) idx = s->length + idx;
                     if (idx < 0 || idx >= s->length)
-                        THROW_ERROR("IndexError: string index %d out of bounds (length %d).",
+                        THROW_ERROR("IndexError: string index %d is out of bounds (length %d).",
                             (int)AS_NUMBER(idx_val), s->length);
                     push(vm, OBJ_VAL(copyString(&s->chars[idx], 1)));
                 } else {

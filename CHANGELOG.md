@@ -2,6 +2,60 @@
 
 ---
 
+## v1.2.1a3 — Alpha 3 (2026)
+
+### Focus: import, CLI, errors, stdlib
+
+**1. Import: searched paths in error message**
+
+When a module is not found, the error now shows exactly which paths were tried:
+```
+ImportError: module 'mymod' not found.
+  Searched:
+      /path/to/script/mymod.nq
+      mymod.nq
+```
+
+**2. CLI: proper usage errors**
+
+`nq check`, `nq run`, `nq test`, and `nq compile` without a filename
+previously crashed or showed a confusing "Cannot open file: check" error.
+Now they show a clear usage message:
+```
+[ Error ] Missing filename.
+  Usage:  nq check <file.nq>
+  Run  nq help  for all commands.
+```
+
+**3. Error messages: more human, more context**
+
+- **Arithmetic**: `TypeError: arithmetic requires numbers, got string and number.`
+  (previously just "arithmetic requires numbers")
+- **Undefined variable**: `NameError: 'x' is not defined.`
+  (previously "undefined variable 'x'")
+- **Cannot assign**: `NameError: cannot assign to 'x' — it has not been declared.`
+- **Negate**: `TypeError: cannot apply '-' to a string value.`
+- **Division by zero**: `ValueError: division by zero. Check the divisor before dividing.`
+
+**4. stdlib/array: new utilities**
+
+- `range(n)` — `[0, 1, ..., n-1]`
+- `range(start, stop)` — `[start, ..., stop-1]`
+- `range(start, stop, step)` — supports negative step
+- `first(arr)` — first element or null
+- `last(arr)` — last element or null
+- `find(arr, fn)` — first matching element or null
+- `count_if(arr, fn)` — count matching elements
+
+**5. stdlib/string: naming aliases**
+
+- `str_contains(s, sub)` — readable alternative to `contains_str`
+- `starts_with(s, prefix)` — consistent with snake_case convention
+- `ends_with(s, suffix)`
+- `to_upper(s)`, `to_lower(s)`, `repeat_str(s, n)`
+
+---
+
 ## v1.2.1a2 — Alpha 2 (2026)
 
 ### Bug Fixes
@@ -546,6 +600,60 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.1a3 — Alpha 3 (2026)
+
+### Focus: import, CLI, errors, stdlib
+
+**1. Import: searched paths in error message**
+
+When a module is not found, the error now shows exactly which paths were tried:
+```
+ImportError: module 'mymod' not found.
+  Searched:
+      /path/to/script/mymod.nq
+      mymod.nq
+```
+
+**2. CLI: proper usage errors**
+
+`nq check`, `nq run`, `nq test`, and `nq compile` without a filename
+previously crashed or showed a confusing "Cannot open file: check" error.
+Now they show a clear usage message:
+```
+[ Error ] Missing filename.
+  Usage:  nq check <file.nq>
+  Run  nq help  for all commands.
+```
+
+**3. Error messages: more human, more context**
+
+- **Arithmetic**: `TypeError: arithmetic requires numbers, got string and number.`
+  (previously just "arithmetic requires numbers")
+- **Undefined variable**: `NameError: 'x' is not defined.`
+  (previously "undefined variable 'x'")
+- **Cannot assign**: `NameError: cannot assign to 'x' — it has not been declared.`
+- **Negate**: `TypeError: cannot apply '-' to a string value.`
+- **Division by zero**: `ValueError: division by zero. Check the divisor before dividing.`
+
+**4. stdlib/array: new utilities**
+
+- `range(n)` — `[0, 1, ..., n-1]`
+- `range(start, stop)` — `[start, ..., stop-1]`
+- `range(start, stop, step)` — supports negative step
+- `first(arr)` — first element or null
+- `last(arr)` — last element or null
+- `find(arr, fn)` — first matching element or null
+- `count_if(arr, fn)` — count matching elements
+
+**5. stdlib/string: naming aliases**
+
+- `str_contains(s, sub)` — readable alternative to `contains_str`
+- `starts_with(s, prefix)` — consistent with snake_case convention
+- `ends_with(s, suffix)`
+- `to_upper(s)`, `to_lower(s)`, `repeat_str(s, n)`
 
 ---
 
