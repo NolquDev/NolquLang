@@ -1,6 +1,6 @@
-# Nolqu
+# Nolqu™
 
-  <img src="assets/Banner.png" width="100%">
+<img src="assets/Banner.png" width="100%">
 </p>
 
 ![version](https://img.shields.io/github/v/tag/Nadzil123/Nolqu?include_prereleases&label=version)
@@ -8,14 +8,14 @@
 ![license](https://img.shields.io/github/license/Nadzil123/Nolqu)
 
 > [!WARNING]
-> **This is an alpha release (v1.1.1a4).** The API and syntax are stable
+> **This is an alpha release (v1.1.1a5).** The language and API are stable
 > but this version has not been fully validated across all platforms.
 > For production use, stick with the **[v1.0.0 stable release](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**.
 >
 > ⚠️ This README describes the **1.1.x development series**.
-> Development is ongoing — see [CHANGELOG.md](CHANGELOG.md) for what changed.
+> See [CHANGELOG.md](CHANGELOG.md) for a full list of what changed.
 
-**A small, fast scripting language with its own bytecode VM.**
+**A small, fast scripting language with its own stack-based bytecode VM.**
 
 Nolqu is designed so code reads like plain sentences — no braces, no semicolons.
 Great for learning, scripting, and embedding into C or C++ projects.
@@ -24,7 +24,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 
 ## Features
 
-- Clean, readable syntax — `if`, `loop`, `function`, `end`
+- Clean, readable syntax — `if`, `loop`, `for`, `function`, `end`
 - Stack-based bytecode VM — fast and portable
 - Mark-and-sweep garbage collector — automatic, tunable
 - Structured error handling — `try` / `catch` / `end`
@@ -32,12 +32,16 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - `for item in array` — range-based loop
 - `break` and `continue` in loops
 - Compound assignment: `+=` `-=` `*=` `/=` `..=`
+- `const` declarations — compile-time immutable bindings
+- Default function parameters — `function greet(name = "world")`
+- Slice expressions — `arr[1:3]` and `s[1:3]` for arrays and strings
+- `null` keyword — alias for `nil`, with extended falsy (`0`, `""`)
 - Module system — `import "stdlib/math"` or your own `.nq` files
 - File I/O — read, write, append, split by lines
-- 40+ built-in functions — math, string, array, random, time, memory
+- 50+ built-in functions — math, string, array, random, time, memory
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
-- Current version: **v1.1.1a4** (alpha) — stable: **v1.0.0**
+- Current version: **v1.1.1a5** (alpha) — stable: **[v1.0.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**
 
 ---
 
@@ -78,23 +82,46 @@ nq hello.nq
 Hello, World!
 ```
 
-A slightly longer taste:
+A fuller taste of the language:
 
 ```nolqu
-function greet(name)
+# Functions with default parameters
+function greet(name = "World")
   return "Hello, " .. name .. "!"
 end
 
+# Range-based loop
 let names = ["Alice", "Bob", "Carol"]
 for name in names
   print greet(name)
 end
-```
 
-```
-Hello, Alice!
-Hello, Bob!
-Hello, Carol!
+# Slices
+let nums = [1, 2, 3, 4, 5]
+print nums[1:4]    # [2, 3, 4]
+print nums[:2]     # [1, 2]
+print nums[-2:]    # [4, 5]
+
+# Constants and compound assignment
+const MAX = 100
+let score = 0
+score += 10
+score *= 2
+print score        # 20
+
+# Error handling
+try
+  error("something went wrong")
+catch e
+  print "Caught: " .. e
+end
+
+# Modules
+import "stdlib/json"
+let obj = json_object()
+json_set(obj, "lang", "nolqu")
+json_set(obj, "version", "1.1.1a5")
+print json_stringify(obj)
 ```
 
 ---
@@ -103,11 +130,10 @@ Hello, Carol!
 
 ```bash
 nq program.nq          # run a file
-nq run program.nq      # same, explicit
-nq check program.nq    # parse + compile only (no run)
+nq check program.nq    # parse + compile, no run
 nq repl                # interactive REPL
 nq version             # show version
-nq help                # show built-in list
+nq help                # show built-in reference
 ```
 
 ---
@@ -118,7 +144,7 @@ nq help                # show built-in list
 $ nq repl
 
   +--------------------------------------+
-  |  Nolqu 1.0.0    Interactive REPL    |
+  |  Nolqu 1.1.1a5  Interactive REPL    |
   |  'help' for help  'exit' to quit    |
   +--------------------------------------+
 
@@ -132,14 +158,35 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 
 ---
 
+## Standard Library
+
+10 modules included:
+
+| Module | Key functions |
+|---|---|
+| `stdlib/math` | `clamp` `lerp` `sin` `cos` `log` `gcd` `lcm` · `PI` `TAU` `E` |
+| `stdlib/array` | `map` `filter` `reduce` `sum` `flatten` `zip` `chunk` `unique` |
+| `stdlib/string` | `replace_all` `title_case` `pad_left` `center` `words` `contains_str` |
+| `stdlib/path` | `path_join` `basename` `dirname` `ext` `normalize` |
+| `stdlib/json` | `json_object` `json_set` `json_get` `json_stringify` `json_parse` |
+| `stdlib/fmt` | `fmt` `printf` `fmt_num` `fmt_pad` `fmt_table` |
+| `stdlib/time` | `now` `elapsed` `sleep` `format_duration` `benchmark` |
+| `stdlib/test` | `suite` `expect` `expect_eq` `expect_err` `done` |
+| `stdlib/os` | `read_lines` `write_lines` `touch` `path_exists` `file_size` |
+| `stdlib/file` | `read_or_default` `write_lines` `count_lines` |
+
+---
+
 ## Documentation
 
-| Document | Contents |
+| | |
 |---|---|
-| [docs/README.md](docs/README.md) | **Documentation index** — stable vs dev guide, version comparison |
-| [docs/stable/](docs/stable/) | All docs for **v1.0.0 stable** |
-| [docs/dev/](docs/dev/) | All docs for **v1.1.x alpha** (current) |
-| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [docs/README.md](docs/README.md) | Documentation index — stable vs dev, version comparison |
+| [docs/stable/](docs/stable/) | Docs for **v1.0.0 stable** |
+| [docs/dev/](docs/dev/) | Docs for **v1.1.x alpha** (current) |
+| [docs/dev/semantics.md](docs/dev/semantics.md) | Truthiness, null, const, slice, logical operators |
+| [CHANGELOG.md](CHANGELOG.md) | Full version history |
+| [ROADMAP.md](ROADMAP.md) | What's coming |
 
 ---
 
@@ -153,11 +200,29 @@ make clean      # remove artefacts
 ```
 
 Runtime core (`memory`, `value`, `chunk`, `object`, `table`, `gc`, `vm`) compiled
-as C11. Tooling layer (`lexer`, `parser`, `compiler`, `repl`, `main`) compiled as
-C++17.
+as **C11**. Tooling layer (`lexer`, `parser`, `compiler`, `repl`, `main`, `nq_embed`)
+compiled as **C++17**.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for code style, commit format, and the PR process.
+
+To report a security vulnerability, see [SECURITY.md](SECURITY.md).
 
 ---
 
 ## License
 
 MIT — free to use, modify, and distribute. See [LICENSE](LICENSE).
+
+---
+
+## Trademark
+
+Nolqu™ is a trademark of Nadzil. See [TRADEMARK.md](TRADEMARK.md) for usage guidelines.
+
+---
+
+*Nolqu™ · nadzil123 · nolquteam@gmail.com*

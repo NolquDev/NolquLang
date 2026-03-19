@@ -30,7 +30,7 @@
 #define NQ_VERSION_MAJOR 1
 #define NQ_VERSION_MINOR 1
 #define NQ_VERSION_PATCH 1
-#define NQ_VERSION       "1.1.1a4"
+#define NQ_VERSION       "1.1.1a5"
 #define NQ_LANG_NAME     "Nolqu"
 
 /* ── VM limits ───────────────────────────────────────────────────── */

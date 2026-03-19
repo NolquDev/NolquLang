@@ -1,4 +1,4 @@
-# Nolqu Language Grammar — v1.1.1a4 (Alpha)
+# Nolqu Language Grammar — v1.1.1a5 (Alpha)
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -42,6 +42,8 @@ let_stmt             → "let" IDENT "=" expr NEWLINE
 
 assign_stmt          → IDENT "=" expr NEWLINE
 
+const_stmt           → "const" IDENT "=" expr NEWLINE
+
 compound_assign_stmt → IDENT ( "+=" | "-=" | "*=" | "/=" | "..=" ) expr NEWLINE
 
 index_assign_stmt    → expr "[" expr "]" "=" expr NEWLINE
@@ -69,7 +71,9 @@ function_decl        → "function" IDENT "(" param_list? ")" NEWLINE
                          statement*
                        "end" NEWLINE
 
-param_list           → IDENT ( "," IDENT )*
+param_list           → param_decl ( "," param_decl )*
+
+param_decl           → IDENT ( "=" expr )?
 
 return_stmt          → "return" expr? NEWLINE
 
@@ -114,7 +118,11 @@ unary        → "-" unary
              | "!" unary
              | call
 
-call         → primary ( "(" arg_list? ")" | "[" expr "]" )*
+call         → primary ( "(" arg_list? ")" | "[" slice_or_index "]" )*
+
+slice_or_index → expr ":" expr?   /* slice: start:end */
+               | ":" expr?        /* slice: :end      */
+               | expr             /* index access     */
 
 primary      → NUMBER
              | STRING
@@ -162,7 +170,8 @@ Single-line only. Block comments are not supported.
 ```
 let      print    if       else     loop     for      in
 function return   import   try      catch    end
-true     false    nil      and      or       not      break    continue
+true     false    nil      null     and      or       not      break    continue
+const
 ```
 
 ### Operators

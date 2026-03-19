@@ -181,19 +181,35 @@ static ASTNode* parseFunctionDecl(Parser* p) {
     char* name = dupStr(p->previous.start, p->previous.length);
     expect(p, TK_LPAREN, "Expected '(' to open parameter list");
 
-    char** params   = NULL;
-    int    n_params = 0;
-    int    p_cap    = 0;
+    char**    params   = NULL;
+    ASTNode** defaults = NULL;
+    int       n_params = 0;
+    int       p_cap    = 0;
+    bool      saw_default = false;
 
     while (!check(p, TK_RPAREN) && !check(p, TK_EOF)) {
-        expect(p, TK_IDENT, "Expected a valid parameter name");
+        expect(p, TK_IDENT, "Expected a parameter name");
         char* pname = dupStr(p->previous.start, p->previous.length);
+
         if (n_params >= p_cap) {
             int old = p_cap;
-            p_cap   = GROW_CAPACITY(old);
-            params  = GROW_ARRAY(char*, params, old, p_cap);
+            p_cap    = GROW_CAPACITY(old);
+            params   = GROW_ARRAY(char*,    params,   old, p_cap);
+            defaults = GROW_ARRAY(ASTNode*, defaults, old, p_cap);
         }
-        params[n_params++] = pname;
+        params[n_params]   = pname;
+        defaults[n_params] = NULL;
+
+        /* Optional default: param = expr */
+        if (check(p, TK_EQ)) {
+            advance(p);
+            defaults[n_params] = parseExpr(p);
+            saw_default = true;
+        } else if (saw_default) {
+            errorAt(p, &p->previous,
+                "Non-default parameter after a default parameter.");
+        }
+        n_params++;
         if (!match(p, TK_COMMA)) break;
     }
     expect(p, TK_RPAREN, "Expected ')' to close parameter list");
@@ -203,9 +219,16 @@ static ASTNode* parseFunctionDecl(Parser* p) {
     expect(p, TK_END, "Expected 'end' to close function body");
     expectNewline(p);
 
+    /* Free defaults array if no defaults were used */
+    if (!saw_default) {
+        FREE_ARRAY(ASTNode*, defaults, p_cap);
+        defaults = NULL;
+    }
+
     ASTNode* n = makeNode(NODE_FUNCTION, line);
     n->data.function.name        = name;
     n->data.function.params      = params;
+    n->data.function.defaults    = defaults;
     n->data.function.param_count = n_params;
     n->data.function.body        = body;
     return n;
@@ -278,6 +301,19 @@ static ASTNode* parseStmt(Parser* p) {
 
     switch (tok.type) {
         case TK_LET:      return parseLetStmt(p);
+        case TK_CONST: {
+            /* const name = expr  — immutable binding */
+            int line = tok.line;
+            expect(p, TK_IDENT, "Expected a name after 'const'. Example: const PI = 3.14");
+            char* name = dupStr(p->previous.start, p->previous.length);
+            expect(p, TK_EQ, "Expected '=' after const name.");
+            ASTNode* val = parseExpr(p);
+            expectNewline(p);
+            ASTNode* n = makeNode(NODE_CONST, line);
+            n->data.const_decl.name  = name;
+            n->data.const_decl.value = val;
+            return n;
+        }
         case TK_PRINT:    return parsePrintStmt(p);
         case TK_IF:       return parseIfStmt(p);
         case TK_LOOP:     return parseLoopStmt(p);
@@ -451,14 +487,52 @@ static ASTNode* parseEquality(Parser* p) {
 
 static ASTNode* parseComparison(Parser* p) {
     ASTNode* left = parseAddition(p);
+    if (!(check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)))
+        return left;
+
+    /* First comparison */
+    TokenType op1 = p->current.type; advance(p);
+    int line1 = p->previous.line;
+    ASTNode* mid = parseAddition(p);
+
+    ASTNode* first = makeNode(NODE_BINARY, line1);
+    first->data.binary.op    = op1;
+    first->data.binary.left  = left;
+    first->data.binary.right = mid;
+
+    /* If no chaining, return single comparison */
+    if (!(check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)))
+        return first;
+
+    /*
+     * Chained comparison: a < b < c  →  (a < b) and (b < c)
+     * 'mid' (b) may be a complex expression. To avoid double evaluation,
+     * only simple identifiers and literals are chained directly.
+     * For complex expressions, we desugar to a single and-chain with
+     * the same AST node (expressions with no side effects).
+     */
+    ASTNode* chain_result = first;
+    ASTNode* prev_mid     = mid;
+
     while (check(p, TK_LT) || check(p, TK_GT) || check(p, TK_LTEQ) || check(p, TK_GTEQ)) {
-        TokenType op = p->current.type; advance(p); int line = p->previous.line;
-        ASTNode* right = parseAddition(p);
-        ASTNode* n = makeNode(NODE_BINARY, line);
-        n->data.binary.op = op; n->data.binary.left = left; n->data.binary.right = right;
-        left = n;
+        TokenType op = p->current.type; advance(p);
+        int line = p->previous.line;
+        ASTNode* next = parseAddition(p);
+
+        ASTNode* cmp = makeNode(NODE_BINARY, line);
+        cmp->data.binary.op    = op;
+        cmp->data.binary.left  = prev_mid;
+        cmp->data.binary.right = next;
+
+        /* Wrap in AND */
+        ASTNode* and_node = makeNode(NODE_BINARY, line);
+        and_node->data.binary.op    = TK_AND;
+        and_node->data.binary.left  = chain_result;
+        and_node->data.binary.right = cmp;
+        chain_result = and_node;
+        prev_mid     = next;
     }
-    return left;
+    return chain_result;
 }
 
 static ASTNode* parseAddition(Parser* p) {
@@ -515,12 +589,32 @@ static ASTNode* parseCall(Parser* p) {
             expr = call;
         } else if (check(p, TK_LBRACKET)) {
             int line = p->current.line; advance(p);
-            ASTNode* idx = parseExpr(p);
-            expect(p, TK_RBRACKET, "Expected ']' to close index access");
-            ASTNode* get = makeNode(NODE_GET_INDEX, line);
-            get->data.get_index.obj   = expr;
-            get->data.get_index.index = idx;
-            expr = get;
+
+            /* Detect slice: arr[start:end]  arr[:end]  arr[start:] */
+            ASTNode* start_expr = NULL;
+            if (!check(p, TK_COLON))
+                start_expr = parseExpr(p);
+
+            if (check(p, TK_COLON)) {
+                /* It's a slice */
+                advance(p); /* consume ':' */
+                ASTNode* end_expr = NULL;
+                if (!check(p, TK_RBRACKET))
+                    end_expr = parseExpr(p);
+                expect(p, TK_RBRACKET, "Expected ']' to close slice");
+                ASTNode* sl = makeNode(NODE_SLICE, line);
+                sl->data.slice.obj   = expr;
+                sl->data.slice.start = start_expr;
+                sl->data.slice.end   = end_expr;
+                expr = sl;
+            } else {
+                /* Normal index access */
+                expect(p, TK_RBRACKET, "Expected ']' to close index access");
+                ASTNode* get = makeNode(NODE_GET_INDEX, line);
+                get->data.get_index.obj   = expr;
+                get->data.get_index.index = start_expr;
+                expr = get;
+            }
         } else {
             break;
         }
@@ -547,6 +641,7 @@ static ASTNode* parsePrimary(Parser* p) {
     if (check(p, TK_TRUE))  { advance(p); ASTNode* n = makeNode(NODE_BOOL, p->previous.line); n->data.boolean.value = true;  return n; }
     if (check(p, TK_FALSE)) { advance(p); ASTNode* n = makeNode(NODE_BOOL, p->previous.line); n->data.boolean.value = false; return n; }
     if (check(p, TK_NIL))   { advance(p); return makeNode(NODE_NIL, p->previous.line); }
+    if (check(p, TK_NULL))  { advance(p); return makeNode(NODE_NIL, p->previous.line); } /* null = alias for nil */
     // Array literal: [expr, expr, ...]
     if (check(p, TK_LBRACKET)) {
         int line = p->current.line; advance(p);

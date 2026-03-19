@@ -36,6 +36,12 @@ static std::vector<LoopCtx>        loop_stack;
  */
 static std::unordered_set<std::string> imported_modules;
 
+/*
+ * Const globals — global variable names declared with 'const'.
+ * Any assignment to these after declaration is a compile-time error.
+ */
+static std::unordered_set<std::string> const_globals;
+
 static void compileError(int line, const char* fmt, ...) {
     had_compile_error = true;
     va_list args;
@@ -247,6 +253,20 @@ static void compileExpr(ASTNode* node) {
             compileExpr(node->data.get_index.index);
             emit(OP_GET_INDEX, line);
             break;
+        case NODE_SLICE: {
+            /*
+             * arr[start:end]
+             * Push: obj, start (or NIL if omitted), end (or NIL if omitted)
+             * Then OP_SLICE — VM resolves NIL → 0 for start, len for end.
+             */
+            compileExpr(node->data.slice.obj);
+            if (node->data.slice.start) compileExpr(node->data.slice.start);
+            else                        emit(OP_NIL, line);
+            if (node->data.slice.end)   compileExpr(node->data.slice.end);
+            else                        emit(OP_NIL, line);
+            emit(OP_SLICE, line);
+            break;
+        }
         default:
             compileError(line, "Cannot compile expression (type: %d).", node->type);
             break;
@@ -269,23 +289,53 @@ static void compileNode(ASTNode* node) {
             }
             break;
         }
+        case NODE_CONST: {
+            /* Compile exactly like NODE_LET, but mark the name as const. */
+            const char* name = node->data.const_decl.name;
+            compileExpr(node->data.const_decl.value);
+            if (current->scope_depth > 0) {
+                addLocal(name, line);
+                int idx = current->local_count - 1;
+                current->locals[idx].initialized = true;
+                current->locals[idx].is_const    = true;
+            } else {
+                { emit(OP_DEFINE_GLOBAL, line); emitUint16(identConst(name, line), line); }
+                const_globals.insert(std::string(name));
+            }
+            break;
+        }
         case NODE_ASSIGN: {
             const char* name = node->data.assign.name;
-            compileExpr(node->data.assign.value);
+            /* Check const for locals */
             int slot = resolveLocal(current, name);
+            if (slot >= 0 && current->locals[slot].is_const) {
+                compileError(line, "Cannot reassign const variable '%s'.", name);
+                break;
+            }
+            /* Check const for globals */
+            if (slot < 0 && const_globals.count(std::string(name))) {
+                compileError(line, "Cannot reassign const variable '%s'.", name);
+                break;
+            }
+            compileExpr(node->data.assign.value);
             if (slot >= 0) emit2(OP_SET_LOCAL,  (uint8_t)slot,          line);
             else           { emit(OP_SET_GLOBAL, line); emitUint16(identConst(name, line), line); }
             emit(OP_POP, line);
             break;
         }
         case NODE_COMPOUND_ASSIGN: {
-            /*
-             * name op= rhs  is sugar for  name = name op rhs
-             * Compile: GET name, compile rhs, emit op, SET name, POP
-             */
             const char* name = node->data.compound_assign.name;
             TokenType   op   = node->data.compound_assign.op;
             int slot = resolveLocal(current, name);
+            /* Const check */
+            if (slot >= 0 && current->locals[slot].is_const) {
+                compileError(line, "Cannot reassign const variable '%s'.", name);
+                break;
+            }
+            if (slot < 0 && const_globals.count(std::string(name))) {
+                compileError(line, "Cannot reassign const variable '%s'.", name);
+                break;
+            }
             /* GET current value */
             if (slot >= 0) emit2(OP_GET_LOCAL, (uint8_t)slot, line);
             else { emit(OP_GET_GLOBAL, line); emitUint16(identConst(name, line), line); }
@@ -497,6 +547,42 @@ static void compileNode(ASTNode* node) {
                 addLocal(node->data.function.params[i], line);
                 current->locals[current->local_count - 1].initialized = true;
             }
+            /*
+             * Default parameter injection.
+             * For each parameter that has a default expression, emit:
+             *   if param == nil then param = <default>
+             * This runs at the top of the function body before user code.
+             *
+             * Pattern:
+             *   GET_LOCAL slot
+             *   OP_NIL
+             *   OP_EQ
+             *   JUMP_IF_FALSE skip       ← param was provided, skip default
+             *   OP_POP                   ← pop eq result (true)
+             *   <default_expr>
+             *   SET_LOCAL slot
+             *   OP_POP
+             * skip:
+             *   OP_POP                   ← pop eq result (false)
+             */
+            if (node->data.function.defaults) {
+                for (int i = 0; i < node->data.function.param_count; i++) {
+                    if (!node->data.function.defaults[i]) continue;
+                    int slot = i + 1; /* slot 0 = fn obj, params start at 1 */
+                    emit2(OP_GET_LOCAL, (uint8_t)slot, line);
+                    emit(OP_NIL, line);
+                    emit(OP_EQ, line);
+                    int skip = emitJump(OP_JUMP_IF_FALSE, line);
+                    emit(OP_POP, line);                    /* pop eq=true */
+                    compileExpr(node->data.function.defaults[i]);
+                    emit2(OP_SET_LOCAL, (uint8_t)slot, line);
+                    emit(OP_POP, line);                    /* pop SET_LOCAL copy */
+                    int end_jump = emitJump(OP_JUMP, line);/* skip false-branch pop */
+                    patchJumpAt(skip);
+                    emit(OP_POP, line);                    /* pop eq=false */
+                    patchJumpAt(end_jump);
+                }
+            }
             compileBlock(node->data.function.body);
             ObjFunction* compiled_fn = endCompilerCtx();
             int fn_idx = addConstant(currentChunk(), OBJ_VAL(compiled_fn));
@@ -653,6 +739,7 @@ CompileResult compile(ASTNode* ast, const char* source_path) {
     /* Reset per-compilation state so REPL calls start clean. */
     loop_stack.clear();
     imported_modules.clear();
+    const_globals.clear();
     ObjFunction* script = newFunction();
     script->name = NULL;
     CompilerCtx ctx;

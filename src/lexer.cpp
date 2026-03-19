@@ -17,9 +17,11 @@ static Keyword keywords[] = {
     {"true",     4, TK_TRUE},
     {"false",    5, TK_FALSE},
     {"nil",      3, TK_NIL},
+    {"null",     4, TK_NULL},
     {"and",      3, TK_AND},
     {"or",       2, TK_OR},
     {"not",      3, TK_NOT},
+    {"const",    5, TK_CONST},
     {"break",    5, TK_BREAK},
     {"continue", 8, TK_CONTINUE},
     {"for",      3, TK_FOR},
@@ -140,6 +142,7 @@ Token nextToken(Lexer* lex) {
         case ',':  return makeToken(lex, TK_COMMA);
         case '[':  return makeToken(lex, TK_LBRACKET);
         case ']':  return makeToken(lex, TK_RBRACKET);
+        case ':':  return makeToken(lex, TK_COLON);
         case '=':  return makeToken(lex, matchChar(lex, '=') ? TK_EQEQ  : TK_EQ);
         case '<':  return makeToken(lex, matchChar(lex, '=') ? TK_LTEQ  : TK_LT);
         case '>':  return makeToken(lex, matchChar(lex, '=') ? TK_GTEQ  : TK_GT);
@@ -185,6 +188,8 @@ const char* tokenTypeName(TokenType t) {
         case TK_AND:      return "and";
         case TK_OR:       return "or";
         case TK_NOT:      return "not";
+        case TK_NULL:     return "null";
+        case TK_CONST:    return "const";
         case TK_BREAK:    return "break";
         case TK_CONTINUE: return "continue";
         case TK_FOR:      return "for";

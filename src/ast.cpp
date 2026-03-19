@@ -63,6 +63,15 @@ void freeNode(ASTNode* node) {
             free(node->data.compound_assign.name);
             freeNode(node->data.compound_assign.value);
             break;
+        case NODE_CONST:
+            free(node->data.const_decl.name);
+            freeNode(node->data.const_decl.value);
+            break;
+        case NODE_SLICE:
+            freeNode(node->data.slice.obj);
+            freeNode(node->data.slice.start);
+            freeNode(node->data.slice.end);
+            break;
         case NODE_FOR:
             free(node->data.for_loop.item);
             freeNode(node->data.for_loop.iterable);
@@ -88,8 +97,12 @@ void freeNode(ASTNode* node) {
             free(node->data.function.name);
             for (int i = 0; i < node->data.function.param_count; i++) {
                 free(node->data.function.params[i]);
+                if (node->data.function.defaults)
+                    freeNode(node->data.function.defaults[i]);
             }
             free(node->data.function.params);
+            if (node->data.function.defaults)
+                free(node->data.function.defaults);
             freeNode(node->data.function.body);
             break;
 

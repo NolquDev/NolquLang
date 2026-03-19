@@ -25,7 +25,7 @@ void freeValueArray(ValueArray* arr) {
 void printValue(Value v) {
     switch (v.type) {
         case VAL_NIL:
-            printf("nil");
+            printf("null");
             break;
         case VAL_BOOL:
             printf("%s", AS_BOOL(v) ? "true" : "false");
@@ -57,14 +57,17 @@ bool valuesEqual(Value a, Value b) {
 }
 
 bool isTruthy(Value v) {
-    if (IS_NIL(v))  return false;
-    if (IS_BOOL(v)) return AS_BOOL(v);
-    return true;
+    if (IS_NIL(v))    return false;
+    if (IS_BOOL(v))   return AS_BOOL(v);
+    /* Extended falsy: 0 and "" are falsy (v1.1.1a5) */
+    if (IS_NUMBER(v)) return AS_NUMBER(v) != 0.0;
+    if (IS_STRING(v)) return AS_STRING(v)->length != 0;
+    return true;  /* arrays, functions are always truthy */
 }
 
 const char* valueTypeName(ValueType t) {
     switch (t) {
-        case VAL_NIL:    return "nil";
+        case VAL_NIL:    return "null";
         case VAL_BOOL:   return "bool";
         case VAL_NUMBER: return "number";
         case VAL_OBJ:    return "object";

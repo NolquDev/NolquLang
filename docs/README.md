@@ -59,3 +59,9 @@ Are you using a v1.0.0 stable binary?
 | stdlib modules | 3 | 10 |
 | stdlib functions | ~30 | 80+ |
 | `str()` precision | 6 digits (`%g`) | 14 digits (`%.14g`) |
+| `null` keyword | ✗ | ✓ (alias for `nil`) |
+| Extended falsy (`0`, `""`) | ✗ | ✓ |
+| `const` variables | ✗ | ✓ (compile-time immutable) |
+| Default parameters | ✗ | ✓ |
+| Slice `arr[1:3]` | ✗ | ✓ (arrays and strings) |
+| Comparison chaining | ✗ | ✓ (`1 < x < 10`) |

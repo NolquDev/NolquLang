@@ -30,6 +30,7 @@ typedef struct {
     int   depth;            /* scope depth at declaration             */
     bool  initialized;      /* false until the initialiser is compiled*/
     bool  used;             /* set when OP_GET_LOCAL references this  */
+    bool  is_const;         /* true if declared with 'const'          */
     int   decl_line;        /* source line — for "unused var" warning */
 } Local;
 

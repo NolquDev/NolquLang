@@ -75,6 +75,7 @@ typedef enum {
     OP_BUILD_ARRAY,     /* [count]  pop count values, push array      */
     OP_GET_INDEX,       /* pop idx,arr → push arr[idx]                */
     OP_SET_INDEX,       /* pop val,idx,arr → arr[idx]=val (in-place)  */
+    OP_SLICE,           /* pop end,start,obj → push slice             */
 
     /* Error handling */
     OP_TRY,             /* [hi,lo]  push try-handler; offset=catch    */

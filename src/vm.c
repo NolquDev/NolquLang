@@ -37,7 +37,7 @@ static Value nativeStr(int argc, Value* args) {
     Value v = args[0];
     char buf[64];
     if (IS_STRING(v))  return v;
-    if (IS_NIL(v))     return OBJ_VAL(copyString("nil", 3));
+    if (IS_NIL(v))     return OBJ_VAL(copyString("null", 4));
     if (IS_BOOL(v))    return OBJ_VAL(copyString(AS_BOOL(v) ? "true" : "false",
                                                   AS_BOOL(v) ? 4 : 5));
     if (IS_NUMBER(v)) {
@@ -68,7 +68,7 @@ static Value nativeType(int argc, Value* args) {
     if (argc != 1) return NIL_VAL;
     Value v = args[0];
     const char* name;
-    if (IS_NIL(v))      name = "nil";
+    if (IS_NIL(v))      name = "null";
     else if (IS_BOOL(v))   name = "bool";
     else if (IS_NUMBER(v)) name = "number";
     else if (IS_STRING(v)) name = "string";
@@ -350,7 +350,7 @@ static Value nativeJoin(int argc, Value* args) {
             int len = (int)strlen(b);
             memcpy(buf + pos, b, (size_t)len); pos += len;
         } else {
-            memcpy(buf + pos, "nil", 3); pos += 3;
+            memcpy(buf + pos, "null", 4); pos += 4;
         }
     }
     buf[pos] = '\0';
@@ -395,7 +395,7 @@ static Value nativeError(int argc, Value* args) {
         char buf[64];
         if (IS_NUMBER(msg)) snprintf(buf, sizeof(buf), "%g", AS_NUMBER(msg));
         else if (IS_BOOL(msg)) snprintf(buf, sizeof(buf), "%s", AS_BOOL(msg) ? "true" : "false");
-        else snprintf(buf, sizeof(buf), "nil");
+        else snprintf(buf, sizeof(buf), "null");
         msg = OBJ_VAL(copyString(buf, (int)strlen(buf)));
     }
     if (g_vm_for_error) g_vm_for_error->thrown = msg;
@@ -741,7 +741,7 @@ static bool throwError(VM* vm, Value error_val) {
 static ObjString* valueToString(Value v) {
     if (IS_STRING(v)) return AS_STRING(v);
     char buf[64];
-    if (IS_NIL(v))       snprintf(buf, sizeof(buf), "nil");
+    if (IS_NIL(v))       snprintf(buf, sizeof(buf), "null");
     else if (IS_BOOL(v)) snprintf(buf, sizeof(buf), "%s", AS_BOOL(v) ? "true" : "false");
     else if (IS_NUMBER(v)) {
         double n = AS_NUMBER(v);
@@ -765,7 +765,7 @@ static Value concatStrings(ObjString* a, ObjString* b) {
 //  Function call
 // ─────────────────────────────────────────────
 static bool callFunction(VM* vm, ObjFunction* fn, int argc) {
-    if (argc != fn->arity) {
+    if (argc > fn->arity) {
         vmRuntimeError(vm,
             "Function '%s' expects %d argument(s), but got %d.",
             fn->name ? fn->name->chars : "<script>",
@@ -780,6 +780,11 @@ static bool callFunction(VM* vm, ObjFunction* fn, int argc) {
     frame->function  = fn;
     frame->ip        = fn->chunk->code;
     frame->slots     = vm->stack_top - argc - 1;
+    /* Push nil for any missing arguments (filled in by default param code) */
+    while (argc < fn->arity) {
+        push(vm, NIL_VAL);
+        argc++;
+    }
     return true;
 }
 
@@ -1011,6 +1016,54 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     THROW_ERROR("Array index must be a number.");
                 }
                 arraySet(AS_ARRAY(obj_val), (int)AS_NUMBER(idx_val), val);
+                break;
+            }
+
+            case OP_SLICE: {
+                /*
+                 * Stack: obj, start, end  (end is on top)
+                 * start/end may be NIL (omitted in source) → default to 0 / len
+                 * Supports arrays and strings.
+                 * Negative indices: -1 = last element, etc.
+                 */
+                Value end_val   = pop(vm);
+                Value start_val = pop(vm);
+                Value obj_val   = pop(vm);
+
+                if (IS_STRING(obj_val)) {
+                    ObjString* s = AS_STRING(obj_val);
+                    int len = s->length;
+                    int start = IS_NIL(start_val) ? 0 : (int)AS_NUMBER(start_val);
+                    int end   = IS_NIL(end_val)   ? len : (int)AS_NUMBER(end_val);
+                    if (start < 0) start = len + start;
+                    if (end   < 0) end   = len + end;
+                    if (start < 0)   start = 0;
+                    if (end > len)   end   = len;
+                    if (start > end) start = end;
+                    push(vm, OBJ_VAL(copyString(s->chars + start, end - start)));
+                } else if (IS_ARRAY(obj_val)) {
+                    ObjArray* arr = AS_ARRAY(obj_val);
+                    int len = arr->count;
+                    int start = IS_NIL(start_val) ? 0 : (int)AS_NUMBER(start_val);
+                    int end   = IS_NIL(end_val)   ? len : (int)AS_NUMBER(end_val);
+                    if (start < 0) start = len + start;
+                    if (end   < 0) end   = len + end;
+                    if (start < 0)   start = 0;
+                    if (end > len)   end   = len;
+                    if (start > end) start = end;
+                    /* Build a new array with the slice */
+                    ObjArray* result = newArray();
+                    push(vm, OBJ_VAL(result)); /* GC root */
+                    for (int i = start; i < end; i++)
+                        arrayPush(result, arr->items[i]);
+                    pop(vm); /* un-root */
+                    push(vm, OBJ_VAL(result));
+                } else {
+                    THROW_ERROR("Slice requires an array or string, not %s.",
+                        IS_NIL(obj_val)    ? "nil"    :
+                        IS_NUMBER(obj_val) ? "number" :
+                        IS_BOOL(obj_val)   ? "bool"   : "value");
+                }
                 break;
             }
 

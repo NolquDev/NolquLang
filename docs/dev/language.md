@@ -1,4 +1,4 @@
-# Nolqu Language Reference — v1.1.1a4 (Alpha)
+# Nolqu Language Reference — v1.1.1a5 (Alpha)
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -70,7 +70,7 @@ print [1, 2, 3]     # [1, 2, 3]
 let name  = "Alice"
 let count = 0
 let flag  = true
-let empty = nil
+let empty = nil    # or: null (same value)
 ```
 
 ### Reassignment
@@ -135,7 +135,10 @@ Nolqu is **dynamically typed**. Every value has a runtime type.
 
 ### Truthiness
 
-`nil` and `false` are **falsy**. Everything else is truthy — including `0` and `""`.
+`nil`/`null`, `false`, `0`, and `""` (empty string) are **falsy**.
+Everything else is truthy — including `[]` (empty array).
+
+> See [semantics.md](semantics.md) for the full truthiness rules.
 
 ### Type checking
 
@@ -337,6 +340,8 @@ print join(doubled, ", ")        # 2, 4, 6, 8, 10
 
 > **Note:** Closures (capturing outer variables) are not supported in v1.1.x.
 
+See [semantics.md](semantics.md) for precise semantics of `null`, truthiness, `and`/`or`, `const`, and slices.
+
 ---
 
 ## 7. Arrays
@@ -528,7 +533,7 @@ end
 
 | Function | Returns |
 |---|---|
-| `is_nil(v)` | `true` if `v` is `nil` |
+| `is_nil(v)` | `true` if `v` is `nil` / `null` |
 | `is_num(v)` | `true` if `v` is a number |
 | `is_str(v)` | `true` if `v` is a string |
 | `is_bool(v)` | `true` if `v` is a bool |

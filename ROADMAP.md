@@ -14,7 +14,8 @@
 | v1.1.0 | break/continue, 5 stdlib modules, project health files |
 | v1.1.1a2 | for-in loop, compound assign +=, bug fixes, stdlib/os+fmt |
 | v1.1.1a3 | Undefined var catchable, docs accuracy pass |
-| **v1.1.1a4** | **Stdlib expanded, alpha banner, docs updated ← current** |
+| v1.1.1a4 | Stdlib expanded, alpha banner, docs updated |
+| **v1.1.1a5** | **null, const, default params, slice, semantics.md ← current** |
 
 ---
 

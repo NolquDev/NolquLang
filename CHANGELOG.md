@@ -2,6 +2,57 @@
 
 ---
 
+## v1.1.1a5 — Alpha 5 (2026)
+
+### Language — New Features
+
+- **`null` keyword** — alias for `nil`. Both print as `"null"`, `type(null)` returns `"null"`.
+
+- **Extended falsy values** — `0` and `""` (empty string) are now falsy in addition
+  to `nil`/`null` and `false`. Breaking change from v1.0.0 where only `nil` and `false` were falsy.
+
+- **`const` declarations** — `const NAME = value` creates an immutable binding.
+  Reassignment and compound assignment (`+=` etc.) are **compile-time errors**.
+  Works at global and local scope. The binding is immutable; array contents can still be mutated.
+
+- **Default parameters** — `function greet(name = "world")`.
+  If a parameter is passed as `null` or omitted, the default expression is used.
+  Default parameters must follow non-default parameters.
+
+- **Slice expressions** — `arr[start:end]`, `arr[:end]`, `arr[start:]`, `arr[:]`.
+  Works on arrays and strings. Negative indices supported. Returns a new value (copy).
+
+- **`and`/`or` return actual values** — already worked since v1.1.1a2, now explicitly
+  documented. `1 and 2 = 2`, `nil or 5 = 5`.
+
+### Bug Fixes
+
+- **Default param stack corruption** — the initial implementation omitted a `JUMP`
+  to skip the false-branch `OP_POP` in the default injection pattern, causing
+  the return value to be concatenated into the string. Fixed.
+
+- **`printValue` now prints `null` for nil** — `print nil` and `print null`
+  both output `null`. `str(nil)`, `type(nil)`, and `type(null)` all return `"null"`.
+
+- **Memory leak in `parseFunctionDecl`** — `defaults` array and its AST nodes
+  were not freed in `freeNode` for `NODE_FUNCTION`. Fixed; ASan/LSan clean.
+
+### Documentation
+
+- **`docs/dev/semantics.md`** — new comprehensive semantics reference covering:
+  truthiness rules, null/nil behavior, function return, logical operator value
+  semantics, const rules, and slice edge cases.
+
+- **`docs/dev/language.md`** — updated: falsy rules, null keyword, Known Limitations
+  updated with comparison-chaining caveat.
+
+- **`docs/dev/grammar.md`** — added `const_stmt`, `slice_or_index`, `null` keyword,
+  `const` keyword, `param_decl` with optional default.
+
+- **`docs/README.md`** — comparison table updated with all a5 additions.
+
+---
+
 ## v1.1.1a4 — Alpha 4 (2026)
 
 ### Standard Library — Expanded
@@ -246,6 +297,57 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.1.1a5 — Alpha 5 (2026)
+
+### Language — New Features
+
+- **`null` keyword** — alias for `nil`. Both print as `"null"`, `type(null)` returns `"null"`.
+
+- **Extended falsy values** — `0` and `""` (empty string) are now falsy in addition
+  to `nil`/`null` and `false`. Breaking change from v1.0.0 where only `nil` and `false` were falsy.
+
+- **`const` declarations** — `const NAME = value` creates an immutable binding.
+  Reassignment and compound assignment (`+=` etc.) are **compile-time errors**.
+  Works at global and local scope. The binding is immutable; array contents can still be mutated.
+
+- **Default parameters** — `function greet(name = "world")`.
+  If a parameter is passed as `null` or omitted, the default expression is used.
+  Default parameters must follow non-default parameters.
+
+- **Slice expressions** — `arr[start:end]`, `arr[:end]`, `arr[start:]`, `arr[:]`.
+  Works on arrays and strings. Negative indices supported. Returns a new value (copy).
+
+- **`and`/`or` return actual values** — already worked since v1.1.1a2, now explicitly
+  documented. `1 and 2 = 2`, `nil or 5 = 5`.
+
+### Bug Fixes
+
+- **Default param stack corruption** — the initial implementation omitted a `JUMP`
+  to skip the false-branch `OP_POP` in the default injection pattern, causing
+  the return value to be concatenated into the string. Fixed.
+
+- **`printValue` now prints `null` for nil** — `print nil` and `print null`
+  both output `null`. `str(nil)`, `type(nil)`, and `type(null)` all return `"null"`.
+
+- **Memory leak in `parseFunctionDecl`** — `defaults` array and its AST nodes
+  were not freed in `freeNode` for `NODE_FUNCTION`. Fixed; ASan/LSan clean.
+
+### Documentation
+
+- **`docs/dev/semantics.md`** — new comprehensive semantics reference covering:
+  truthiness rules, null/nil behavior, function return, logical operator value
+  semantics, const rules, and slice edge cases.
+
+- **`docs/dev/language.md`** — updated: falsy rules, null keyword, Known Limitations
+  updated with comparison-chaining caveat.
+
+- **`docs/dev/grammar.md`** — added `const_stmt`, `slice_or_index`, `null` keyword,
+  `const` keyword, `param_decl` with optional default.
+
+- **`docs/README.md`** — comparison table updated with all a5 additions.
 
 ---
 

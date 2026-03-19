@@ -41,9 +41,11 @@ typedef enum {
     TK_TRUE,        /* true     */
     TK_FALSE,       /* false    */
     TK_NIL,         /* nil      */
+    TK_NULL,        /* null     */
     TK_AND,         /* and      */
     TK_OR,          /* or       */
     TK_NOT,         /* not      */
+    TK_CONST,       /* const    */
     TK_BREAK,       /* break    */
     TK_CONTINUE,    /* continue */
     TK_FOR,         /* for      */
@@ -79,6 +81,7 @@ typedef enum {
     TK_COMMA,       /* ,  */
     TK_LBRACKET,    /* [  */
     TK_RBRACKET,    /* ]  */
+    TK_COLON,       /* :   (slice separator)  */
 
     /* Structural */
     TK_NEWLINE,     /* \n  statement terminator                      */

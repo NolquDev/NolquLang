@@ -58,8 +58,14 @@ typedef enum {
     NODE_BREAK,         /* break    — exit the nearest loop           */
     NODE_CONTINUE,      /* continue — jump to next loop iteration     */
 
-    /* Compound assignment: name += expr  name -= expr  etc. */
+    /* Compound assignment */
     NODE_COMPOUND_ASSIGN,
+
+    /* const declaration (immutable let) */
+    NODE_CONST,
+
+    /* arr[start:end] slice expression */
+    NODE_SLICE,
 
     /* for item in array — range-based loop */
     NODE_FOR,
@@ -97,8 +103,14 @@ struct ASTNode {
         /* NODE_ASSIGN: name = value */
         struct { char* name; ASTNode* value; } assign;
 
-        /* NODE_COMPOUND_ASSIGN: name op= value  (op = TK_PLUS, TK_MINUS, etc.) */
+        /* NODE_COMPOUND_ASSIGN */
         struct { char* name; TokenType op; ASTNode* value; } compound_assign;
+
+        /* NODE_CONST: const name = value */
+        struct { char* name; ASTNode* value; } const_decl;
+
+        /* NODE_SLICE: obj[start:end]  (start or end may be NULL = omitted) */
+        struct { ASTNode* obj; ASTNode* start; ASTNode* end; } slice;
 
         /* NODE_FOR: for item in iterable body end */
         struct { char* item; ASTNode* iterable; ASTNode* body; } for_loop;
@@ -118,10 +130,11 @@ struct ASTNode {
 
         /* NODE_FUNCTION */
         struct {
-            char*    name;
-            char**   params;
-            int      param_count;
-            ASTNode* body;
+            char*     name;
+            char**    params;
+            ASTNode** defaults;   /* NULL or default expr per param */
+            int       param_count;
+            ASTNode*  body;
         } function;
 
         /* NODE_RETURN */
