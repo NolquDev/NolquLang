@@ -1,139 +1,107 @@
-# Nolqu v1.0.0 — Release Notes
+# Nolqu v1.2.0-rc1 — Release Notes
 
-> **First stable release.**
-> Language syntax and bytecode format are now frozen.
-> Programs written for v1.0.0 will continue to run on all future 1.x versions.
+> **Release Candidate.**
+> All planned features for v1.2.0 are implemented and tested.
+> This release is ready for broader testing before stable promotion.
+> See [CHANGELOG.md](CHANGELOG.md) for the full version history.
 
 ---
 
-## What is Nolqu?
+## What's in v1.2.0
 
-Nolqu is a small, fast scripting language with its own stack-based bytecode VM.
-It is designed to read like plain sentences, with minimal punctuation and no braces.
+### Language
+
+- `for item in array ... end` — range-based loop
+- `break` and `continue` in all loop types
+- `+=` `-=` `*=` `/=` `..=` — compound assignment
+- `const NAME = value` — compile-time immutable binding
+- `function f(x = default)` — default parameters
+- `arr[1:3]` / `s[1:3]` — slice expressions (arrays and strings, negative indices)
+- `null` keyword — alias for `nil`; extended falsy (`0`, `""` are now falsy)
+- Comparison chaining: `1 < x < 10` desugars to `(1 < x) and (x < 10)`
+- `and` / `or` return the actual value, not a boolean coerced result
+- `ord(ch)` / `chr(n)` — character ↔ code point
+- `bool(v)` — coerce any value to boolean
+- `error_type(e)` — extract `"TypeError"`, `"NameError"`, etc. from an error
+
+### Error System
+
+All runtime errors carry a typed prefix:
+
+| Prefix | Cause |
+|---|---|
+| `TypeError` | Wrong type for an operation |
+| `NameError` | Undefined or undeclared variable |
+| `IndexError` | Array / string index out of bounds |
+| `ValueError` | Invalid value (division by zero, log of negative) |
+
+All errors are catchable via `try/catch`.
+
+### Import System
 
 ```nolqu
-function greet(name)
-  return "Hello, " .. name .. "!"
-end
-
-print greet("World")
+import "stdlib/math"          # quoted string
+import stdlib/math            # unquoted path
+import stdlib/math as math    # alias (accepted; no namespace effect)
+from stdlib/math import PI    # selective (runs whole module)
 ```
+
+### Standard Library — 11 modules, 90+ functions
+
+| Module | Key additions vs v1.0.0 |
+|---|---|
+| `stdlib/math` | `PI` `TAU` `E` · trig · log · `gcd` `lcm` `hypot` `is_nan` |
+| `stdlib/array` | `sum` `flatten` `zip` `chunk` `unique` `any` `all` `min_arr` `max_arr` |
+| `stdlib/string` | `replace_all` `title_case` `char_at` `contains_str` `pad_*` `center` |
+| `stdlib/path` | Full path manipulation without filesystem calls |
+| `stdlib/json` | Recursive descent parser, object API |
+| `stdlib/time` | `elapsed` `format_duration` `benchmark` |
+| `stdlib/io` | `read_file` `write_file` `copy_file` `ensure_file` |
+| `stdlib/os` | `env_or` `path_exists` `read_lines` `write_lines` `file_size` |
+| `stdlib/fmt` | `fmt` `printf` `fmt_num` `fmt_pad` `fmt_table` |
+| `stdlib/test` | Full test framework: `suite` `expect` `expect_eq` `expect_err` `done` |
+
+### VM / Runtime Improvements
+
+- Constant pool raised from 256 to **65,535** (16-bit index)
+- Import deduplication — each module runs at most once
+- All errors catchable — undefined variable, wrong arg count, type errors
+- `str()` precision: `%.14g` (was `%g`, 6 significant digits)
 
 ---
 
-## Highlights of This Release
+## Upgrade from v1.0.0
 
-### Runtime Bug Fixes
+### Breaking changes
 
-Seven native string functions were using `malloc()` for buffers passed to
-`takeString()`, while the GC freed them via `nq_realloc()` — causing
-`nq_bytes_allocated` to silently underflow. The GC would never trigger
-correctly on programs that created many strings. **All native buffers now
-go through `nq_realloc`.** This is the most impactful fix in v1.0.0.
+- `nil` now prints as `"null"` (type is also `"null"`)
+- `0` and `""` (empty string) are now **falsy** — previously truthy
+- Error messages now carry a type prefix: `"NameError: undefined variable 'x'"`
 
-### C / C++ Hybrid Architecture (from rc1)
+### Compatibility
 
-The runtime core (VM, GC, memory, value system) stays as **C11** for
-performance and binary size. The tooling layer (lexer, parser, compiler,
-REPL, CLI) is now **C++17**, enabling cleaner abstractions without
-touching the hot path.
-
-The `nq_register()` embed API was refactored from a 16-slot macro dispatch
-table to a zero-overhead C++ template trampoline system — limit raised to 64.
-
-### Completed Documentation
-
-- `README.md` — full language tour, all 40+ builtins, embed API, project structure
-- `docs/grammar.md` — complete EBNF, type system, scoping rules, limitations
-- `docs/vm_design.md` — full instruction set, GC algorithm, error propagation
+All v1.0.0 programs run unchanged unless they:
+- Relied on `0` or `""` being truthy in conditions
+- Pattern-matched on the exact text of runtime error messages
+- Used `print nil` and expected the output `"nil"`
 
 ---
 
-## Full Changelog
+## Known Limitations (v1.2.0-rc1)
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
-
----
-
-## Installing
-
-```bash
-# Linux / macOS
-git clone https://github.com/Nadzil123/Nolqu.git
-cd Nolqu && make && sudo make install
-
-# Termux (Android)
-pkg install git clang make
-git clone https://github.com/Nadzil123/Nolqu.git
-cd Nolqu && make CC=clang CXX=clang++
-cp nq $PREFIX/bin/
-
-# Windows (MinGW-w64 / MSYS2)
-git clone https://github.com/Nadzil123/Nolqu.git
-cd Nolqu && mingw32-make
-```
+| Limitation | Notes |
+|---|---|
+| No closures | Functions cannot capture outer-scope variables |
+| No hash maps | Only arrays are collection types |
+| No integer type | All numbers are 64-bit IEEE 754 doubles |
+| Circular imports | Will loop forever — no cycle detection |
+| No string mutation | All string ops return new strings |
+| Single-pass compiler | No forward references to functions |
+| Comparison chaining | Complex middle expression is evaluated twice |
+| `chr()` ASCII only | Code points 0–127 only |
+| `import as` no-op | No namespace objects; alias is parsed but has no effect |
+| Transpiler experimental | `codegen` does not support all features |
 
 ---
 
-## Quick Start
-
-```bash
-echo 'print "Hello from Nolqu!"' > hello.nq
-nq hello.nq
-```
-
-```bash
-nq repl         # interactive mode
-nq check file.nq  # syntax check without running
-nq help         # full built-in reference
-```
-
----
-
-## Test Results
-
-```
-── Core examples ──────────────────────
-  ✓ hello        ✓ fibonacci     ✓ functions
-  ✓ counter      ✓ input         ✓ arrays
-  ✓ stdlib       ✓ import        ✓ file I/O
-
-── Unit tests ─────────────────────────
-  ✓ math_test    ✓ string_test
-  ✓ array_test   ✓ error_test
-
-── CLI ────────────────────────────────
-  ✓ nq check     ✓ nq version    ✓ nq help
-
-── Memory ─────────────────────────────
-  ✓ gc_collect
-
-  Results: 17/17 passed
-  ASan + UBSan: clean
-```
-
----
-
-## Git Tag
-
-```bash
-git tag -a v1.0.0 \
-  -m "Nolqu v1.0.0 — First stable release" \
-  -m "" \
-  -m "Bug fixes:" \
-  -m "  - vm.c: 7 native fns used malloc for takeString buffers (GC underflow)" \
-  -m "  - vm.c: nativeFileLines free(buf) → nq_realloc" \
-  -m "" \
-  -m "Improvements:" \
-  -m "  - nq_embed: macro dispatch table → C++ template trampolines (limit 16→64)" \
-  -m "  - docs: README, grammar.md, vm_design.md completed" \
-  -m "  - tests: all 4 test files rewritten with full coverage" \
-  -m "" \
-  -m "No syntax changes. No bytecode changes. No API changes."
-```
-
----
-
-## License
-
-MIT — free to use, modify, and distribute.
+*Nolqu™ · nadzil123 · nolquteam@gmail.com*

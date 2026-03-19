@@ -1,11 +1,11 @@
-# Nolqu Language Reference — v1.1.1a6 (Alpha)
+# Nolqu Language Reference — v1.2.0-rc1
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
 > This document describes the current alpha series.
 > For the v1.0.0 stable reference see [`docs/stable/language.md`](../stable/language.md).
 
-Complete reference for Nolqu v1.1.1a4.
+Complete reference for Nolqu v1.2.0-rc1.
 For the formal grammar see [grammar.md](grammar.md).
 For VM internals see [vm_design.md](vm_design.md).
 
@@ -629,7 +629,7 @@ print x              # global
 
 ---
 
-## 13. Known Limitations (v1.1.1a4)
+## 13. Known Limitations (v1.2.0-rc1)
 
 | Limitation | Notes |
 |---|---|

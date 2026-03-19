@@ -2,6 +2,39 @@
 
 ---
 
+## v1.2.0-rc1 — Release Candidate (2026)
+
+Stabilization pass before the v1.2.0 stable release.
+No new language features. All changes are fixes and cleanup.
+
+### Fixes
+
+- **`nq help` accuracy** — stdlib list now correct: `stdlib/os` shows actual
+  functions (`env_or`, `path_exists`, etc.); `stdlib/fmt` shows `fmt`/`printf`;
+  `stdlib/io` added; `bool()` and `error_type()` added to built-in list;
+  duplicate `ord`/`chr` entry removed; syntax quick-ref updated with `const`
+  and slice examples.
+
+- **Remaining `"nil"` in error messages** — four error message format strings
+  in `vm.c` still used `"nil"` as a type name. All updated to `"null"`.
+
+- **All `docs/dev/` files** — headers, banners, and internal version references
+  updated from `v1.1.1a4`/`a5`/`a6` to `v1.2.0-rc1 (Release Candidate)`.
+  Per-version tags in `stdlib.md` (e.g. `*(v1.1.1a4)*`) removed — the docs
+  now describe the current state, not the history.
+
+- **`RELEASE_NOTES.md`** — fully rewritten for v1.2.0. Covers all new
+  language features, error system, import syntax, stdlib summary, upgrade
+  guide, and known limitations.
+
+- **`README.md`** — banner updated from "alpha" to "release candidate";
+  version references updated.
+
+- **`ROADMAP.md`** — v1.2.0-rc1 added; stable promotion criteria updated
+  to reflect current state (most boxes already checked).
+
+---
+
 ## v1.1.1a6 — Alpha 6 (2026)
 
 ### Language / Runtime
@@ -338,6 +371,39 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.0-rc1 — Release Candidate (2026)
+
+Stabilization pass before the v1.2.0 stable release.
+No new language features. All changes are fixes and cleanup.
+
+### Fixes
+
+- **`nq help` accuracy** — stdlib list now correct: `stdlib/os` shows actual
+  functions (`env_or`, `path_exists`, etc.); `stdlib/fmt` shows `fmt`/`printf`;
+  `stdlib/io` added; `bool()` and `error_type()` added to built-in list;
+  duplicate `ord`/`chr` entry removed; syntax quick-ref updated with `const`
+  and slice examples.
+
+- **Remaining `"nil"` in error messages** — four error message format strings
+  in `vm.c` still used `"nil"` as a type name. All updated to `"null"`.
+
+- **All `docs/dev/` files** — headers, banners, and internal version references
+  updated from `v1.1.1a4`/`a5`/`a6` to `v1.2.0-rc1 (Release Candidate)`.
+  Per-version tags in `stdlib.md` (e.g. `*(v1.1.1a4)*`) removed — the docs
+  now describe the current state, not the history.
+
+- **`RELEASE_NOTES.md`** — fully rewritten for v1.2.0. Covers all new
+  language features, error system, import syntax, stdlib summary, upgrade
+  guide, and known limitations.
+
+- **`README.md`** — banner updated from "alpha" to "release candidate";
+  version references updated.
+
+- **`ROADMAP.md`** — v1.2.0-rc1 added; stable promotion criteria updated
+  to reflect current state (most boxes already checked).
 
 ---
 

@@ -1,4 +1,4 @@
-# Nolqu Language Grammar — v1.1.1a6 (Alpha)
+# Nolqu Language Grammar — v1.2.0-rc1
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -255,7 +255,7 @@ import "path/to/module"
 
 ---
 
-## Notes and Limitations (v1.1.1a4)
+## Notes and Limitations (v1.2.0-rc1)
 
 - No closures — functions cannot capture variables from outer scopes.
 - No hash maps — only arrays and strings are collection types.

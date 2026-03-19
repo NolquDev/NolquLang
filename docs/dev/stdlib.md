@@ -1,4 +1,4 @@
-# Nolqu Standard Library — v1.1.1a4 (Alpha)
+# Nolqu Standard Library — v1.2.0-rc1
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -39,7 +39,7 @@ print TAU   # 6.28318530717958...  (2 × PI)
 print E     # 2.71828182845904...
 ```
 
-### Helpers from v1.0.0
+### Core helpers
 
 ```nolqu
 print clamp(15, 0, 10)     # 10
@@ -69,7 +69,7 @@ print log10(1000)    # ≈ 3.0
 
 Throws a catchable error for `log(0)` or `log(-1)`.
 
-### Number utilities *(v1.1.1a4)*
+### Number utilities 
 
 ```nolqu
 print is_nan(PI)         # false
@@ -95,7 +95,7 @@ print lcm(12, 18)        # 36
 
 Higher-order array operations. Callbacks must be named functions.
 
-### Classic (v1.0.0)
+### Core
 
 ```nolqu
 import "stdlib/array"
@@ -118,7 +118,7 @@ print reduce(nums, add, 0)               # 15
 print join(reverse(nums), ", ")          # 5, 4, 3, 2, 1
 ```
 
-### Aggregation *(v1.1.1a4)*
+### Aggregation 
 
 ```nolqu
 print sum([1, 2, 3, 4, 5])    # 15
@@ -128,7 +128,7 @@ print min_arr([3, 1, 4, 1, 5]) # 1
 print max_arr([3, 1, 4, 1, 5]) # 5
 ```
 
-### Predicates *(v1.1.1a4)*
+### Predicates 
 
 ```nolqu
 function is_neg(x)
@@ -143,7 +143,7 @@ print all([1,-2, 3], is_pos)      # false
 print all([], is_pos)             # true  (vacuous)
 ```
 
-### Structure *(v1.1.1a4)*
+### Structure 
 
 ```nolqu
 # flatten — one level deep
@@ -245,7 +245,7 @@ print center("hi", 8)          # "   hi   "
 print truncate("Hello, World!", 8)  # "Hello..."
 ```
 
-### Character utilities *(v1.1.1a4)*
+### Character utilities 
 
 ```nolqu
 print char_at("hello", 0)    # h

@@ -1,4 +1,4 @@
-# Embedding Nolqu — v1.1.1a4 (Alpha)
+# Embedding Nolqu — v1.2.0-rc1
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**

@@ -16,21 +16,22 @@
 | v1.1.1a3 | Undefined var catchable, docs accuracy pass |
 | v1.1.1a4 | Stdlib expanded, alpha banner, docs updated |
 | v1.1.1a5 | null, const, default params, slice, semantics.md |
-| **v1.1.1a6** | **Typed errors, bool(), import syntax, stdlib/io, real examples ← current** |
+| v1.1.1a6 | Typed errors, bool(), import syntax, stdlib/io, real examples |
+| **v1.2.0-rc1** | **Stabilization, help fix, docs cleanup — release candidate ← current** |
 
 ---
 
 ## In Progress
 
-### v1.1.1 — Stable patch release 🎯
+### v1.2.0 — Stable release 🎯
 
-Criteria to promote a4 → stable v1.1.1:
+Criteria to promote rc1 → stable v1.2.0:
 - [ ] All known bugs closed
-- [ ] Full test suite green (currently 27/27 ✅)
-- [ ] ASan + UBSan clean ✅
-- [ ] Documentation accurate and complete ✅ (after a3)
+- [x] Full test suite green (33/33 ✅)
+- [x] ASan + UBSan clean ✅
+- [x] Documentation accurate and complete ✅
 - [ ] Tested on Linux, macOS, Windows (MinGW), Termux
-- [ ] No regressions vs v1.1.0
+- [x] No regressions vs v1.0.0
 
 ---
 

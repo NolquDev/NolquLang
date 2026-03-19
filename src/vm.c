@@ -89,7 +89,7 @@ static Value nativeLen(int argc, Value* args) {
     if (IS_STRING(args[0])) return NUMBER_VAL(AS_STRING(args[0])->length);
     char msg[128];
     snprintf(msg, sizeof(msg), "len: expected string or array, got %s",
-        IS_NUMBER(args[0]) ? "number" : IS_BOOL(args[0]) ? "bool" : "nil");
+        IS_NUMBER(args[0]) ? "number" : IS_BOOL(args[0]) ? "bool" : "null");
     if (g_vm_for_error) g_vm_for_error->thrown = OBJ_VAL(copyString(msg, (int)strlen(msg)));
     return NIL_VAL;
 }
@@ -1014,7 +1014,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 if (IS_ARRAY(obj_val)) {
                     if (!IS_NUMBER(idx_val))
                         THROW_ERROR("TypeError: array index must be a number, got %s.",
-                            IS_STRING(idx_val) ? "string" : IS_BOOL(idx_val) ? "bool" : "nil");
+                            IS_STRING(idx_val) ? "string" : IS_BOOL(idx_val) ? "bool" : "null");
                     ObjArray* arr = AS_ARRAY(obj_val);
                     int idx = (int)AS_NUMBER(idx_val);
                     if (idx < 0) idx = arr->count + idx;
@@ -1034,7 +1034,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     push(vm, OBJ_VAL(copyString(&s->chars[idx], 1)));
                 } else {
                     THROW_ERROR("TypeError: only arrays and strings support indexing, not %s.",
-                        IS_NUMBER(obj_val) ? "number" : IS_BOOL(obj_val) ? "bool" : "nil");
+                        IS_NUMBER(obj_val) ? "number" : IS_BOOL(obj_val) ? "bool" : "null");
                 }
                 break;
             }
@@ -1122,7 +1122,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 if (!IS_STRING(err)) {
                     char buf[64];
                     snprintf(buf, sizeof(buf), IS_NUMBER(err) ? "%g" :
-                             IS_BOOL(err) ? (AS_BOOL(err) ? "true" : "false") : "nil",
+                             IS_BOOL(err) ? (AS_BOOL(err) ? "true" : "false") : "null",
                              IS_NUMBER(err) ? AS_NUMBER(err) : 0.0);
                     err = OBJ_VAL(copyString(buf, (int)strlen(buf)));
                 }
