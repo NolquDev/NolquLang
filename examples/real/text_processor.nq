@@ -1,0 +1,175 @@
+#!/usr/bin/env nq
+# text_processor.nq — Text transformation pipeline
+#
+# Demonstrates: string stdlib, array stdlib, for-in, functions,
+#               pipeline pattern, error handling
+#
+# A mini text processing tool: read → clean → transform → report.
+
+import "stdlib/string"
+import "stdlib/array"
+import "stdlib/fmt"
+
+# ── Transformers ──────────────────────────────────────────────────────
+
+# normalize_whitespace — collapse multiple spaces, trim each line
+function normalize_whitespace(text)
+  let ls = lines(text)
+  let result = []
+  for line in ls
+    push(result, trim(line))
+  end
+  return join(result, "\n")
+end
+
+# remove_blank_lines — strip lines that are empty or only whitespace
+function remove_blank_lines(text)
+  let ls = lines(text)
+  let result = []
+  for line in ls
+    if not is_empty(line)
+      push(result, line)
+    end
+  end
+  return join(result, "\n")
+end
+
+# to_title_case — title-case every line
+function to_title_case_lines(text)
+  let ls = lines(text)
+  let result = []
+  for line in ls
+    push(result, title_case(line))
+  end
+  return join(result, "\n")
+end
+
+# number_lines — prefix each line with its 1-based line number
+function number_lines(text)
+  let ls = lines(text)
+  let result = []
+  let i = 1
+  for line in ls
+    let num_str = fmt_pad(str(i), 3, " ")
+    push(result, num_str .. "  " .. line)
+    i += 1
+  end
+  return join(result, "\n")
+end
+
+# word_frequency — count how often each word appears
+function word_frequency(text)
+  let ws = words(lower(text))
+  let keys = []
+  let vals = []
+  for w in ws
+    let found = false
+    let i = 0
+    loop i < len(keys)
+      if keys[i] == w
+        vals[i] = vals[i] + 1
+        found = true
+        break
+      end
+      i += 1
+    end
+    if not found
+      push(keys, w)
+      push(vals, 1)
+    end
+  end
+  return [keys, vals]
+end
+
+# top_n — return top n items by frequency as "word: count" strings
+function top_n(keys, vals, n)
+  let result = []
+  # copy arrays
+  let rk = []
+  let rv = []
+  let ci = 0
+  loop ci < len(keys)
+    push(rk, keys[ci])
+    push(rv, vals[ci])
+    ci = ci + 1
+  end
+
+  let taken = 0
+  loop taken < n and taken < len(rk)
+    let best = 0
+    let j = 1
+    loop j < len(rk)
+      if is_num(rv[j]) and rv[j] > rv[best]
+        best = j
+      end
+      j += 1
+    end
+    if rv[best] < 0
+      break
+    end
+    push(result, rk[best] .. ": " .. rv[best])
+    rv[best] = -1
+    taken += 1
+  end
+  return result
+end
+
+# ── Pipeline ──────────────────────────────────────────────────────────
+
+function run_pipeline(text, steps)
+  let result = text
+  for step in steps
+    result = step(result)
+  end
+  return result
+end
+
+# ── Demo ──────────────────────────────────────────────────────────────
+
+let sample = "  Hello   World  
+
+  the quick   brown fox
+  jumps  OVER   the lazy dog
+
+  nolqu is a   small   fast   language
+  nolqu  runs  on a  stack-based  VM
+  the VM uses  mark and sweep  GC
+
+"
+
+print "── Original ───────────────────────────────────"
+print sample
+
+print "── Step 1: normalize whitespace ───────────────"
+let step1 = normalize_whitespace(sample)
+print step1
+print ""
+
+print "── Step 2: remove blank lines ─────────────────"
+let step2 = remove_blank_lines(step1)
+print step2
+print ""
+
+print "── Step 3: title case ─────────────────────────"
+let step3 = to_title_case_lines(step2)
+print step3
+print ""
+
+print "── Step 4: number lines ───────────────────────"
+let step4 = number_lines(step3)
+print step4
+print ""
+
+print "── Word frequency (original) ──────────────────"
+let freq = word_frequency(sample)
+let top = top_n(freq[0], freq[1], 8)
+for entry in top
+  print "  " .. entry
+end
+print ""
+
+print "── Stats ──────────────────────────────────────"
+let orig_lines = lines(remove_blank_lines(sample))
+print fmt("Lines:  {:d}", [len(orig_lines)])
+print fmt("Words:  {:d}", [len(words(sample))])
+print fmt("Chars:  {:d}", [len(sample)])

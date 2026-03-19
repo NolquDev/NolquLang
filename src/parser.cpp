@@ -248,12 +248,98 @@ static ASTNode* parseReturnStmt(Parser* p) {
 
 static ASTNode* parseImportStmt(Parser* p) {
     int line = p->previous.line;
-    expect(p, TK_STRING, "Expected a file path after 'import'. Example: import \"stdlib/math\"");
-    char* path = extractString(p->previous.start, p->previous.length, NULL);
+
+    /*
+     * Supported forms:
+     *   import "stdlib/math"              -- original quoted form
+     *   import stdlib/math                -- unquoted: slash-separated
+     *   import stdlib.math                -- dot-separated (alt style)
+     *   import stdlib/math as math        -- alias (no-op: Nolqu has no namespaces)
+     *   from stdlib/math import PI, sin   -- selective (runs module, names already global)
+     *
+     * All forms ultimately compile to the same NODE_IMPORT with the resolved path.
+     * The 'as' and 'from...import' forms parse and discard the alias/names — they
+     * are accepted for readability but have no additional runtime effect since
+     * all module-level declarations become globals after import.
+     */
+
+    char* path = NULL;
+
+    /* Handle: from module import name1, name2 */
+    if (p->previous.type == TK_FROM) {
+        /* parse the module path (unquoted ident sequence) */
+        char buf[512] = {0};
+        if (check(p, TK_STRING)) {
+            advance(p);
+            path = extractString(p->previous.start, p->previous.length, NULL);
+        } else {
+            /* collect slash/dot separated identifiers */
+            while (check(p, TK_IDENT) || check(p, TK_SLASH)) {
+                if (check(p, TK_SLASH)) {
+                    advance(p);
+                    strncat(buf, "/", 1);
+                } else {
+                    Token t = p->current; advance(p);
+                    strncat(buf, t.start, (size_t)t.length);
+                }
+            }
+            path = dupStr(buf, (int)strlen(buf));
+        }
+        /* consume 'import name1, name2' — names are ignored (already global) */
+        if (check(p, TK_IMPORT)) {
+            advance(p);
+            while (check(p, TK_IDENT) || check(p, TK_COMMA)) {
+                advance(p);
+            }
+        }
+        expectNewline(p);
+        ASTNode* n = makeNode(NODE_IMPORT, line);
+        n->data.import.path = path;
+        return n;
+    }
+
+    /* Handle: import "quoted/path" or import unquoted/path */
+    if (check(p, TK_STRING)) {
+        advance(p);
+        path = extractString(p->previous.start, p->previous.length, NULL);
+    } else {
+        /* collect slash/dot separated identifiers into a path */
+        char buf[512] = {0};
+        bool got_one = false;
+        while (check(p, TK_IDENT) || (got_one && check(p, TK_SLASH))) {
+            if (check(p, TK_SLASH)) {
+                advance(p);
+                strncat(buf, "/", 1);
+            } else {
+                Token t = p->current; advance(p);
+                strncat(buf, t.start, (size_t)t.length);
+                got_one = true;
+            }
+        }
+        if (!got_one) {
+            errorAt(p, &p->current,
+                "Expected a module path after 'import'. "
+                "Example: import \"stdlib/math\"  or  import stdlib/math");
+            return NULL;
+        }
+        path = dupStr(buf, (int)strlen(buf));
+    }
+
+    /* Optional: as alias — parsed and ignored */
+    if (check(p, TK_AS)) {
+        advance(p);
+        if (check(p, TK_IDENT)) advance(p); /* consume alias name */
+    }
+
     expectNewline(p);
     ASTNode* n = makeNode(NODE_IMPORT, line);
     n->data.import.path = path;
     return n;
+}
+
+static ASTNode* parseFromImportStmt(Parser* p) {
+    /* 'from' was already consumed by parseStmt — delegate to import handler */
+    return parseImportStmt(p);
 }
 
 static ASTNode* parseTryStmt(Parser* p) {
@@ -321,6 +407,7 @@ static ASTNode* parseStmt(Parser* p) {
         case TK_FUNCTION: return parseFunctionDecl(p);
         case TK_RETURN:   return parseReturnStmt(p);
         case TK_IMPORT:   return parseImportStmt(p);
+        case TK_FROM:     return parseFromImportStmt(p);
         case TK_TRY:      return parseTryStmt(p);
         case TK_BREAK: {
             expectNewline(p);

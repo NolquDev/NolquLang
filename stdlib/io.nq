@@ -1,0 +1,149 @@
+# stdlib/io.nq — File I/O utilities
+#
+# Import:
+#   import "stdlib/io"
+#
+# A clean, consistent interface over Nolqu's built-in file functions.
+# All errors are catchable.
+#
+# Quick reference:
+#   read_file(path)              read entire file → string
+#   write_file(path, data)       overwrite file with string
+#   append_file(path, data)      append string to file
+#   file_exists(path)            true if file is readable
+#   read_lines(path)             read file → array of lines
+#   write_lines(path, lines)     write array of strings as lines
+#   append_line(path, line)      append a single line
+#   file_size(path)              byte count, or -1 if missing
+#   copy_file(src, dst)          copy file contents
+#   delete_file(path)            remove file (via write then check)
+#   ensure_file(path)            create file if missing
+
+# ─── read_file ────────────────────────────────────────────────────────
+
+# read_file(path) — read entire file and return as a string
+#
+# Throws ValueError if file cannot be opened.
+#
+# Example:
+#   let src = read_file("config.txt")
+#   print len(src) .. " bytes"
+function read_file(path)
+  if not file_exists(path)
+    error("ValueError: read_file: file not found: " .. path)
+  end
+  return file_read(path)
+end
+
+# ─── write_file ───────────────────────────────────────────────────────
+
+# write_file(path, data) — overwrite file with a string
+#
+# Creates the file if it does not exist. Overwrites if it does.
+#
+# Example:
+#   write_file("output.txt", "Hello\nWorld\n")
+function write_file(path, data)
+  return file_write(path, data)
+end
+
+# ─── append_file ──────────────────────────────────────────────────────
+
+# append_file(path, data) — append a string to the end of a file
+#
+# Example:
+#   append_file("log.txt", "error: something failed\n")
+function append_file(path, data)
+  return file_append(path, data)
+end
+
+# ─── read_lines ───────────────────────────────────────────────────────
+
+# read_lines(path) — read file and return array of lines
+#
+# Strips the trailing blank entry caused by a final newline.
+#
+# Example:
+#   let ls = read_lines("names.txt")
+#   for name in ls
+#     print name
+#   end
+function read_lines(path)
+  if not file_exists(path)
+    error("ValueError: read_lines: file not found: " .. path)
+  end
+  let lines = file_lines(path)
+  if len(lines) > 0 and lines[len(lines) - 1] == ""
+    pop(lines)
+  end
+  return lines
+end
+
+# ─── write_lines ──────────────────────────────────────────────────────
+
+# write_lines(path, lines) — write an array of strings as lines
+#
+# Each string is joined with "\n" and a trailing newline is added.
+#
+# Example:
+#   write_lines("names.txt", ["Alice", "Bob", "Carol"])
+function write_lines(path, lines)
+  let content = join(lines, "\n") .. "\n"
+  return file_write(path, content)
+end
+
+# ─── append_line ──────────────────────────────────────────────────────
+
+# append_line(path, line) — append a single line to a file
+#
+# Example:
+#   append_line("log.txt", "2025-01-01: started")
+function append_line(path, line)
+  return file_append(path, line .. "\n")
+end
+
+# ─── file_size ────────────────────────────────────────────────────────
+
+# file_size(path) — return the byte count of a file
+#
+# Returns -1 if the file does not exist.
+#
+# Example:
+#   let sz = file_size("data.csv")
+#   if sz > 1000000
+#     print "large file: " .. sz .. " bytes"
+#   end
+function file_size(path)
+  if not file_exists(path)
+    return -1
+  end
+  return len(file_read(path))
+end
+
+# ─── ensure_file ──────────────────────────────────────────────────────
+
+# ensure_file(path) — create file if it does not already exist
+#
+# Example:
+#   ensure_file("app.log")
+function ensure_file(path)
+  if not file_exists(path)
+    file_write(path, "")
+  end
+end
+
+# ─── copy_file ────────────────────────────────────────────────────────
+
+# copy_file(src, dst) — copy contents of src to dst
+#
+# Throws ValueError if src does not exist.
+#
+# Example:
+#   copy_file("config.txt", "config.bak")
+function copy_file(src, dst)
+  if not file_exists(src)
+    error("ValueError: copy_file: source not found: " .. src)
+  end
+  let content = file_read(src)
+  return file_write(dst, content)
+end

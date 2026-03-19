@@ -1,0 +1,129 @@
+#!/usr/bin/env nq
+# file_reader.nq — Read and analyse a text file
+#
+# Demonstrates: file I/O, string ops, stdlib/string, stdlib/fmt
+#
+# Usage:
+#   Set FILE_PATH below, then run:  nq examples/real/file_reader.nq
+
+import "stdlib/io"
+import "stdlib/string"
+import "stdlib/fmt"
+import "stdlib/math"
+
+const FILE_PATH = "examples/real/file_reader.nq"   # reads itself by default
+
+function count_words_in(text)
+  return len(words(text))
+end
+
+function count_char(text, ch)
+  return count(text, ch)
+end
+
+function longest_line(lines)
+  let max_len = 0
+  let max_line = ""
+  for line in lines
+    if len(line) > max_len
+      max_len = len(line)
+      max_line = line
+    end
+  end
+  return max_line
+end
+
+function top_words(text, n)
+  # Count word frequencies
+  let ws = words(lower(text))
+  let freq_keys = []
+  let freq_vals = []
+
+  for w in ws
+    # Skip very short words
+    if len(w) <= 2
+      continue
+    end
+    let found = false
+    let i = 0
+    loop i < len(freq_keys)
+      if freq_keys[i] == w
+        freq_vals[i] = freq_vals[i] + 1
+        found = true
+        break
+      end
+      i += 1
+    end
+    if not found
+      push(freq_keys, w)
+      push(freq_vals, 1)
+    end
+  end
+
+  # Simple selection sort for top n
+  let result = []
+  let taken = 0
+  loop taken < n and taken < len(freq_keys)
+    let best_i = 0
+    let j = 1
+    loop j < len(freq_keys)
+      if is_num(freq_vals[j]) and freq_vals[j] > freq_vals[best_i]
+        best_i = j
+      end
+      j += 1
+    end
+    if freq_vals[best_i] < 0
+      break
+    end
+    push(result, freq_keys[best_i] .. " (" .. freq_vals[best_i] .. ")")
+    freq_vals[best_i] = -1
+    taken += 1
+  end
+  return result
+end
+
+# ── Main ──────────────────────────────────────────────────────────────
+
+print ""
+print fmt("Reading: {}", [FILE_PATH])
+print "─────────────────────────────────────"
+
+let ok = false
+try
+  let content = read_file(FILE_PATH)
+  let file_lines = read_lines(FILE_PATH)
+  ok = true
+
+  let n_lines = len(file_lines)
+  let n_words = count_words_in(content)
+  let n_chars = len(content)
+  let n_blank = 0
+
+  for line in file_lines
+    if is_empty(line)
+      n_blank += 1
+    end
+  end
+
+  print fmt("Lines:      {:d}  ({:d} blank)", [n_lines, n_blank])
+  print fmt("Words:      {:d}", [n_words])
+  print fmt("Characters: {:d}", [n_chars])
+  print fmt("Avg line:   {:f} chars", [n_chars / n_lines])
+  print ""
+
+  let long = longest_line(file_lines)
+  print "Longest line (" .. len(long) .. " chars):"
+  print "  " .. truncate(long, 72)
+  print ""
+
+  print "Top 5 words:"
+  let top = top_words(content, 5)
+  for entry in top
+    print "  " .. entry
+  end
+
+catch e
+  print "Error: " .. e
+end
+
+print ""

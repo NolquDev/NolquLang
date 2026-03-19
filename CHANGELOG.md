@@ -2,6 +2,47 @@
 
 ---
 
+## v1.1.1a6 — Alpha 6 (2026)
+
+### Language / Runtime
+
+- **Typed errors** — all runtime errors now carry a type prefix:
+  `TypeError:`, `NameError:`, `IndexError:`, `ValueError:`.
+  Stdlib errors updated to match. Use `error_type(e)` to dispatch.
+
+- **`bool(v)` builtin** — coerce any value to `true`/`false` using
+  the language's truthiness rules. `bool(0) = false`, `bool("hi") = true`.
+
+- **`error_type(e)` builtin** — extract the type prefix from a typed
+  error string. `error_type("TypeError: foo") = "TypeError"`.
+  Falls back to `"RuntimeError"` for plain error strings.
+
+- **Import syntax extended:**
+  - `import stdlib/math` — unquoted slash-separated path
+  - `import "stdlib/math" as math` — alias (parsed; no namespace effect)
+  - `from stdlib/math import PI, sin` — selective import (runs whole module)
+
+### Standard Library
+
+- **`stdlib/io.nq`** — new unified file I/O module:
+  `read_file` · `write_file` · `append_file` · `read_lines` · `write_lines` ·
+  `append_line` · `file_size` · `ensure_file` · `copy_file`
+
+### Examples
+
+- **`examples/real/cli_tool.nq`** — interactive task manager (input, file I/O)
+- **`examples/real/file_reader.nq`** — file stats and word frequency
+- **`examples/real/json_tool.nq`** — JSON build, encode, decode, validate, merge
+- **`examples/real/text_processor.nq`** — text transformation pipeline
+
+### Documentation
+
+- `docs/dev/semantics.md` — new section: Typed Errors with dispatch examples
+- `docs/dev/language.md` — updated: typed error table, `bool()`/`error_type()`, import forms
+- `docs/dev/grammar.md` — added `module_path`, extended `import_stmt`, `from`/`as` keywords
+
+---
+
 ## v1.1.1a5 — Alpha 5 (2026)
 
 ### Language — New Features
@@ -297,6 +338,47 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.1.1a6 — Alpha 6 (2026)
+
+### Language / Runtime
+
+- **Typed errors** — all runtime errors now carry a type prefix:
+  `TypeError:`, `NameError:`, `IndexError:`, `ValueError:`.
+  Stdlib errors updated to match. Use `error_type(e)` to dispatch.
+
+- **`bool(v)` builtin** — coerce any value to `true`/`false` using
+  the language's truthiness rules. `bool(0) = false`, `bool("hi") = true`.
+
+- **`error_type(e)` builtin** — extract the type prefix from a typed
+  error string. `error_type("TypeError: foo") = "TypeError"`.
+  Falls back to `"RuntimeError"` for plain error strings.
+
+- **Import syntax extended:**
+  - `import stdlib/math` — unquoted slash-separated path
+  - `import "stdlib/math" as math` — alias (parsed; no namespace effect)
+  - `from stdlib/math import PI, sin` — selective import (runs whole module)
+
+### Standard Library
+
+- **`stdlib/io.nq`** — new unified file I/O module:
+  `read_file` · `write_file` · `append_file` · `read_lines` · `write_lines` ·
+  `append_line` · `file_size` · `ensure_file` · `copy_file`
+
+### Examples
+
+- **`examples/real/cli_tool.nq`** — interactive task manager (input, file I/O)
+- **`examples/real/file_reader.nq`** — file stats and word frequency
+- **`examples/real/json_tool.nq`** — JSON build, encode, decode, validate, merge
+- **`examples/real/text_processor.nq`** — text transformation pipeline
+
+### Documentation
+
+- `docs/dev/semantics.md` — new section: Typed Errors with dispatch examples
+- `docs/dev/language.md` — updated: typed error table, `bool()`/`error_type()`, import forms
+- `docs/dev/grammar.md` — added `module_path`, extended `import_stmt`, `from`/`as` keywords
 
 ---
 

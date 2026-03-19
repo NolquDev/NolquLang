@@ -1,4 +1,4 @@
-# Nolqu Language Reference — v1.1.1a5 (Alpha)
+# Nolqu Language Reference — v1.1.1a6 (Alpha)
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -445,25 +445,27 @@ end
 | Division / modulo by zero | `"Division by zero."` |
 | Arithmetic on non-numbers | `"This operation only works on numbers."` |
 | `<` `>` `<=` `>=` on non-numbers | `"Operator '<' only works on numbers."` |
-| Array index out of bounds | `"Array index N out of bounds (length M)."` |
+| Array index out of bounds | `"IndexError: array index N out of bounds (length M)."` |
 | String index out of bounds | `"String index N out of bounds (length M)."` |
-| Non-number index | `"Array index must be a number."` |
+| Non-number index | `"TypeError: array index must be a number."` |
 | File read / write failure | `"file_read: cannot open 'path'"` etc. |
-| Calling a non-function | `"Only functions can be called, not <type>."` |
+| Calling a non-function | `"TypeError: only functions can be callable, not <type>."` |
 | Builtin wrong argument count | `"Built-in function 'x' expects N argument(s)."` |
 | `pop` on empty array | `"pop: cannot pop from an empty array"` |
 | `len` on wrong type | `"len: expected string or array, got <type>"` |
-| Accessing undefined variable | `"Undefined variable 'name'."` |
-| Assigning to undeclared variable | `"Variable 'name' is not declared."` |
+| Accessing undefined variable | `"NameError: undefined variable 'name'."`  |
+| Assigning to undeclared variable | `"NameError: variable 'name' is not declared."` |
 
 ---
 
 ## 9. Modules
 
 ```nolqu
-import "stdlib/math"
-import "stdlib/array"
-import "my_module"     # loads my_module.nq from CWD
+import "stdlib/math"            # original quoted form
+import stdlib/math             # unquoted — same effect
+import stdlib/math as math     # alias (parsed, no namespace effect)
+from stdlib/math import PI     # selective (module runs, names are global)
+import "my_module"             # custom module from CWD     # loads my_module.nq from CWD
 ```
 
 - Path is relative to the **working directory** where `nq` is run.
@@ -538,6 +540,8 @@ end
 | `is_str(v)` | `true` if `v` is a string |
 | `is_bool(v)` | `true` if `v` is a bool |
 | `is_array(v)` | `true` if `v` is an array |
+| `bool(v)` | Coerce any value to `true`/`false` using truthiness rules |
+| `error_type(e)` | Extract type prefix from a typed error: `"TypeError"`, etc. |
 | `ord(ch)` | Code point of first character (0–127) |
 | `chr(n)` | Single-character string for code point `n` (0–127) |
 

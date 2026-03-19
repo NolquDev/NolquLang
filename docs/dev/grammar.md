@@ -1,4 +1,4 @@
-# Nolqu Language Grammar — v1.1.1a5 (Alpha)
+# Nolqu Language Grammar — v1.1.1a6 (Alpha)
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -77,7 +77,10 @@ param_decl           → IDENT ( "=" expr )?
 
 return_stmt          → "return" expr? NEWLINE
 
-import_stmt          → "import" STRING NEWLINE
+import_stmt          → "import" ( STRING | module_path ) ( "as" IDENT )? NEWLINE
+                     | "from" module_path "import" IDENT ( "," IDENT )* NEWLINE
+
+module_path          → IDENT ( "/" IDENT )*
 
 try_stmt             → "try" NEWLINE
                          statement*
@@ -169,7 +172,7 @@ Single-line only. Block comments are not supported.
 
 ```
 let      print    if       else     loop     for      in
-function return   import   try      catch    end
+function return   import   from     as       try      catch    end
 true     false    nil      null     and      or       not      break    continue
 const
 ```

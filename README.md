@@ -8,7 +8,7 @@
 ![license](https://img.shields.io/github/license/Nadzil123/Nolqu)
 
 > [!WARNING]
-> **This is an alpha release (v1.1.1a5).** The language and API are stable
+> **This is an alpha release (v1.1.1a6).** The language and API are stable
 > but this version has not been fully validated across all platforms.
 > For production use, stick with the **[v1.0.0 stable release](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**.
 >
@@ -41,7 +41,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - 50+ built-in functions — math, string, array, random, time, memory
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
-- Current version: **v1.1.1a5** (alpha) — stable: **[v1.0.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**
+- Current version: **v1.1.1a6** (alpha) — stable: **[v1.0.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.0.0)**
 
 ---
 
@@ -173,6 +173,7 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 | `stdlib/time` | `now` `elapsed` `sleep` `format_duration` `benchmark` |
 | `stdlib/test` | `suite` `expect` `expect_eq` `expect_err` `done` |
 | `stdlib/os` | `read_lines` `write_lines` `touch` `path_exists` `file_size` |
+| `stdlib/io` | `read_file` `write_file` `append_file` `read_lines` `write_lines` `copy_file` |
 | `stdlib/file` | `read_or_default` `write_lines` `count_lines` |
 
 ---

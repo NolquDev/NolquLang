@@ -64,7 +64,7 @@ end
 #   min_arr([3, 1, 4, 1, 5])   # 1
 function min_arr(arr)
   if len(arr) == 0
-    error("min_arr: array must not be empty")
+    error("ValueError: min_arr: array must not be empty")
   end
   let m = arr[0]
   for n in arr
@@ -81,7 +81,7 @@ end
 #   max_arr([3, 1, 4, 1, 5])   # 5
 function max_arr(arr)
   if len(arr) == 0
-    error("max_arr: array must not be empty")
+    error("ValueError: max_arr: array must not be empty")
   end
   let m = arr[0]
   for n in arr
@@ -190,7 +190,7 @@ end
 #   chunk([1, 2, 3, 4], 2)      # [[1,2], [3,4]]
 function chunk(arr, size)
   if size <= 0
-    error("chunk: size must be greater than 0")
+    error("ValueError: chunk: size must be greater than 0")
   end
   let result = []
   let i = 0

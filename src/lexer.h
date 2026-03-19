@@ -50,6 +50,8 @@ typedef enum {
     TK_CONTINUE,    /* continue */
     TK_FOR,         /* for      */
     TK_IN,          /* in       */
+    TK_AS,          /* as       */
+    TK_FROM,        /* from     */
 
     /* Arithmetic operators */
     TK_PLUS,        /* +  */

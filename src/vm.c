@@ -540,6 +540,37 @@ static Value nativeMemUsage(int argc, Value* args) {
 // is_nil(v) / is_num(v) / is_str(v) / is_bool(v) / is_array(v) — type predicates
 static Value nativeIsNil(int argc, Value* args)   { return BOOL_VAL(argc==1 && IS_NIL(args[0]));    }
 static Value nativeIsNum(int argc, Value* args)   { return BOOL_VAL(argc==1 && IS_NUMBER(args[0])); }
+
+/* bool(v) — coerce any value to boolean using truthiness rules */
+static Value nativeBool(int argc, Value* args) {
+    if (argc != 1) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("TypeError: bool() expects 1 argument", 36));
+        return NIL_VAL;
+    }
+    return BOOL_VAL(isTruthy(args[0]));
+}
+
+/*
+ * error_type(e) — extract the type prefix from a typed error string.
+ * "TypeError: foo" → "TypeError"
+ * "hello" (no prefix) → "RuntimeError"
+ */
+static Value nativeErrorType(int argc, Value* args) {
+    if (argc != 1 || !IS_STRING(args[0])) return OBJ_VAL(copyString("RuntimeError", 12));
+    const char* s = AS_CSTRING(args[0]);
+    const char* colon = strstr(s, ": ");
+    if (!colon) return OBJ_VAL(copyString("RuntimeError", 12));
+    /* Check it looks like a known type name (no spaces before the colon) */
+    int prefix_len = (int)(colon - s);
+    if (prefix_len <= 0 || prefix_len > 20) return OBJ_VAL(copyString("RuntimeError", 12));
+    for (int i = 0; i < prefix_len; i++) {
+        char c = s[i];
+        if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')))
+            return OBJ_VAL(copyString("RuntimeError", 12));
+    }
+    return OBJ_VAL(copyString(s, prefix_len));
+}
 static Value nativeIsStr(int argc, Value* args)   { return BOOL_VAL(argc==1 && IS_STRING(args[0])); }
 static Value nativeIsBool(int argc, Value* args)  { return BOOL_VAL(argc==1 && IS_BOOL(args[0]));   }
 static Value nativeIsArray(int argc, Value* args) { return BOOL_VAL(argc==1 && IS_ARRAY(args[0]));  }
@@ -648,6 +679,8 @@ void initVM(VM* vm) {
     registerNative(vm, "mem_usage",   nativeMemUsage,    0);
     registerNative(vm, "is_nil",      nativeIsNil,       1);
     registerNative(vm, "is_num",      nativeIsNum,       1);
+    registerNative(vm, "bool",        nativeBool,        1);
+    registerNative(vm, "error_type",  nativeErrorType,   1);
     registerNative(vm, "is_str",      nativeIsStr,       1);
     registerNative(vm, "is_bool",     nativeIsBool,      1);
     registerNative(vm, "is_array",    nativeIsArray,     1);
@@ -767,7 +800,7 @@ static Value concatStrings(ObjString* a, ObjString* b) {
 static bool callFunction(VM* vm, ObjFunction* fn, int argc) {
     if (argc > fn->arity) {
         vmRuntimeError(vm,
-            "Function '%s' expects %d argument(s), but got %d.",
+            "TypeError: function '%s' expects %d argument(s), but got %d.",
             fn->name ? fn->name->chars : "<script>",
             fn->arity, argc);
         return false;
@@ -853,11 +886,11 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
 
 #define BINARY_NUM(op) do { \
     if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
-        THROW_ERROR("This operation only works on numbers. Use '..' to concatenate strings."); \
-    } else { \
+        THROW_ERROR("TypeError: arithmetic requires numbers."); \
+    } \
     double b = AS_NUMBER(pop(vm)); \
     double a = AS_NUMBER(pop(vm)); \
-    push(vm, NUMBER_VAL(a op b)); } \
+    push(vm, NUMBER_VAL(a op b)); \
 } while (0)
 
     for (;;) {
@@ -884,10 +917,10 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 if (!tableGet(&vm->globals, name, &val)) {
                     const char* suggestion = didYouMean(vm, name->chars);
                     if (suggestion)
-                        THROW_ERROR("Undefined variable '%s'. Did you mean '%s'?",
+                        THROW_ERROR("NameError: undefined variable '%s'. Did you mean '%s'?",
                             name->chars, suggestion);
                     else
-                        THROW_ERROR("Undefined variable '%s'.", name->chars);
+                        THROW_ERROR("NameError: undefined variable '%s'.", name->chars);
                 }
                 push(vm, val);
                 break;
@@ -896,7 +929,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 ObjString* name = AS_STRING(READ_CONST());
                 if (tableSet(&vm->globals, name, peek(vm, 0))) {
                     tableDelete(&vm->globals, name);
-                    THROW_ERROR("Variable '%s' is not declared. Use 'let %s = ...' first.",
+                    THROW_ERROR("NameError: variable '%s' is not declared. Use 'let %s = ...' first.",
                         name->chars, name->chars);
                 }
                 break;
@@ -909,26 +942,26 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             case OP_MUL: BINARY_NUM(*); break;
             case OP_DIV: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1))) {
-                    THROW_ERROR("Division only works on numbers.");
+                    THROW_ERROR("TypeError: division requires numbers.");
                 }
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm));
-                if (b == 0.0) { THROW_ERROR("Division by zero."); }
+                if (b == 0.0) { THROW_ERROR("ValueError: division by zero."); }
                 push(vm, NUMBER_VAL(a / b));
                 break;
             }
             case OP_MOD: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1))) {
-                    THROW_ERROR("Modulo only works on numbers.");
+                    THROW_ERROR("TypeError: modulo requires numbers.");
                 }
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm));
-                if (b == 0.0) { THROW_ERROR("Modulo by zero."); }
+                if (b == 0.0) { THROW_ERROR("ValueError: modulo by zero."); }
                 push(vm, NUMBER_VAL(fmod(a, b)));
                 break;
             }
             case OP_NEGATE: {
                 Value v = peek(vm, 0);
                 if (!IS_NUMBER(v)) {
-                    THROW_ERROR("Cannot negate a %s — only numbers can be negated. Example: let x = -5",
+                    THROW_ERROR("TypeError: cannot negate a %s — only numbers can be negated.",
                         IS_STRING(v) ? "string" : IS_BOOL(v) ? "bool" : IS_NIL(v) ? "nil" : "object");
                 }
                 pop(vm); push(vm, NUMBER_VAL(-AS_NUMBER(v)));
@@ -943,22 +976,22 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             case OP_NEQ: { Value b = pop(vm), a = pop(vm); push(vm, BOOL_VAL(!valuesEqual(a, b))); break; }
             case OP_LT: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1)))
-                    THROW_ERROR("Operator '<' only works on numbers — use it like: a < b where both are numbers.");
+                    THROW_ERROR("TypeError: '<' requires numbers.");
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm)); push(vm, BOOL_VAL(a < b)); break;
             }
             case OP_GT: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1)))
-                    THROW_ERROR("Operator '>' only works on numbers — use it like: a > b where both are numbers.");
+                    THROW_ERROR("TypeError: '>' requires numbers.");
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm)); push(vm, BOOL_VAL(a > b)); break;
             }
             case OP_LTE: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1)))
-                    THROW_ERROR("Operator '<=' only works on numbers — use it like: a <= b where both are numbers.");
+                    THROW_ERROR("TypeError: '<=' requires numbers.");
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm)); push(vm, BOOL_VAL(a <= b)); break;
             }
             case OP_GTE: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1)))
-                    THROW_ERROR("Operator '>=' only works on numbers — use it like: a >= b where both are numbers.");
+                    THROW_ERROR("TypeError: '>=' requires numbers.");
                 double b = AS_NUMBER(pop(vm)), a = AS_NUMBER(pop(vm)); push(vm, BOOL_VAL(a >= b)); break;
             }
             case OP_NOT: { Value v = pop(vm); push(vm, BOOL_VAL(!isTruthy(v))); break; }
@@ -980,27 +1013,27 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 Value obj_val = pop(vm);
                 if (IS_ARRAY(obj_val)) {
                     if (!IS_NUMBER(idx_val))
-                        THROW_ERROR("Array index must be a number, got %s.",
+                        THROW_ERROR("TypeError: array index must be a number, got %s.",
                             IS_STRING(idx_val) ? "string" : IS_BOOL(idx_val) ? "bool" : "nil");
                     ObjArray* arr = AS_ARRAY(obj_val);
                     int idx = (int)AS_NUMBER(idx_val);
                     if (idx < 0) idx = arr->count + idx;
                     if (idx < 0 || idx >= arr->count)
-                        THROW_ERROR("Array index %d out of bounds (length %d).",
+                        THROW_ERROR("IndexError: array index %d out of bounds (length %d).",
                             (int)AS_NUMBER(idx_val), arr->count);
                     push(vm, arr->items[idx]);
                 } else if (IS_STRING(obj_val)) {
                     if (!IS_NUMBER(idx_val))
-                        THROW_ERROR("String index must be a number.");
+                        THROW_ERROR("TypeError: string index must be a number.");
                     ObjString* s = AS_STRING(obj_val);
                     int idx = (int)AS_NUMBER(idx_val);
                     if (idx < 0) idx = s->length + idx;
                     if (idx < 0 || idx >= s->length)
-                        THROW_ERROR("String index %d out of bounds (length %d).",
+                        THROW_ERROR("IndexError: string index %d out of bounds (length %d).",
                             (int)AS_NUMBER(idx_val), s->length);
                     push(vm, OBJ_VAL(copyString(&s->chars[idx], 1)));
                 } else {
-                    THROW_ERROR("Only arrays and strings support indexing, not %s.",
+                    THROW_ERROR("TypeError: only arrays and strings support indexing, not %s.",
                         IS_NUMBER(obj_val) ? "number" : IS_BOOL(obj_val) ? "bool" : "nil");
                 }
                 break;
@@ -1010,10 +1043,10 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 Value idx_val = pop(vm);
                 Value obj_val = pop(vm);
                 if (!IS_ARRAY(obj_val)) {
-                    THROW_ERROR("Only arrays support index assignment.");
+                    THROW_ERROR("TypeError: only arrays support index assignment.");
                 }
                 if (!IS_NUMBER(idx_val)) {
-                    THROW_ERROR("Array index must be a number.");
+                    THROW_ERROR("TypeError: array index must be a number.");
                 }
                 arraySet(AS_ARRAY(obj_val), (int)AS_NUMBER(idx_val), val);
                 break;
@@ -1059,7 +1092,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     pop(vm); /* un-root */
                     push(vm, OBJ_VAL(result));
                 } else {
-                    THROW_ERROR("Slice requires an array or string, not %s.",
+                    THROW_ERROR("TypeError: slice requires an array or string, not %s.",
                         IS_NIL(obj_val)    ? "nil"    :
                         IS_NUMBER(obj_val) ? "number" :
                         IS_BOOL(obj_val)   ? "bool"   : "value");
@@ -1115,7 +1148,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     // Validate arity (-1 = variadic) — now catchable
                     if (native->arity != -1 && argc != native->arity) {
                         THROW_ERROR(
-                            "Built-in function '%s' expects %d argument(s), but got %d.",
+                            "TypeError: built-in '%s' expects %d argument(s), but got %d.",
                             native->name, native->arity, argc);
                     }
                     vm->thrown = NIL_VAL;  // clear before call
@@ -1137,7 +1170,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 // Calling a non-function — now catchable
                 if (!IS_FUNCTION(callee)) {
                     THROW_ERROR(
-                        "Only functions can be called, not %s.",
+                        "TypeError: only functions can be called, not %s.",
                         IS_STRING(callee) ? "string" :
                         IS_NUMBER(callee) ? "number" :
                         IS_BOOL(callee)   ? "bool"   :

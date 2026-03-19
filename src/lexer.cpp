@@ -26,6 +26,8 @@ static Keyword keywords[] = {
     {"continue", 8, TK_CONTINUE},
     {"for",      3, TK_FOR},
     {"in",       2, TK_IN},
+    {"as",       2, TK_AS},
+    {"from",     4, TK_FROM},
     {NULL,       0, TK_IDENT},
 };
 
@@ -194,6 +196,8 @@ const char* tokenTypeName(TokenType t) {
         case TK_CONTINUE: return "continue";
         case TK_FOR:      return "for";
         case TK_IN:       return "in";
+        case TK_AS:       return "as";
+        case TK_FROM:     return "from";
         case TK_PLUS:      return "+";
         case TK_MINUS:     return "-";
         case TK_STAR:      return "*";

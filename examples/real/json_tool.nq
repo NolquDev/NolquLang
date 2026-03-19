@@ -1,0 +1,141 @@
+#!/usr/bin/env nq
+# json_tool.nq — JSON processing utility
+#
+# Demonstrates: stdlib/json, stdlib/fmt, error handling, for-in
+#
+# Shows how to parse, inspect, transform, and produce JSON.
+
+import "stdlib/json"
+import "stdlib/fmt"
+import "stdlib/string"
+
+# ── Build a config object ─────────────────────────────────────────────
+
+function make_config(name, version, debug)
+  let cfg = json_object()
+  json_set(cfg, "name",    name)
+  json_set(cfg, "version", version)
+  json_set(cfg, "debug",   debug)
+  json_set(cfg, "features", ["error-handling", "modules", "gc"])
+  json_set(cfg, "limits", null)
+  return cfg
+end
+
+# ── Pretty-print a JSON object ────────────────────────────────────────
+
+function pp_object(obj, indent)
+  let pad = ""
+  let i = 0
+  loop i < indent
+    pad ..= "  "
+    i += 1
+  end
+
+  let keys = json_keys(obj)
+  print pad .. "{"
+  let ki = 0
+  for key in keys
+    let val = json_get(obj, key)
+    let val_str = ""
+    if is_array(val)
+      val_str = json_stringify(val)
+    else
+      val_str = json_stringify(val)
+    end
+    print pad .. "  \"" .. key .. "\": " .. val_str
+    ki += 1
+  end
+  print pad .. "}"
+end
+
+# ── Merge two JSON objects ────────────────────────────────────────────
+
+function merge_objects(a, b)
+  let result = json_object()
+  for key in json_keys(a)
+    json_set(result, key, json_get(a, key))
+  end
+  for key in json_keys(b)
+    json_set(result, key, json_get(b, key))
+  end
+  return result
+end
+
+# ── Parse and validate ────────────────────────────────────────────────
+
+function validate_config(obj)
+  let errors = []
+  if not json_has(obj, "name")
+    push(errors, "missing 'name'")
+  end
+  if not json_has(obj, "version")
+    push(errors, "missing 'version'")
+  end
+  let name = json_get(obj, "name")
+  if not is_nil(name) and not is_str(name)
+    push(errors, "'name' must be a string")
+  end
+  return errors
+end
+
+# ── Main ──────────────────────────────────────────────────────────────
+
+print ""
+print "── Build config ──────────────────────────────"
+let cfg = make_config("nolqu-app", "1.0.0", false)
+pp_object(cfg, 0)
+
+print ""
+print "── Encode to JSON string ─────────────────────"
+let encoded = json_stringify(cfg)
+print encoded
+
+print ""
+print "── Decode from JSON string ───────────────────"
+let decoded = json_parse(encoded)
+
+if json_parse_error() != ""
+  print "Parse error: " .. json_parse_error()
+else
+  print "Name:    " .. json_get(decoded, "name")
+  print "Version: " .. json_get(decoded, "version")
+  print "Debug:   " .. str(json_get(decoded, "debug"))
+  let feats = json_get(decoded, "features")
+  print "Features: " .. join(feats, ", ")
+end
+
+print ""
+print "── Merge two objects ─────────────────────────"
+let overrides = json_object()
+json_set(overrides, "debug",   true)
+json_set(overrides, "env",     "production")
+let merged = merge_objects(cfg, overrides)
+print json_stringify(merged)
+
+print ""
+print "── Validate ──────────────────────────────────"
+let bad = json_object()
+json_set(bad, "name", 42)   # name should be a string
+let errs = validate_config(bad)
+if len(errs) > 0
+  print "Validation errors:"
+  for err in errs
+    print "  - " .. err
+  end
+else
+  print "Valid!"
+end
+
+print ""
+print "── Parse error handling ──────────────────────"
+let bad_json = "{not valid json}"
+let result = json_parse(bad_json)
+let parse_err = json_parse_error()
+if parse_err != ""
+  print "Caught parse issue: " .. parse_err
+  print "Result was: " .. str(result)
+else
+  print "Parsed: " .. json_stringify(result)
+end
+
+print ""

@@ -1,4 +1,4 @@
-# Nolqu Semantics Reference — v1.1.1a5 (Alpha)
+# Nolqu Semantics Reference — v1.1.1a6 (Alpha)
 
 > [!NOTE]
 > **Development documentation — Nolqu v1.1.x (alpha)**
@@ -423,6 +423,77 @@ print arr[1]      # 20        (single value — number)
 print arr[1:2]    # [20]      (slice — array with one element)
 ```
 
+
+---
+
+## 7. Typed Errors
+
+All runtime errors carry a **type prefix** that identifies the category of error.
+Use `error_type(e)` to extract the prefix, or `startswith(e, "TypeError:")` to dispatch.
+
+### Error types
+
+| Type | Cause |
+|---|---|
+| `TypeError` | Wrong type for an operation (arithmetic on string, call a non-function, wrong arg count) |
+| `NameError` | Accessing or assigning an undefined/undeclared variable |
+| `IndexError` | Array or string index out of bounds |
+| `ValueError` | Value is invalid for the operation (division by zero, log of negative) |
+| `RuntimeError` | Catch-all for errors thrown with `error("plain message")` |
+
+### Reading the error type
+
+```nolqu
+try
+  let _x = undefined_var
+catch e
+  print e               # NameError: undefined variable 'undefined_var'.
+  print error_type(e)   # NameError
+end
+
+try
+  let arr = [1, 2, 3]
+  print arr[99]
+catch e
+  print error_type(e)   # IndexError
+end
+```
+
+### Dispatching on error type
+
+```nolqu
+try
+  some_operation()
+catch e
+  let kind = error_type(e)
+  if kind == "TypeError"
+    print "Wrong type: " .. e
+  else
+    if kind == "IndexError"
+      print "Out of bounds: " .. e
+    else
+      print "Error: " .. e
+    end
+  end
+end
+```
+
+### Throwing typed errors
+
+Use the type prefix in your own `error()` calls for consistency:
+
+```nolqu
+function divide(a, b)
+  if not is_num(a) or not is_num(b)
+    error("TypeError: divide() requires two numbers")
+  end
+  if b == 0
+    error("ValueError: divide() cannot divide by zero")
+  end
+  return a / b
+end
+```
+
 ---
 
 ## Summary Table
@@ -438,6 +509,7 @@ print arr[1:2]    # [20]      (slice — array with one element)
 | `and` result | First falsy, or last (no bool coercion) |
 | `or` result | First truthy, or last (no bool coercion) |
 | `not` result | Always a bool |
+| `bool(v)` | Coerces any value to bool using truthiness |
 | `const` | Compile-time immutable binding |
 | `const` array contents | Mutable (binding is const, not value) |
 | `arr[a:b]` | New array/string, `a` inclusive, `b` exclusive |

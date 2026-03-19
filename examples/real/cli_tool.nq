@@ -1,0 +1,137 @@
+#!/usr/bin/env nq
+# cli_tool.nq — A simple command-line argument processor
+#
+# Demonstrates: input(), string operations, for-in, error handling
+#
+# Usage: run and follow the prompts, or pipe a command
+#
+# This tool acts as a mini task manager stored in a text file.
+# Tasks are stored one per line in "tasks.txt".
+
+import "stdlib/io"
+import "stdlib/string"
+import "stdlib/fmt"
+
+const TASK_FILE = "tasks.txt"
+
+function load_tasks()
+  if not file_exists(TASK_FILE)
+    return []
+  end
+  return read_lines(TASK_FILE)
+end
+
+function save_tasks(tasks)
+  if len(tasks) == 0
+    write_file(TASK_FILE, "")
+  else
+    write_lines(TASK_FILE, tasks)
+  end
+end
+
+function show_tasks(tasks)
+  if len(tasks) == 0
+    print "  (no tasks)"
+    return null
+  end
+  let i = 1
+  for task in tasks
+    print fmt("  {}.  {}", [i, task])
+    i += 1
+  end
+end
+
+function cmd_list(tasks)
+  print ""
+  print "Tasks:"
+  show_tasks(tasks)
+  print ""
+end
+
+function cmd_add(tasks, text)
+  if is_empty(trim(text))
+    print "Error: task text cannot be empty."
+    return tasks
+  end
+  push(tasks, trim(text))
+  save_tasks(tasks)
+  print "Added: " .. trim(text)
+  return tasks
+end
+
+function cmd_done(tasks, index_str)
+  let idx = num(index_str)
+  if is_nil(idx)
+    print "Error: provide a task number. Example: done 2"
+    return tasks
+  end
+  let i = floor(idx) - 1
+  if i < 0 or i >= len(tasks)
+    print fmt("Error: no task {}. Use 'list' to see tasks.", [floor(idx)])
+    return tasks
+  end
+  print "Completed: " .. tasks[i]
+  remove(tasks, i)
+  save_tasks(tasks)
+  return tasks
+end
+
+function cmd_clear(tasks)
+  save_tasks([])
+  print "All tasks cleared."
+  return []
+end
+
+function print_help()
+  print ""
+  print "Commands:"
+  print "  list           — show all tasks"
+  print "  add <text>     — add a new task"
+  print "  done <number>  — mark task as done (removes it)"
+  print "  clear          — remove all tasks"
+  print "  quit           — exit"
+  print ""
+end
+
+# ── Main loop ──────────────────────────────────────────────────────────
+
+print ""
+print "  Nolqu Task Manager"
+print "  Type 'help' for commands."
+print ""
+
+let tasks = load_tasks()
+let running = true
+
+loop running
+  let raw = input("tasks> ")
+  let line = trim(raw)
+
+  if line == "quit" or line == "exit"
+    running = false
+  else
+    if line == "list" or line == ""
+      cmd_list(tasks)
+    else
+      if line == "help"
+        print_help()
+      else
+        if line == "clear"
+          tasks = cmd_clear(tasks)
+        else
+          if startswith(line, "add ")
+            tasks = cmd_add(tasks, slice(line, 4))
+          else
+            if startswith(line, "done ")
+              tasks = cmd_done(tasks, trim(slice(line, 5)))
+            else
+              print "Unknown command: " .. line .. ". Type 'help'."
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
+print "Bye!"

@@ -87,7 +87,7 @@ end
 function tan(x)
   let c = cos(x)
   if c == 0
-    error("tan: undefined at this angle (cos == 0)")
+    error("RuntimeError: tan: undefined at this angle (cos == 0)")
   end
   return sin(x) / c
 end
