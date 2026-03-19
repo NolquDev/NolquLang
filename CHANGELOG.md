@@ -2,6 +2,44 @@
 
 ---
 
+## v1.2.1b1 — Beta 1 (2026)
+
+**First beta release.** Feature freeze. Only bug fixes until v1.2.1 stable.
+
+### Bug Fix: REPL expression evaluation with binary operators
+
+In alpha 4, `x + 1` worked but only because the pre-advance literal check caught
+number tokens. Identifier-based expressions like `a + b`, `x > 3`, `x == 5`,
+`a < b and b < 10` all failed with "Expected a new line after statement."
+
+Root cause: the `TK_IDENT` case in `parseStmt` parsed the identifier and any
+following call `(...)`, then immediately called `expectNewline`. In repl_mode,
+binary operators after the identifier were not consumed.
+
+Fix: added an operator-continuation block in the `TK_IDENT` case for repl_mode
+that walks through multiply → addition → comparison → equality → and → or,
+building the binary expression tree correctly. The `and`/`or` rhs now uses
+`parseComparison` (not `parseUnary`) so `a < b and b < 10` works as expected.
+
+All REPL expression forms now work:
+```
+nq > let x = 5
+nq > x + 1
+6
+nq > x > 3
+true
+nq > x == 5
+true
+nq > let a = 3
+nq > let b = 7
+nq > a < b and b < 10
+true
+nq > [1, 2, 3][0]
+1
+```
+
+---
+
 ## v1.2.1a4 — Alpha 4 (2026)
 
 ### Features
@@ -648,6 +686,44 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.1b1 — Beta 1 (2026)
+
+**First beta release.** Feature freeze. Only bug fixes until v1.2.1 stable.
+
+### Bug Fix: REPL expression evaluation with binary operators
+
+In alpha 4, `x + 1` worked but only because the pre-advance literal check caught
+number tokens. Identifier-based expressions like `a + b`, `x > 3`, `x == 5`,
+`a < b and b < 10` all failed with "Expected a new line after statement."
+
+Root cause: the `TK_IDENT` case in `parseStmt` parsed the identifier and any
+following call `(...)`, then immediately called `expectNewline`. In repl_mode,
+binary operators after the identifier were not consumed.
+
+Fix: added an operator-continuation block in the `TK_IDENT` case for repl_mode
+that walks through multiply → addition → comparison → equality → and → or,
+building the binary expression tree correctly. The `and`/`or` rhs now uses
+`parseComparison` (not `parseUnary`) so `a < b and b < 10` works as expected.
+
+All REPL expression forms now work:
+```
+nq > let x = 5
+nq > x + 1
+6
+nq > x > 3
+true
+nq > x == 5
+true
+nq > let a = 3
+nq > let b = 7
+nq > a < b and b < 10
+true
+nq > [1, 2, 3][0]
+1
+```
 
 ---
 
