@@ -71,6 +71,14 @@ typedef enum {
     OP_JUMP_IF_FALSE,   /* [hi,lo]  if !peek: ip += offset; pop cond  */
     OP_LOOP,            /* [hi,lo]  ip -= offset (loop back)          */
 
+    /* ── Superinstructions (fused opcodes for common patterns) ────── */
+    OP_ADD_LOCAL_CONST, /* [slot][const_idx]  locals[slot] += const   */
+                        /* replaces: GET_LOCAL, CONST, ADD, SET_LOCAL, POP */
+    OP_LOOP_IF_LT,      /* [slot_a][slot_b][hi][lo]                   */
+                        /* if locals[a] < locals[b]: ip -= offset      */
+                        /* replaces: GET_LOCAL a, GET_LOCAL b, LT,     */
+                        /*           JUMP_IF_FALSE, POP                */
+
     /* Arrays */
     OP_BUILD_ARRAY,     /* [count]  pop count values, push array      */
     OP_GET_INDEX,       /* pop idx,arr → push arr[idx]                */

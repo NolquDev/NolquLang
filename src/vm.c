@@ -1176,6 +1176,25 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             case OP_JUMP_IF_FALSE: { uint16_t off = READ_UINT16(); if (NQ_UNLIKELY(!isTruthy(peek(vm, 0)))) frame->ip += off; break; }
             case OP_LOOP:          { uint16_t off = READ_UINT16(); frame->ip -= off; break; }
 
+            case OP_ADD_LOCAL_CONST: {
+                /* locals[slot] += const_val  (no stack traffic) */
+                uint8_t slot = READ_BYTE();
+                Value   cv   = READ_CONST();
+                /* Only works for numbers — the compiler guarantees this */
+                frame->slots[slot].as.number += AS_NUMBER(cv);
+                break;
+            }
+            case OP_LOOP_IF_LT: {
+                /* if locals[a] < locals[b]: ip -= offset  (loop back) */
+                uint8_t a   = READ_BYTE();
+                uint8_t b   = READ_BYTE();
+                uint16_t off = READ_UINT16();
+                if (NQ_LIKELY(AS_NUMBER(frame->slots[a]) <
+                              AS_NUMBER(frame->slots[b])))
+                    frame->ip -= off;
+                break;
+            }
+
             case OP_CALL: {
                 int argc = READ_BYTE();
                 Value callee = peek(vm, argc);

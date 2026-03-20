@@ -370,12 +370,32 @@ static void compileNode(ASTNode* node) {
                 compileError(line, "Cannot reassign const variable '%s'.", name);
                 break;
             }
-            /* GET current value */
+
+            /* Superinstruction: local += number_literal → OP_ADD_LOCAL_CONST */
+            if (slot >= 0 && op == TK_PLUS &&
+                node->data.compound_assign.value->type == NODE_NUMBER) {
+                double cv = node->data.compound_assign.value->data.number.value;
+                int cidx  = addConstant(currentChunk(), NUMBER_VAL(cv));
+                emit(OP_ADD_LOCAL_CONST, line);
+                emit((uint8_t)slot, line);
+                emitUint16((uint16_t)cidx, line);
+                break;
+            }
+            /* Superinstruction: local -= number_literal → OP_ADD_LOCAL_CONST with -val */
+            if (slot >= 0 && op == TK_MINUS &&
+                node->data.compound_assign.value->type == NODE_NUMBER) {
+                double cv = -node->data.compound_assign.value->data.number.value;
+                int cidx  = addConstant(currentChunk(), NUMBER_VAL(cv));
+                emit(OP_ADD_LOCAL_CONST, line);
+                emit((uint8_t)slot, line);
+                emitUint16((uint16_t)cidx, line);
+                break;
+            }
+
+            /* General case */
             if (slot >= 0) emit2(OP_GET_LOCAL, (uint8_t)slot, line);
             else { emit(OP_GET_GLOBAL, line); emitUint16(identConst(name, line), line); }
-            /* RHS */
             compileExpr(node->data.compound_assign.value);
-            /* Binary op */
             switch (op) {
                 case TK_PLUS:   emit(OP_ADD,    line); break;
                 case TK_MINUS:  emit(OP_SUB,    line); break;
@@ -384,7 +404,6 @@ static void compileNode(ASTNode* node) {
                 case TK_DOTDOT: emit(OP_CONCAT, line); break;
                 default: compileError(line, "Unsupported compound assignment operator."); break;
             }
-            /* SET result back */
             if (slot >= 0) emit2(OP_SET_LOCAL, (uint8_t)slot, line);
             else { emit(OP_SET_GLOBAL, line); emitUint16(identConst(name, line), line); }
             emit(OP_POP, line);
@@ -680,11 +699,14 @@ static void compileNode(ASTNode* node) {
 
                 for (int p : loop_stack.back().continue_patches) patchJumpAt(p);
 
-                emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
-                emitConst(NUMBER_VAL(step_val), line);
-                emit(OP_ADD, line);
-                emit2(OP_SET_LOCAL, (uint8_t)i_slot, line);
-                emit(OP_POP, line);
+                /* OP_ADD_LOCAL_CONST: fuses GET_LOCAL + CONST + ADD + SET_LOCAL + POP
+                 * into a single opcode that modifies the slot in-place.
+                 * Saves 4 opcodes per iteration. */
+                int step_cidx = addConstant(currentChunk(), NUMBER_VAL(step_val));
+                emit(OP_ADD_LOCAL_CONST, line);
+                emit((uint8_t)i_slot, line);
+                emitUint16((uint16_t)step_cidx, line);
+
                 emitLoop(loop_stack.back().loop_start, line);
 
                 patchJumpAt(exit_j);

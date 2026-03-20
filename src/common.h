@@ -44,7 +44,7 @@
 #  define NQ_UNLIKELY(x) (x)
 #endif
 
-#define NQ_VERSION       "1.2.2a3"
+#define NQ_VERSION       "1.2.2a4"
 #define NQ_LANG_NAME     "Nolqu"
 
 /* ── VM limits ───────────────────────────────────────────────────── */

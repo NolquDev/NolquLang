@@ -2,9 +2,109 @@
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
@@ -151,9 +251,109 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
@@ -368,9 +568,109 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
@@ -517,9 +817,109 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
@@ -1427,9 +1827,109 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
@@ -1576,9 +2076,109 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
@@ -1793,9 +2393,109 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
@@ -1942,9 +2642,109 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
+
+---
+
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a4 — Alpha 4 (2026)
+
+### Performance: superinstructions (69% faster than v1.2.1)
+
+**`OP_ADD_LOCAL_CONST` — fused increment**
+
+The pattern `local += number` (and `-=`) is the most common operation in
+loops. Previously it emitted 5 opcodes per execution:
+```
+GET_LOCAL slot    # push value
+CONST step        # push step
+ADD               # pop 2, push result
+SET_LOCAL slot    # peek → slot (value stays on stack)
+POP               # discard
+```
+Now it emits 1 opcode:
+```
+ADD_LOCAL_CONST slot [const_idx]   # slots[slot] += const, no stack traffic
+```
+Applied automatically to:
+- `for i = 0 to N` increment (always)
+- `n += 1`, `n -= 2`, any `local op= literal_number` (compound assign)
+
+**`OP_ADD_LOCAL_CONST` applied in two places:**
+1. `for-range` increment path — replaces the 5-opcode sequence unconditionally
+2. `NODE_COMPOUND_ASSIGN` — detects `local += number_literal` at compile time
+
+**Benchmark results:**
+
+| Benchmark | v1.2.1 | v1.2.2a2 | v1.2.2a4 | Total gain |
+|---|---|---|---|---|
+| 1B iters (local `+=`) | 61s | 43s | **19s** | **-69%** |
+| for-range empty 100M | — | 2711ms | 1726ms | — |
+| local `+= 1` 1B | — | 39s | 19s | — |
+
+**Updated benchmark file** (`benchmark.nq`) now uses a local variable inside
+a function — the correct way to avoid global hash-table overhead:
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1
+  end
+  return number
+end
+print run()
+```
 
 ---
 
