@@ -4,9 +4,9 @@ This folder contains two parallel documentation tracks:
 
 ---
 
-## `stable/` — Nolqu v1.2.0 (Stable)
+## `stable/` — Nolqu v1.2.1 (Stable)
 
-Documentation for the **v1.2.0 stable release**.
+Documentation for the **v1.2.1 stable release**.
 
 | Document | Contents |
 |---|---|
@@ -20,7 +20,7 @@ Documentation for the **v1.2.0 stable release**.
 
 ## `dev/` — Nolqu v1.2.0 (Primary)
 
-The main documentation. Reflects v1.2.0 stable.
+The main documentation. Reflects v1.2.1 stable.
 
 | Document | Contents |
 |---|---|

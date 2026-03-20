@@ -2,6 +2,47 @@
 
 ---
 
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — `1 + 2` → `3`, identifiers, all binary operators
+- **Circular import detection** — `A → B → A` → `[ImportError]` with cycle chain
+- **`from X import a, b`** — compile-time name verification, `[ImportError]` on typo
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version ?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in `stdlib/array`
+- **`str_contains()` `starts_with()` `ends_with()`** aliases in `stdlib/string`
+- **Parser refactor** — `parseExprWithLeft()`, no duplication
+- **Better error messages** — arithmetic shows operand types, import shows searched paths
+- **CLI usage errors** — `nq check` without filename shows clear usage
+- **License year updated to 2026**
+
+---
+
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — expressions evaluated and printed automatically
+- **REPL binary operators** — `x + 1`, `a < b and b < 10` all work
+- **Circular import detection** — `A → B → A` → `[ImportError]`
+- **`from X import a, b`** — compile-time name verification
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in stdlib/array
+- **`str_contains()` `starts_with()` `ends_with()`** in stdlib/string
+- **`parseExprWithLeft`** — clean REPL parser, no duplication
+- **License year updated** to 2026
+
+### No breaking changes from v1.2.0
+
+---
+
 ## v1.2.1-rc1 — Release Candidate (2026)
 
 Promoted from v1.2.1b3. No code changes.
@@ -66,6 +107,47 @@ Full error type map now consistent end-to-end:
 | `[IOError]` | File not found, read failure |
 | `[UsageError]` | Unknown command, missing filename |
 | `[Warning]` | Unused variable |
+
+---
+
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — `1 + 2` → `3`, identifiers, all binary operators
+- **Circular import detection** — `A → B → A` → `[ImportError]` with cycle chain
+- **`from X import a, b`** — compile-time name verification, `[ImportError]` on typo
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version ?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in `stdlib/array`
+- **`str_contains()` `starts_with()` `ends_with()`** aliases in `stdlib/string`
+- **Parser refactor** — `parseExprWithLeft()`, no duplication
+- **Better error messages** — arithmetic shows operand types, import shows searched paths
+- **CLI usage errors** — `nq check` without filename shows clear usage
+- **License year updated to 2026**
+
+---
+
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — expressions evaluated and printed automatically
+- **REPL binary operators** — `x + 1`, `a < b and b < 10` all work
+- **Circular import detection** — `A → B → A` → `[ImportError]`
+- **`from X import a, b`** — compile-time name verification
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in stdlib/array
+- **`str_contains()` `starts_with()` `ends_with()`** in stdlib/string
+- **`parseExprWithLeft`** — clean REPL parser, no duplication
+- **License year updated** to 2026
+
+### No breaking changes from v1.2.0
 
 ---
 
@@ -829,6 +911,47 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — `1 + 2` → `3`, identifiers, all binary operators
+- **Circular import detection** — `A → B → A` → `[ImportError]` with cycle chain
+- **`from X import a, b`** — compile-time name verification, `[ImportError]` on typo
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version ?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in `stdlib/array`
+- **`str_contains()` `starts_with()` `ends_with()`** aliases in `stdlib/string`
+- **Parser refactor** — `parseExprWithLeft()`, no duplication
+- **Better error messages** — arithmetic shows operand types, import shows searched paths
+- **CLI usage errors** — `nq check` without filename shows clear usage
+- **License year updated to 2026**
+
+---
+
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — expressions evaluated and printed automatically
+- **REPL binary operators** — `x + 1`, `a < b and b < 10` all work
+- **Circular import detection** — `A → B → A` → `[ImportError]`
+- **`from X import a, b`** — compile-time name verification
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in stdlib/array
+- **`str_contains()` `starts_with()` `ends_with()`** in stdlib/string
+- **`parseExprWithLeft`** — clean REPL parser, no duplication
+- **License year updated** to 2026
+
+### No breaking changes from v1.2.0
+
+---
+
 ## v1.2.1-rc1 — Release Candidate (2026)
 
 Promoted from v1.2.1b3. No code changes.
@@ -893,6 +1016,47 @@ Full error type map now consistent end-to-end:
 | `[IOError]` | File not found, read failure |
 | `[UsageError]` | Unknown command, missing filename |
 | `[Warning]` | Unused variable |
+
+---
+
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — `1 + 2` → `3`, identifiers, all binary operators
+- **Circular import detection** — `A → B → A` → `[ImportError]` with cycle chain
+- **`from X import a, b`** — compile-time name verification, `[ImportError]` on typo
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version ?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in `stdlib/array`
+- **`str_contains()` `starts_with()` `ends_with()`** aliases in `stdlib/string`
+- **Parser refactor** — `parseExprWithLeft()`, no duplication
+- **Better error messages** — arithmetic shows operand types, import shows searched paths
+- **CLI usage errors** — `nq check` without filename shows clear usage
+- **License year updated to 2026**
+
+---
+
+## v1.2.1 — Stable Release (2026)
+
+Promoted from v1.2.1-rc1 with no code changes.
+
+### What's new since v1.2.0
+
+- **REPL auto-print** — expressions evaluated and printed automatically
+- **REPL binary operators** — `x + 1`, `a < b and b < 10` all work
+- **Circular import detection** — `A → B → A` → `[ImportError]`
+- **`from X import a, b`** — compile-time name verification
+- **CLI command suggestion** — `nq verdion` → `Did you mean: version?`
+- **Typed error brackets** — `[TypeError]` `[NameError]` `[IndexError]` `[ValueError]` `[ImportError]` `[SyntaxError]` `[IOError]` `[UsageError]`
+- **`range()` `first()` `last()` `find()` `count_if()`** in stdlib/array
+- **`str_contains()` `starts_with()` `ends_with()`** in stdlib/string
+- **`parseExprWithLeft`** — clean REPL parser, no duplication
+- **License year updated** to 2026
+
+### No breaking changes from v1.2.0
 
 ---
 

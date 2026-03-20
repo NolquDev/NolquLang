@@ -1,8 +1,8 @@
-# Nolqu Language Reference — v1.2.0 (Stable)
+# Nolqu Language Reference — v1.2.1 (Stable)
 
 > [!NOTE]
 > **Stable documentation — Nolqu v1.2.0**
-> This document describes the v1.2.0 stable release.
+> This document describes the v1.2.1 stable release.
 > For the latest features see [`docs/dev/`](../dev/).
 
 Complete reference for Nolqu v1.0.0.

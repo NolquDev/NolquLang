@@ -1,4 +1,4 @@
-# Nolqu Standard Library — v1.2.0 (Stable)
+# Nolqu Standard Library — v1.2.1 (Stable)
 
 > [!NOTE]
 > **Stable documentation — Nolqu v1.0.0**
@@ -59,7 +59,7 @@ print count_lines("output.txt")   # 2
 
 ## New in v1.2.0 vs v1.0.0
 
-The following modules are **not** part of v1.2.0 stable:
+The following modules are **not** part of v1.2.1 stable:
 
 | Module | Added in |
 |---|---|

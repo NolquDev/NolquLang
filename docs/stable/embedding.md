@@ -1,4 +1,4 @@
-# Embedding Nolqu — v1.2.0 (Stable)
+# Embedding Nolqu — v1.2.1 (Stable)
 
 > [!NOTE]
 > **Stable documentation — Nolqu v1.0.0**
