@@ -2,7 +2,7 @@
 
 ---
 
-## v1.2.1b4 — Beta 4 (2026)
+## v1.2.1b3 — Beta 4 (2026)
 
 ### All typed errors now show correct bracket header
 
@@ -807,7 +807,7 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
-## v1.2.1b4 — Beta 4 (2026)
+## v1.2.1b3 — Beta 4 (2026)
 
 ### All typed errors now show correct bracket header
 
