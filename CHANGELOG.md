@@ -2,6 +2,17 @@
 
 ---
 
+## v1.2.1-rc1 — Release Candidate (2026)
+
+Promoted from v1.2.1b3. No code changes.
+
+All planned features for v1.2.1 are implemented, tested, and stable.
+This release is ready for broader testing before stable promotion.
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the full feature summary.
+
+---
+
 ## v1.2.1b3 — Beta 4 (2026)
 
 ### All typed errors now show correct bracket header
@@ -55,6 +66,17 @@ Full error type map now consistent end-to-end:
 | `[IOError]` | File not found, read failure |
 | `[UsageError]` | Unknown command, missing filename |
 | `[Warning]` | Unused variable |
+
+---
+
+## v1.2.1-rc1 — Release Candidate (2026)
+
+Promoted from v1.2.1b3. No code changes.
+
+All planned features for v1.2.1 are implemented, tested, and stable.
+This release is ready for broader testing before stable promotion.
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the full feature summary.
 
 ---
 
@@ -807,6 +829,17 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.1-rc1 — Release Candidate (2026)
+
+Promoted from v1.2.1b3. No code changes.
+
+All planned features for v1.2.1 are implemented, tested, and stable.
+This release is ready for broader testing before stable promotion.
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the full feature summary.
+
+---
+
 ## v1.2.1b3 — Beta 4 (2026)
 
 ### All typed errors now show correct bracket header
@@ -860,6 +893,17 @@ Full error type map now consistent end-to-end:
 | `[IOError]` | File not found, read failure |
 | `[UsageError]` | Unknown command, missing filename |
 | `[Warning]` | Unused variable |
+
+---
+
+## v1.2.1-rc1 — Release Candidate (2026)
+
+Promoted from v1.2.1b3. No code changes.
+
+All planned features for v1.2.1 are implemented, tested, and stable.
+This release is ready for broader testing before stable promotion.
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for the full feature summary.
 
 ---
 

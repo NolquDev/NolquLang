@@ -1,6 +1,8 @@
-# Nolqu v1.2.0 — Release Notes
+# Nolqu v1.2.1-rc1 — Release Notes
 
-> **Stable release.**
+> **Release Candidate.**
+> All planned features for v1.2.1 are implemented and tested.
+> Awaiting validation before stable promotion.
 > See [CHANGELOG.md](CHANGELOG.md) for the full version history.
 
 ---

@@ -8,7 +8,7 @@
 ![license](https://img.shields.io/github/license/Nadzil123/Nolqu)
 
 > [!WARNING]
-> **This is an beta release (v1.2.1b3).** For stable use see [v1.2.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.2.0).
+> **This is an release candidate (v1.2.1-rc1).** For stable use see [v1.2.0](https://github.com/Nadzil123/Nolqu/releases/tag/v1.2.0).
 
 > [!IMPORTANT]
 > **Upgrading from v1.0.0?** v1.2.x has one breaking change:
@@ -40,7 +40,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - 50+ built-in functions + `range()` `first()` `last()` `find()` `count_if()` in stdlib
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
-- Current version: **v1.2.1b3** (beta)
+- Current version: **v1.2.1-rc1** (Release Candidate)
 
 ---
 
