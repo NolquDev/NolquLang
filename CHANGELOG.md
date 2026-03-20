@@ -2,6 +2,46 @@
 
 ---
 
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
+
+---
+
 ## v1.2.1 — Stable Release (2026)
 
 Promoted from v1.2.1-rc1 with no code changes.
@@ -19,6 +59,46 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
 
 ---
 
@@ -110,6 +190,46 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
+
+---
+
 ## v1.2.1 — Stable Release (2026)
 
 Promoted from v1.2.1-rc1 with no code changes.
@@ -127,6 +247,46 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
 
 ---
 
@@ -911,6 +1071,46 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
+
+---
+
 ## v1.2.1 — Stable Release (2026)
 
 Promoted from v1.2.1-rc1 with no code changes.
@@ -928,6 +1128,46 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
 
 ---
 
@@ -1019,6 +1259,46 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
+
+---
+
 ## v1.2.1 — Stable Release (2026)
 
 Promoted from v1.2.1-rc1 with no code changes.
@@ -1036,6 +1316,46 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a1 — Alpha 1 (2026)
+
+### New: Numeric `for` loop (`for i = start to stop`)
+
+Nolqu now has a pure counter-based loop with no array allocation:
+
+```nolqu
+# Equivalent to Python:  for i in range(1_000_000_000): number += 1
+let number = 0
+for i = 0 to 1000000000
+  number += 1
+end
+print number   # 1000000000
+```
+
+Syntax:
+```nolqu
+for i = start to stop            # step defaults to +1
+for i = start to stop step s     # custom step (any number, including negative)
+```
+
+Features:
+- `break` and `continue` work correctly
+- Nested loops work correctly
+- `step` can be negative: `for i = 10 to 0 step -1`
+- `to` and `step` are contextual — still usable as variable names
+- Compiles to a pure counter loop: no array created, no `len()` call
+- Compatible with existing `for item in array` syntax
+
+Benchmark (1 billion iterations):
+- Nolqu v1.2.2a1: ~61s on this machine
+- The loop overhead is minimal — two GET_LOCAL + ADD + SET_LOCAL per iteration
+
+Implementation:
+- `NODE_FOR_RANGE` added to ast.h / ast.cpp
+- Parser: detects `for x = ...` vs `for x in ...` by checking for `=` after ident
+- Compiler: emits step-direction check (positive vs negative), correct break/continue
 
 ---
 

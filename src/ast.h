@@ -69,6 +69,7 @@ typedef enum {
 
     /* for item in array — range-based loop */
     NODE_FOR,
+    NODE_FOR_RANGE,     /* for i = start to stop [step s] body end    */
 
     NODE_COUNT          /* sentinel                                   */
 } NodeType;
@@ -114,6 +115,15 @@ struct ASTNode {
 
         /* NODE_FOR: for item in iterable body end */
         struct { char* item; ASTNode* iterable; ASTNode* body; } for_loop;
+
+        /* NODE_FOR_RANGE: for i = start to stop [step s] body end */
+        struct {
+            char*    var;    /* loop variable name */
+            ASTNode* start;
+            ASTNode* stop;
+            ASTNode* step;   /* NULL → default +1 */
+            ASTNode* body;
+        } for_range;
 
         /* NODE_PRINT: print expr */
         struct { ASTNode* expr; } print;

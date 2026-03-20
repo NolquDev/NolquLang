@@ -566,6 +566,125 @@ static void compileNode(ASTNode* node) {
             loop_stack.pop_back();
             break;
         }
+        case NODE_FOR_RANGE: {
+            /*
+             * Numeric range loop:  for i = start to stop [step s]
+             *
+             * Desugars to:
+             *   let __i   = start      (hidden local, slot 0)
+             *   let __stop = stop      (hidden local, slot 1, evaluated once)
+             *   let __step = step|1    (hidden local, slot 2, evaluated once)
+             *   loop (__step > 0) ? __i < __stop : __i > __stop
+             *     let i = __i          (visible loop var)
+             *     <body>
+             *     __i = __i + __step
+             *   end
+             *
+             * break/continue work via loop_stack, same as for-in.
+             * The loop variable 'i' is read-only in spirit but writable
+             * (modifying it just affects the visible name, not __i).
+             */
+            int outer_locals = current->local_count;
+            beginScope();
+
+            /* __i = start */
+            compileExpr(node->data.for_range.start);
+            int i_slot = current->local_count;
+            addLocal("__fr_i__", line);
+            current->locals[i_slot].initialized = true;
+            current->locals[i_slot].used        = true;
+
+            /* __stop = stop (evaluated once) */
+            compileExpr(node->data.for_range.stop);
+            int stop_slot = current->local_count;
+            addLocal("__fr_stop__", line);
+            current->locals[stop_slot].initialized = true;
+            current->locals[stop_slot].used        = true;
+
+            /* __step = step (or literal 1 if not provided) */
+            if (node->data.for_range.step)
+                compileExpr(node->data.for_range.step);
+            else
+                emitConst(NUMBER_VAL(1), line);
+            int step_slot = current->local_count;
+            addLocal("__fr_step__", line);
+            current->locals[step_slot].initialized = true;
+            current->locals[step_slot].used        = true;
+
+            /* Loop condition:
+             *   if step >= 0: i < stop
+             *   if step <  0: i > stop
+             *
+             * Emit: step >= 0 ? (i < stop) : (i > stop)
+             * Using: GET step; const 0; GE; JUMP_IF_FALSE → gt_branch
+             *   lt_branch: GET i; GET stop; LT; JUMP → end_cond
+             *   gt_branch: GET i; GET stop; GT
+             *   end_cond:
+             */
+            LoopCtx lctx;
+            lctx.loop_start        = currentChunk()->count;
+            lctx.continue_target   = -1;
+            lctx.scope_depth       = 0;
+            lctx.local_count       = current->local_count; /* after hidden vars: don't pop them */
+            lctx.outer_local_count = outer_locals;
+            loop_stack.push_back(lctx);
+
+            /* step >= 0 ? */
+            emit2(OP_GET_LOCAL, (uint8_t)step_slot, line);
+            emitConst(NUMBER_VAL(0), line);
+            emit(OP_GTE, line);
+            int gt_branch = emitJump(OP_JUMP_IF_FALSE, line);
+            emit(OP_POP, line);  /* pop condition */
+            /* positive step: i < stop */
+            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+            emit2(OP_GET_LOCAL, (uint8_t)stop_slot, line);
+            emit(OP_LT, line);
+            int end_cond = emitJump(OP_JUMP, line);
+            /* negative step: i > stop */
+            patchJumpAt(gt_branch);
+            emit(OP_POP, line);
+            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+            emit2(OP_GET_LOCAL, (uint8_t)stop_slot, line);
+            emit(OP_GT, line);
+            patchJumpAt(end_cond);
+
+            int exit_jump = emitJump(OP_JUMP_IF_FALSE, line);
+            emit(OP_POP, line);  /* pop cond=true */
+
+            /* Visible loop variable: let <var> = __i */
+            beginScope();
+            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+            int var_slot = current->local_count;
+            addLocal(node->data.for_range.var, line);
+            current->locals[var_slot].initialized = true;
+            current->locals[var_slot].used        = true;
+
+            /* Body */
+            compileBlock(node->data.for_range.body);
+
+            endScope(line);   /* pop visible var — before continue patches */
+
+            /* Patch continues here (after visible var is popped, before increment) */
+            for (int patch : loop_stack.back().continue_patches)
+                patchJumpAt(patch);
+
+            /* __i += __step */
+            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+            emit2(OP_GET_LOCAL, (uint8_t)step_slot, line);
+            emit(OP_ADD, line);
+            emit2(OP_SET_LOCAL, (uint8_t)i_slot, line);
+            emit(OP_POP, line);
+            emitLoop(loop_stack.back().loop_start, line);
+
+            patchJumpAt(exit_jump);
+            emit(OP_POP, line);  /* pop cond=false */
+            endScope(line);      /* pop __i, __stop, __step */
+
+            for (int patch : loop_stack.back().break_patches)
+                patchJumpAt(patch);
+            loop_stack.pop_back();
+            break;
+        }
         case NODE_FUNCTION: {
             ObjFunction* fn = newFunction();
             fn->arity = node->data.function.param_count;

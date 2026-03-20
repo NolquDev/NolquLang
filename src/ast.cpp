@@ -77,6 +77,13 @@ void freeNode(ASTNode* node) {
             freeNode(node->data.for_loop.iterable);
             freeNode(node->data.for_loop.body);
             break;
+        case NODE_FOR_RANGE:
+            free(node->data.for_range.var);
+            freeNode(node->data.for_range.start);
+            freeNode(node->data.for_range.stop);
+            freeNode(node->data.for_range.step);
+            freeNode(node->data.for_range.body);
+            break;
 
         case NODE_PRINT:
             freeNode(node->data.print.expr);

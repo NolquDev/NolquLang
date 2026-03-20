@@ -1,4 +1,4 @@
-# Nolqu VM Design — v1.2.0
+# Nolqu VM Design — v1.2.2a1
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**

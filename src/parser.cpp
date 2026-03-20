@@ -173,16 +173,74 @@ static ASTNode* parseLoopStmt(Parser* p) {
    end  */
 static ASTNode* parseForStmt(Parser* p) {
     int line = p->previous.line;
-    expect(p, TK_IDENT, "Expected a variable name after 'for'. Example: for item in list");
-    char* item = dupStr(p->previous.start, p->previous.length);
-    expect(p, TK_IN, "Expected 'in' after loop variable. Example: for item in list");
+    expect(p, TK_IDENT, "Expected a variable name after 'for'.\n"
+        "  for item in list  ..  end\n"
+        "  for i = 0 to 100  ..  end");
+    char* var = dupStr(p->previous.start, p->previous.length);
+
+    /*
+     * Disambiguate:
+     *   for i = 0 to N [step S]  →  NODE_FOR_RANGE  (numeric loop)
+     *   for item in iterable     →  NODE_FOR         (collection loop)
+     */
+    if (check(p, TK_EQ)) {
+        /* Numeric range: for i = start to stop [step s] */
+        advance(p);  /* consume '=' */
+        ASTNode* start = parseExpr(p);
+
+        /* Expect contextual keyword 'to' */
+        if (!check(p, TK_IDENT) ||
+            p->current.length != 2 ||
+            memcmp(p->current.start, "to", 2) != 0) {
+            errorAt(p, &p->current,
+                "Expected 'to' after start value.\n"
+                "  Example: for i = 0 to 100");
+            free(var); freeNode(start);
+            return NULL;
+        }
+        advance(p);  /* consume 'to' */
+        ASTNode* stop = parseExpr(p);
+
+        /* Optional contextual keyword 'step' */
+        ASTNode* step = NULL;
+        if (check(p, TK_IDENT) &&
+            p->current.length == 4 &&
+            memcmp(p->current.start, "step", 4) == 0) {
+            advance(p);  /* consume 'step' */
+            step = parseExpr(p);
+        }
+
+        expectNewline(p);
+        ASTNode* body = parseBlock(p);
+        expect(p, TK_END, "Expected 'end' to close 'for' block");
+        expectNewline(p);
+
+        ASTNode* n = makeNode(NODE_FOR_RANGE, line);
+        n->data.for_range.var   = var;
+        n->data.for_range.start = start;
+        n->data.for_range.stop  = stop;
+        n->data.for_range.step  = step;
+        n->data.for_range.body  = body;
+        return n;
+    }
+
+    /* Collection loop: for item in iterable */
+    if (!check(p, TK_IN)) {
+        errorAt(p, &p->current,
+            "Expected 'in' or '=' after loop variable.\n"
+            "  for item in list    # iterate collection\n"
+            "  for i = 0 to 100   # numeric range");
+        free(var);
+        return NULL;
+    }
+    advance(p);  /* consume 'in' */
     ASTNode* iterable = parseExpr(p);
     expectNewline(p);
     ASTNode* body = parseBlock(p);
     expect(p, TK_END, "Expected 'end' to close 'for' block");
     expectNewline(p);
     ASTNode* n = makeNode(NODE_FOR, line);
-    n->data.for_loop.item     = item;
+    n->data.for_loop.item     = var;
     n->data.for_loop.iterable = iterable;
     n->data.for_loop.body     = body;
     return n;
@@ -337,7 +395,7 @@ static ASTNode* parseImportStmt(Parser* p) {
 
 static ASTNode* parseFromImportStmt(Parser* p) {
     /*
-     * from module import name1, name2, ...    (v1.2.1b2)
+     * from module import name1, name2, ...    (v1.2.2a1)
      *
      * The module is imported fully (all definitions become global).
      * The listed names are verified at compile time — typos → ImportError.
@@ -822,7 +880,7 @@ static ASTNode* parseComparison(Parser* p) {
      * Single comparison (common case):
      *   a < b   →  NODE_BINARY(LT, a, b)
      *
-     * Chained comparison (v1.2.1b2):
+     * Chained comparison (v1.2.2a1):
      *   1 < x < 10  →  (1 < x) and (x < 10)
      *   a < b <= c  →  (a < b) and (b <= c)
      *
