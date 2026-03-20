@@ -2,6 +2,49 @@
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
+
+---
+
 ## v1.2.2a1 — Alpha 1 (2026)
 
 ### New: Numeric `for` loop (`for i = start to stop`)
@@ -59,6 +102,49 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
 
 ---
 
@@ -190,6 +276,49 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
+
+---
+
 ## v1.2.2a1 — Alpha 1 (2026)
 
 ### New: Numeric `for` loop (`for i = start to stop`)
@@ -247,6 +376,49 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
 
 ---
 
@@ -1071,6 +1243,49 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
+
+---
+
 ## v1.2.2a1 — Alpha 1 (2026)
 
 ### New: Numeric `for` loop (`for i = start to stop`)
@@ -1128,6 +1343,49 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
 
 ---
 
@@ -1259,6 +1517,49 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
+
+---
+
 ## v1.2.2a1 — Alpha 1 (2026)
 
 ### New: Numeric `for` loop (`for i = start to stop`)
@@ -1316,6 +1617,49 @@ Promoted from v1.2.1-rc1 with no code changes.
 - **Better error messages** — arithmetic shows operand types, import shows searched paths
 - **CLI usage errors** — `nq check` without filename shows clear usage
 - **License year updated to 2026**
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a2 — Alpha 2 (2026)
+
+### Performance optimization
+
+**Compiler: O3 + march=native + flto** (was O2)
+
+`-O3` enables loop vectorization, more aggressive inlining, and strength
+reduction. `-march=native` lets the compiler use all CPU instructions available
+on the build machine. `-flto` enables link-time optimization across translation
+units — particularly effective for the VM dispatch loop which calls helpers
+defined in separate .c files.
+
+**for-range: step-direction check hoisted out of the loop**
+
+Previously, `for i = 0 to N` emitted a `step >= 0` branch **every iteration**
+to decide whether to use `i < stop` or `i > stop`. Since the step is almost
+always a compile-time constant, this was pure overhead.
+
+Now:
+- If step is a literal (default `1`, or e.g. `step -1`, `step 2`) → the
+  compiler chooses the comparison at compile time. The loop body is just
+  `GET_LOCAL; GET_LOCAL; LT; JUMP_IF_FALSE` — one fewer comparison per iter.
+- If step is a runtime expression → direction is checked **once before the
+  loop**, then two specialized loops are emitted (positive and negative).
+  No per-iteration branching.
+- Zero step → `ValueError` at compile time.
+
+**Benchmark results (1 billion iterations, `for i = 0 to 1_000_000_000`):**
+
+| Version | Time |
+|---|---|
+| v1.2.2a1 | ~61s |
+| v1.2.2a2 | ~43s |
+| Improvement | **~29% faster** |
 
 ---
 

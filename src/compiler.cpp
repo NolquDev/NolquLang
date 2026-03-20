@@ -611,78 +611,130 @@ static void compileNode(ASTNode* node) {
             current->locals[step_slot].initialized = true;
             current->locals[step_slot].used        = true;
 
-            /* Loop condition:
-             *   if step >= 0: i < stop
-             *   if step <  0: i > stop
+            /*
+             * Hoist step-direction check out of the loop.
              *
-             * Emit: step >= 0 ? (i < stop) : (i > stop)
-             * Using: GET step; const 0; GE; JUMP_IF_FALSE → gt_branch
-             *   lt_branch: GET i; GET stop; LT; JUMP → end_cond
-             *   gt_branch: GET i; GET stop; GT
-             *   end_cond:
+             * If step is a compile-time constant (the common case):
+             *   Emit a specialized loop with one comparison per iteration.
+             *   No per-iteration branch.
+             *
+             * If step is a runtime expression:
+             *   Check direction once before the loop, then jump to
+             *   the appropriate loop. Two loops, one direction check.
              */
-            LoopCtx lctx;
-            lctx.loop_start        = currentChunk()->count;
-            lctx.continue_target   = -1;
-            lctx.scope_depth       = 0;
-            lctx.local_count       = current->local_count; /* after hidden vars: don't pop them */
-            lctx.outer_local_count = outer_locals;
-            loop_stack.push_back(lctx);
+            bool step_is_const = false;
+            double step_val    = 1.0;
+            if (node->data.for_range.step == NULL) {
+                step_is_const = true; step_val = 1.0;
+            } else if (node->data.for_range.step->type == NODE_NUMBER) {
+                step_is_const = true;
+                step_val = node->data.for_range.step->data.number.value;
+            } else if (node->data.for_range.step->type == NODE_UNARY &&
+                       node->data.for_range.step->data.unary.op == TK_MINUS &&
+                       node->data.for_range.step->data.unary.operand->type == NODE_NUMBER) {
+                step_is_const = true;
+                step_val = -node->data.for_range.step->data.unary.operand->data.number.value;
+            }
+            if (step_is_const && step_val == 0.0) {
+                compileError(line, "ValueError: for-range step cannot be zero.");
+                endScope(line); break;
+            }
 
-            /* step >= 0 ? */
-            emit2(OP_GET_LOCAL, (uint8_t)step_slot, line);
-            emitConst(NUMBER_VAL(0), line);
-            emit(OP_GTE, line);
-            int gt_branch = emitJump(OP_JUMP_IF_FALSE, line);
-            emit(OP_POP, line);  /* pop condition */
-            /* positive step: i < stop */
-            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
-            emit2(OP_GET_LOCAL, (uint8_t)stop_slot, line);
-            emit(OP_LT, line);
-            int end_cond = emitJump(OP_JUMP, line);
-            /* negative step: i > stop */
-            patchJumpAt(gt_branch);
-            emit(OP_POP, line);
-            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
-            emit2(OP_GET_LOCAL, (uint8_t)stop_slot, line);
-            emit(OP_GT, line);
-            patchJumpAt(end_cond);
+            if (step_is_const) {
+                /* ── Fast path: direction known at compile time ── */
+                LoopCtx lctx;
+                lctx.loop_start      = currentChunk()->count;
+                lctx.continue_target = -1;
+                lctx.scope_depth     = 0;
+                lctx.local_count     = current->local_count;
+                lctx.outer_local_count = outer_locals;
+                loop_stack.push_back(lctx);
 
-            int exit_jump = emitJump(OP_JUMP_IF_FALSE, line);
-            emit(OP_POP, line);  /* pop cond=true */
+                emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+                emit2(OP_GET_LOCAL, (uint8_t)stop_slot, line);
+                emit(step_val > 0 ? OP_LT : OP_GT, line);
+                int exit_j = emitJump(OP_JUMP_IF_FALSE, line);
+                emit(OP_POP, line);
 
-            /* Visible loop variable: let <var> = __i */
-            beginScope();
-            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
-            int var_slot = current->local_count;
-            addLocal(node->data.for_range.var, line);
-            current->locals[var_slot].initialized = true;
-            current->locals[var_slot].used        = true;
+                beginScope();
+                emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+                int vs = current->local_count;
+                addLocal(node->data.for_range.var, line);
+                current->locals[vs].initialized = current->locals[vs].used = true;
+                compileBlock(node->data.for_range.body);
+                endScope(line);
 
-            /* Body */
-            compileBlock(node->data.for_range.body);
+                for (int p : loop_stack.back().continue_patches) patchJumpAt(p);
 
-            endScope(line);   /* pop visible var — before continue patches */
+                emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+                emitConst(NUMBER_VAL(step_val), line);
+                emit(OP_ADD, line);
+                emit2(OP_SET_LOCAL, (uint8_t)i_slot, line);
+                emit(OP_POP, line);
+                emitLoop(loop_stack.back().loop_start, line);
 
-            /* Patch continues here (after visible var is popped, before increment) */
-            for (int patch : loop_stack.back().continue_patches)
-                patchJumpAt(patch);
+                patchJumpAt(exit_j);
+                emit(OP_POP, line);
+                endScope(line);
+                for (int p : loop_stack.back().break_patches) patchJumpAt(p);
+                loop_stack.pop_back();
 
-            /* __i += __step */
-            emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
-            emit2(OP_GET_LOCAL, (uint8_t)step_slot, line);
-            emit(OP_ADD, line);
-            emit2(OP_SET_LOCAL, (uint8_t)i_slot, line);
-            emit(OP_POP, line);
-            emitLoop(loop_stack.back().loop_start, line);
+            } else {
+                /* ── Slow path: direction check once before loop ── */
+                auto emit_one_loop = [&](uint8_t cmp_op) {
+                    LoopCtx lx;
+                    lx.loop_start      = currentChunk()->count;
+                    lx.continue_target = -1;
+                    lx.scope_depth     = 0;
+                    lx.local_count     = current->local_count;
+                    lx.outer_local_count = outer_locals;
+                    loop_stack.push_back(lx);
 
-            patchJumpAt(exit_jump);
-            emit(OP_POP, line);  /* pop cond=false */
-            endScope(line);      /* pop __i, __stop, __step */
+                    emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+                    emit2(OP_GET_LOCAL, (uint8_t)stop_slot, line);
+                    emit(cmp_op, line);
+                    int ej = emitJump(OP_JUMP_IF_FALSE, line);
+                    emit(OP_POP, line);
 
-            for (int patch : loop_stack.back().break_patches)
-                patchJumpAt(patch);
-            loop_stack.pop_back();
+                    beginScope();
+                    emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+                    int vs = current->local_count;
+                    addLocal(node->data.for_range.var, line);
+                    current->locals[vs].initialized = current->locals[vs].used = true;
+                    compileBlock(node->data.for_range.body);
+                    endScope(line);
+
+                    for (int p : loop_stack.back().continue_patches) patchJumpAt(p);
+
+                    emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
+                    emit2(OP_GET_LOCAL, (uint8_t)step_slot, line);
+                    emit(OP_ADD, line);
+                    emit2(OP_SET_LOCAL, (uint8_t)i_slot, line);
+                    emit(OP_POP, line);
+                    emitLoop(loop_stack.back().loop_start, line);
+
+                    patchJumpAt(ej);
+                    emit(OP_POP, line);
+
+                    for (int p : loop_stack.back().break_patches) patchJumpAt(p);
+                    loop_stack.pop_back();
+                };
+
+                emit2(OP_GET_LOCAL, (uint8_t)step_slot, line);
+                emitConst(NUMBER_VAL(0), line);
+                emit(OP_GTE, line);
+                int to_neg = emitJump(OP_JUMP_IF_FALSE, line);
+                emit(OP_POP, line);
+                emit_one_loop(OP_LT);
+                int to_end = emitJump(OP_JUMP, line);
+
+                patchJumpAt(to_neg);
+                emit(OP_POP, line);
+                emit_one_loop(OP_GT);
+                endScope(line);
+
+                patchJumpAt(to_end);
+            }
             break;
         }
         case NODE_FUNCTION: {

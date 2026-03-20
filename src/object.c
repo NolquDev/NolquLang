@@ -143,7 +143,7 @@ ObjString* copyString(const char* chars, int length) {
     if (interned) return interned;
 
     char* buf = (char*)nq_realloc(NULL, 0, (size_t)(length + 1));
-    memcpy(buf, chars, (size_t)length);
+    if (length > 0) memcpy(buf, chars, (size_t)length);
     buf[length] = '\0';
     return allocString(buf, length, hash);
 }

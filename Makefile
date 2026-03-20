@@ -48,8 +48,11 @@ CXXFLAGS = $(COMMON_FLAGS) \
 LDFLAGS = -lm
 
 # ── Release flags ──────────────────────────────────────────────────────
-CFLAGS_RELEASE   = $(CFLAGS)   -O2 -DNDEBUG
-CXXFLAGS_RELEASE = $(CXXFLAGS) -O2 -DNDEBUG
+# O3 + march=native: full scalar optimization + use all CPU instructions.
+# flto: link-time optimization — inlines across translation units (big win
+#       for the hot VM dispatch loop which calls helpers defined in vm.c).
+CFLAGS_RELEASE   = $(CFLAGS)   -O3 -march=native -flto -DNDEBUG
+CXXFLAGS_RELEASE = $(CXXFLAGS) -O3 -march=native -flto -DNDEBUG
 
 # ── Debug flags ────────────────────────────────────────────────────────
 # AddressSanitizer + UndefinedBehaviourSanitizer (Linux / macOS only).
