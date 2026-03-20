@@ -93,7 +93,7 @@ For trademark licensing, permission requests, or to report misuse:
 
 ## Copyright
 
-Copyright © 2024–2025 Nadzil. All rights reserved.
+Copyright © 2026 Nadzil. All rights reserved.
 
 The Nolqu runtime, standard library, tooling, and documentation are provided
 under the terms of the project license. See `LICENSE` for details.

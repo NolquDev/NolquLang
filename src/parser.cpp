@@ -19,7 +19,7 @@ static void errorAt(Parser* p, Token* tok, const char* msg) {
     p->panic_mode = true;
     p->had_error  = true;
 
-    fprintf(stderr, NQ_COLOR_RED "[ Error ]" NQ_COLOR_RESET);
+    fprintf(stderr, NQ_COLOR_RED "[SyntaxError]" NQ_COLOR_RESET);
     if (p->source_path) fprintf(stderr, " %s", p->source_path);
     fprintf(stderr, ":%d\n", tok->line);
     fprintf(stderr, "  " NQ_COLOR_BOLD "%s" NQ_COLOR_RESET "\n", msg);

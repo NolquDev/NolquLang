@@ -2,6 +2,102 @@
 
 ---
 
+## v1.2.1b4 — Beta 4 (2026)
+
+### All typed errors now show correct bracket header
+
+Previously `vmRuntimeError` always printed `[RuntimeError]` regardless of what
+error was inside. Now both `vmRuntimeError` (runtime) and `compileError`
+(compile-time) extract the type prefix from the message and use it as the
+bracket label:
+
+```
+[TypeError]   /tmp/e.nq:2
+  TypeError: arithmetic requires numbers, got string and number.
+
+[NameError]   /tmp/e.nq:5
+  NameError: 'x' is not defined. Did you mean 'y'?
+
+[IndexError]  /tmp/e.nq:3
+  IndexError: array index 99 is out of bounds (length 3).
+
+[ValueError]  /tmp/e.nq:1
+  ValueError: division by zero. Check the divisor before dividing.
+
+[ImportError] /tmp/e.nq:1
+  ImportError: module 'mymod' not found.
+  Searched:
+      ./mymod.nq
+
+[SyntaxError] /tmp/e.nq:4
+  Invalid expression. Expected a number...
+
+[RuntimeError] /tmp/e.nq:7
+  something broke         ← plain error("message") with no prefix
+```
+
+Implementation: format the message string first, scan for `Word: ` prefix
+using the same logic as `error_type()`, then use it as the bracket label.
+Falls back to `[RuntimeError]` / `[SyntaxError]` if no recognized prefix.
+Zero duplication — the same extraction logic works in both the VM and compiler.
+
+Full error type map now consistent end-to-end:
+
+| Bracket header | Cause |
+|---|---|
+| `[TypeError]` | Wrong type for operation |
+| `[NameError]` | Undefined/undeclared variable |
+| `[IndexError]` | Array/string out of bounds |
+| `[ValueError]` | Division by zero, invalid value |
+| `[ImportError]` | Module not found, bad name, circular import |
+| `[SyntaxError]` | Parse error, compile error |
+| `[RuntimeError]` | Uncaught `error("plain message")` |
+| `[IOError]` | File not found, read failure |
+| `[UsageError]` | Unknown command, missing filename |
+| `[Warning]` | Unused variable |
+
+---
+
+## v1.2.1b3 — Beta 3 (2026)
+
+### CLI: Unknown command suggestion
+
+When you mistype a command, Nolqu now detects it and suggests the closest
+valid command using Levenshtein distance:
+
+```
+$ nq verdion
+[UsageError] Unknown command: verdion
+  Did you mean: version ?
+
+$ nq chekc myfile.nq
+[UsageError] Unknown command: chekc
+  Did you mean: check ?
+```
+
+Rules: only triggers when the input has no `.nq` extension, the file does not
+exist, and the edit distance to a valid command is ≤ 2. Long or unrelated
+inputs fall through to the normal `[IOError]` (file not found) path.
+
+### Error prefixes: typed and consistent
+
+All error output now uses typed prefixes instead of the generic `[ Error ]`:
+
+| Old | New | When |
+|---|---|---|
+| `[ Error ]` (file) | `[IOError]` | File not found, read failure |
+| `[ Error ]` (usage) | `[UsageError]` | Unknown command, missing filename |
+| `[ Compile Error ]` | `[SyntaxError]` | Parse error, compile error |
+| `[ Warning ]` | `[Warning]` | Unused variable etc. |
+| `[ Runtime Error ]` | `[RuntimeError]` | Uncaught runtime error |
+| `[ check ] ok` | `[OK]` | nq check pass |
+| `[ check ] error` | `[SyntaxError]` | nq check fail |
+
+Typed prefixes in `try/catch` error values remain unchanged
+(`TypeError:`, `NameError:`, `IndexError:`, `ValueError:`, `ImportError:`).
+
+---
+
 ## v1.2.1b2 — Beta 2 (2026)
 
 ### Refactor: REPL expression parser (no duplication)
@@ -708,6 +804,102 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 - Zero warnings in release build
 - ASan + UBSan clean (debug build)
 - Version string updated: `1.0.0-rc1` → `1.0.0`
+
+---
+
+## v1.2.1b4 — Beta 4 (2026)
+
+### All typed errors now show correct bracket header
+
+Previously `vmRuntimeError` always printed `[RuntimeError]` regardless of what
+error was inside. Now both `vmRuntimeError` (runtime) and `compileError`
+(compile-time) extract the type prefix from the message and use it as the
+bracket label:
+
+```
+[TypeError]   /tmp/e.nq:2
+  TypeError: arithmetic requires numbers, got string and number.
+
+[NameError]   /tmp/e.nq:5
+  NameError: 'x' is not defined. Did you mean 'y'?
+
+[IndexError]  /tmp/e.nq:3
+  IndexError: array index 99 is out of bounds (length 3).
+
+[ValueError]  /tmp/e.nq:1
+  ValueError: division by zero. Check the divisor before dividing.
+
+[ImportError] /tmp/e.nq:1
+  ImportError: module 'mymod' not found.
+  Searched:
+      ./mymod.nq
+
+[SyntaxError] /tmp/e.nq:4
+  Invalid expression. Expected a number...
+
+[RuntimeError] /tmp/e.nq:7
+  something broke         ← plain error("message") with no prefix
+```
+
+Implementation: format the message string first, scan for `Word: ` prefix
+using the same logic as `error_type()`, then use it as the bracket label.
+Falls back to `[RuntimeError]` / `[SyntaxError]` if no recognized prefix.
+Zero duplication — the same extraction logic works in both the VM and compiler.
+
+Full error type map now consistent end-to-end:
+
+| Bracket header | Cause |
+|---|---|
+| `[TypeError]` | Wrong type for operation |
+| `[NameError]` | Undefined/undeclared variable |
+| `[IndexError]` | Array/string out of bounds |
+| `[ValueError]` | Division by zero, invalid value |
+| `[ImportError]` | Module not found, bad name, circular import |
+| `[SyntaxError]` | Parse error, compile error |
+| `[RuntimeError]` | Uncaught `error("plain message")` |
+| `[IOError]` | File not found, read failure |
+| `[UsageError]` | Unknown command, missing filename |
+| `[Warning]` | Unused variable |
+
+---
+
+## v1.2.1b3 — Beta 3 (2026)
+
+### CLI: Unknown command suggestion
+
+When you mistype a command, Nolqu now detects it and suggests the closest
+valid command using Levenshtein distance:
+
+```
+$ nq verdion
+[UsageError] Unknown command: verdion
+  Did you mean: version ?
+
+$ nq chekc myfile.nq
+[UsageError] Unknown command: chekc
+  Did you mean: check ?
+```
+
+Rules: only triggers when the input has no `.nq` extension, the file does not
+exist, and the edit distance to a valid command is ≤ 2. Long or unrelated
+inputs fall through to the normal `[IOError]` (file not found) path.
+
+### Error prefixes: typed and consistent
+
+All error output now uses typed prefixes instead of the generic `[ Error ]`:
+
+| Old | New | When |
+|---|---|---|
+| `[ Error ]` (file) | `[IOError]` | File not found, read failure |
+| `[ Error ]` (usage) | `[UsageError]` | Unknown command, missing filename |
+| `[ Compile Error ]` | `[SyntaxError]` | Parse error, compile error |
+| `[ Warning ]` | `[Warning]` | Unused variable etc. |
+| `[ Runtime Error ]` | `[RuntimeError]` | Uncaught runtime error |
+| `[ check ] ok` | `[OK]` | nq check pass |
+| `[ check ] error` | `[SyntaxError]` | nq check fail |
+
+Typed prefixes in `try/catch` error values remain unchanged
+(`TypeError:`, `NameError:`, `IndexError:`, `ValueError:`, `ImportError:`).
 
 ---
 

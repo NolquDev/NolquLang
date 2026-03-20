@@ -14,11 +14,51 @@
 // ─────────────────────────────────────────────
 //  File helpers
 // ─────────────────────────────────────────────
+
+/* Levenshtein distance for command suggestion (small strings only) */
+static int cmdLevenshtein(const char* a, const char* b) {
+    int la = (int)strlen(a), lb = (int)strlen(b);
+    if (la > 20 || lb > 20) return 99;
+    int dp[21][21];
+    for (int i = 0; i <= la; i++) dp[i][0] = i;
+    for (int j = 0; j <= lb; j++) dp[0][j] = j;
+    for (int i = 1; i <= la; i++)
+        for (int j = 1; j <= lb; j++) {
+            int cost = (a[i-1] == b[j-1]) ? 0 : 1;
+            dp[i][j] = dp[i-1][j-1] + cost;
+            if (dp[i-1][j] + 1 < dp[i][j]) dp[i][j] = dp[i-1][j] + 1;
+            if (dp[i][j-1] + 1 < dp[i][j]) dp[i][j] = dp[i][j-1] + 1;
+        }
+    return dp[la][lb];
+}
+
+/* Suggest the closest valid command if the input looks like a mistyped command
+ * (no .nq extension, file does not exist, distance <= 2). */
+static const char* suggestCommand(const char* input) {
+    static const char* cmds[] = {
+        "run", "check", "test", "version", "help", "repl", "compile", NULL
+    };
+    /* Only suggest if input has no .nq extension and no path separators */
+    if (strstr(input, ".nq") || strchr(input, '/') || strchr(input, '\\'))
+        return NULL;
+    /* Only suggest if file does not exist */
+    FILE* probe = fopen(input, "r");
+    if (probe) { fclose(probe); return NULL; }
+
+    const char* best = NULL;
+    int best_dist = 3; /* threshold: only suggest if dist <= 2 */
+    for (int i = 0; cmds[i]; i++) {
+        int d = cmdLevenshtein(input, cmds[i]);
+        if (d < best_dist) { best_dist = d; best = cmds[i]; }
+    }
+    return best;
+}
+
 static char* readFile(const char* path) {
     FILE* f = fopen(path, "rb");
     if (!f) {
         fprintf(stderr,
-            NQ_COLOR_RED "[ Error ]" NQ_COLOR_RESET
+            NQ_COLOR_RED "[IOError]" NQ_COLOR_RESET
             " Cannot open file: %s\n"
             "  Hint: Check if the file exists and you have read permission.\n",
             path);
@@ -32,7 +72,7 @@ static char* readFile(const char* path) {
         if (size >= 0) {
             char* buf = (char*)malloc((size_t)(size + 1));
             if (!buf) {
-                fprintf(stderr, NQ_COLOR_RED "[ Error ]" NQ_COLOR_RESET " Out of memory.\n");
+                fprintf(stderr, NQ_COLOR_RED "[IOError]" NQ_COLOR_RESET " Out of memory.\n");
                 fclose(f); return NULL;
             }
             size_t n = fread(buf, 1, (size_t)size, f);
@@ -98,7 +138,7 @@ static int checkFile(const char* path) {
     if (parser.had_error) {
         freeNode(ast);
         fprintf(stderr,
-            NQ_COLOR_RED "[ check ]" NQ_COLOR_RESET " %s: parse error\n", path);
+            NQ_COLOR_RED "[SyntaxError]" NQ_COLOR_RESET " %s: parse error\n", path);
         return 1;
     }
 
@@ -107,11 +147,11 @@ static int checkFile(const char* path) {
 
     if (result.had_error || !result.function) {
         fprintf(stderr,
-            NQ_COLOR_RED "[ check ]" NQ_COLOR_RESET " %s: compile error\n", path);
+            NQ_COLOR_RED "[SyntaxError]" NQ_COLOR_RESET " %s: compile error\n", path);
         return 1;
     }
 
-    printf(NQ_COLOR_GREEN "[ check ]" NQ_COLOR_RESET " %s: ok\n", path);
+    printf(NQ_COLOR_GREEN "[OK]" NQ_COLOR_RESET " %s\n", path);
     return 0;
 }
 
@@ -401,7 +441,7 @@ int main(int argc, char* argv[]) {
         strcmp(cmd, "test") == 0 || strcmp(cmd, "compile") == 0) {
         if (argc < 3) {
             fprintf(stderr,
-                NQ_COLOR_RED "[ Error ]" NQ_COLOR_RESET
+                NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET
                 " Missing filename.\n"
                 "  Usage:  nq %s <file.nq>\n"
                 "  Run  " NQ_COLOR_BOLD "nq help" NQ_COLOR_RESET
@@ -418,14 +458,24 @@ int main(int argc, char* argv[]) {
         if (strcmp(cmd, "compile") == 0) return compileToC(argc - 2, argv + 2);
     }
 
-    // Bare filename
+    // Bare filename or unknown command
     if (argc == 2) {
+        /* Check if it looks like a mistyped command before trying to run as file */
+        const char* suggestion = suggestCommand(cmd);
+        if (suggestion) {
+            fprintf(stderr,
+                NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET
+                " Unknown command: %s\n"
+                "  Did you mean: " NQ_COLOR_BOLD "%s" NQ_COLOR_RESET " ?\n\n",
+                cmd, suggestion);
+            return 1;
+        }
         VM vm; initVM(&vm);
         int r = runFile(&vm, cmd);
         freeVM(&vm); return r;
     }
 
-    fprintf(stderr, NQ_COLOR_RED "[ Error ]" NQ_COLOR_RESET " Invalid usage.\n\n");
+    fprintf(stderr, NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET " Invalid usage.\n\n");
     printHelp();
     return 1;
 }

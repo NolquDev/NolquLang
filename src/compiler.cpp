@@ -55,10 +55,35 @@ static void compileError(int line, const char* fmt, ...) {
     had_compile_error = true;
     va_list args;
     va_start(args, fmt);
-    fprintf(stderr, NQ_COLOR_RED "[ Compile Error ]" NQ_COLOR_RESET);
+
+    /* Format first so we can extract the error type prefix */
+    char msg[1024];
+    va_list args2;
+    va_copy(args2, args);
+    vsnprintf(msg, sizeof(msg), fmt, args2);
+    va_end(args2);
+
+    /* Extract type prefix (e.g. "ImportError: ..." → "ImportError") */
+    const char* colon = strstr(msg, ": ");
+    char header[64] = "SyntaxError";
+    if (colon && colon > msg) {
+        int prefix_len = (int)(colon - msg);
+        if (prefix_len <= 20 && prefix_len > 0) {
+            int valid = 1;
+            for (int i = 0; i < prefix_len; i++) {
+                char c = msg[i];
+                if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+                    valid = 0; break;
+                }
+            }
+            if (valid) snprintf(header, sizeof(header), "%.*s", prefix_len, msg);
+        }
+    }
+
+    fprintf(stderr, NQ_COLOR_RED "[%s]" NQ_COLOR_RESET, header);
     if (src_path) fprintf(stderr, " %s", src_path);
     fprintf(stderr, ":%d\n  ", line);
-    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "%s", msg);
     fprintf(stderr, "\n\n");
     va_end(args);
 }
@@ -139,7 +164,7 @@ static void endScope(int line) {
         Local* loc = &current->locals[current->local_count - 1];
         if (!loc->used && loc->name[0] != '\0' && loc->name[0] != '_') {
             fprintf(stderr,
-                NQ_COLOR_YELLOW "[ Warning ]" NQ_COLOR_RESET
+                NQ_COLOR_YELLOW "[Warning]" NQ_COLOR_RESET
                 " line %d: Local variable '%s' is declared but never used.\n",
                 loc->decl_line, loc->name);
         }

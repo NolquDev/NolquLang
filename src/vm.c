@@ -702,7 +702,7 @@ void freeVM(VM* vm) {
 static void push(VM* vm, Value v) {
     if (vm->stack_top >= vm->stack + NQ_STACK_MAX) {
         fprintf(stderr,
-            NQ_COLOR_RED "[ Runtime Error ]" NQ_COLOR_RESET
+            NQ_COLOR_RED "[RuntimeError]" NQ_COLOR_RESET
             " Stack overflow! Possible infinite recursion.\n");
         exit(1);
     }
@@ -719,7 +719,39 @@ void vmRuntimeError(VM* vm, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
-    fprintf(stderr, NQ_COLOR_RED "\n[ Runtime Error ]" NQ_COLOR_RESET);
+    /*
+     * Format the message first so we can extract the error type prefix.
+     * e.g. "TypeError: ..."  →  header = "[TypeError]"
+     *      "NameError: ..."  →  header = "[NameError]"
+     *      "plain message"   →  header = "[RuntimeError]"
+     */
+    char msg[1024];
+    va_list args2;
+    va_copy(args2, args);
+    vsnprintf(msg, sizeof(msg), fmt, args2);
+    va_end(args2);
+
+    /* Extract type prefix: word before the first ": " */
+    const char* colon = strstr(msg, ": ");
+    char header[64] = "RuntimeError";
+    if (colon && colon > msg) {
+        int prefix_len = (int)(colon - msg);
+        /* Validate: prefix must be all letters, max 20 chars */
+        if (prefix_len <= 20 && prefix_len > 0) {
+            int valid = 1;
+            for (int i = 0; i < prefix_len; i++) {
+                char c = msg[i];
+                if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+                    valid = 0; break;
+                }
+            }
+            if (valid) {
+                snprintf(header, sizeof(header), "%.*s", prefix_len, msg);
+            }
+        }
+    }
+
+    fprintf(stderr, NQ_COLOR_RED "[%s]" NQ_COLOR_RESET, header);
 
     // Print stack trace (innermost first)
     for (int i = vm->frame_count - 1; i >= 0; i--) {
@@ -729,11 +761,9 @@ void vmRuntimeError(VM* vm, const char* fmt, ...) {
         if (offset < 0) offset = 0;
         int line = fn->chunk->lines[offset];
         if (i == vm->frame_count - 1) {
-            // Innermost frame — print file:line
             const char* src = vm->source_path ? vm->source_path : "<script>";
             fprintf(stderr, " %s:%d\n", src, line);
         } else {
-            // Outer frames — indent callchain
             if (fn->name)
                 fprintf(stderr, "  called from '%s' line %d\n", fn->name->chars, line);
         }
@@ -743,7 +773,7 @@ void vmRuntimeError(VM* vm, const char* fmt, ...) {
     }
 
     fprintf(stderr, NQ_COLOR_RED "  " NQ_COLOR_RESET);
-    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "%s", msg);
     fprintf(stderr, "\n\n");
     va_end(args);
 }
