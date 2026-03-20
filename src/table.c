@@ -14,7 +14,7 @@ void freeTable(Table* t) {
     initTable(t);
 }
 
-static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
+NQ_INLINE Entry* findEntry(Entry* NQ_RESTRICT entries, int capacity, ObjString* key) {
     uint32_t idx = key->hash % (uint32_t)capacity;
     Entry* tombstone = NULL;
 
@@ -28,7 +28,7 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
                 // Tombstone
                 if (!tombstone) tombstone = e;
             }
-        } else if (e->key == key) {
+        } else if (NQ_LIKELY(e->key == key)) {
             return e;
         }
         idx = (idx + 1) % (uint32_t)capacity;
@@ -60,7 +60,7 @@ static void adjustCapacity(Table* t, int new_capacity) {
 bool tableGet(Table* t, ObjString* key, Value* out) {
     if (t->count == 0) return false;
     Entry* e = findEntry(t->entries, t->capacity, key);
-    if (!e->key) return false;
+    if (NQ_UNLIKELY(!e->key)) return false;
     *out = e->value;
     return true;
 }

@@ -896,6 +896,10 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
     callFunction(vm, script, 0);
     CallFrame* frame = &vm->frames[vm->frame_count - 1];
 
+/* Register-cached frame fields — updated when frame changes (CALL/RETURN/THROW) */
+#define LOAD_FRAME() \
+    frame = &vm->frames[vm->frame_count - 1]
+
 #define READ_BYTE()    (*frame->ip++)
 #define READ_UINT16()  (frame->ip += 2, \
                         (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
@@ -915,7 +919,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
 } while (0)
 
 #define BINARY_NUM(op) do { \
-    if (!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1))) { \
+    if (NQ_UNLIKELY(!IS_NUMBER(peek(vm, 0)) || !IS_NUMBER(peek(vm, 1)))) { \
         THROW_ERROR("TypeError: arithmetic requires numbers, got %s and %s.", \
             IS_NIL(peek(vm,1)) ? "null" : IS_BOOL(peek(vm,1)) ? "bool" : \
             IS_STRING(peek(vm,1)) ? "string" : IS_ARRAY(peek(vm,1)) ? "array" : "number", \
@@ -1169,7 +1173,7 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             }
 
             case OP_JUMP:          { uint16_t off = READ_UINT16(); frame->ip += off; break; }
-            case OP_JUMP_IF_FALSE: { uint16_t off = READ_UINT16(); if (!isTruthy(peek(vm, 0))) frame->ip += off; break; }
+            case OP_JUMP_IF_FALSE: { uint16_t off = READ_UINT16(); if (NQ_UNLIKELY(!isTruthy(peek(vm, 0)))) frame->ip += off; break; }
             case OP_LOOP:          { uint16_t off = READ_UINT16(); frame->ip -= off; break; }
 
             case OP_CALL: {

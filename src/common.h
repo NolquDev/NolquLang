@@ -30,6 +30,20 @@
 #define NQ_VERSION_MAJOR 1
 #define NQ_VERSION_MINOR 1
 #define NQ_VERSION_PATCH 1
+
+/* ── Compiler hints ─────────────────────────────────────────────────── */
+#ifdef __GNUC__
+#  define NQ_INLINE      __attribute__((always_inline)) static inline
+#  define NQ_RESTRICT    __restrict__
+#  define NQ_LIKELY(x)   __builtin_expect(!!(x), 1)
+#  define NQ_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#  define NQ_INLINE      static inline
+#  define NQ_RESTRICT
+#  define NQ_LIKELY(x)   (x)
+#  define NQ_UNLIKELY(x) (x)
+#endif
+
 #define NQ_VERSION       "1.2.2a3"
 #define NQ_LANG_NAME     "Nolqu"
 

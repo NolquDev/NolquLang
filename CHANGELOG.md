@@ -8,6 +8,52 @@ Promoted from v1.2.2a2. No code changes.
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
+
+---
+
 ## v1.2.2a2 — Alpha 2 (2026)
 
 ### Performance optimization
@@ -108,6 +154,52 @@ Promoted from v1.2.1-rc1 with no code changes.
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
 
 ---
 
@@ -282,6 +374,52 @@ Promoted from v1.2.2a2. No code changes.
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
+
+---
+
 ## v1.2.2a2 — Alpha 2 (2026)
 
 ### Performance optimization
@@ -382,6 +520,52 @@ Promoted from v1.2.1-rc1 with no code changes.
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
 
 ---
 
@@ -1249,6 +1433,52 @@ Promoted from v1.2.2a2. No code changes.
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
+
+---
+
 ## v1.2.2a2 — Alpha 2 (2026)
 
 ### Performance optimization
@@ -1349,6 +1579,52 @@ Promoted from v1.2.1-rc1 with no code changes.
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
 
 ---
 
@@ -1523,6 +1799,52 @@ Promoted from v1.2.2a2. No code changes.
 
 ---
 
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
+
+---
+
 ## v1.2.2a2 — Alpha 2 (2026)
 
 ### Performance optimization
@@ -1623,6 +1945,52 @@ Promoted from v1.2.1-rc1 with no code changes.
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a3 — Alpha 3 (2026)
+
+### Performance: zero-copy loop variable + branch prediction hints
+
+**for-range: zero-copy loop variable alias**
+
+Previously `for i = 0 to N` emitted two extra opcodes **every iteration**:
+- `OP_GET_LOCAL __i` → push onto new slot (visible var copy)
+- `OP_POP` on `endScope` when the iteration ends
+
+Fix: the user's variable name is registered as an alias pointing directly
+to the `__i` slot. No copy, no extra push/pop. The body reads and writes
+the counter directly.
+
+Result:
+| | a2 | a3 |
+|---|---|---|
+| for-range empty 100M | 3279ms | 2711ms (-17%) |
+| for-range ≈ loop | — | ✅ Same speed |
+| 1B iterations (local) | — | ~39s |
+
+**NQ_LIKELY / NQ_UNLIKELY branch hints**
+
+Added `__builtin_expect` hints on the most-executed paths:
+- `BINARY_NUM` type check: the number case is almost always taken
+- `JUMP_IF_FALSE`: the loop-continue case (condition true) is dominant
+- `tableGet`: successful lookup is the common path; miss is unlikely
+- `findEntry`: key pointer equality is the expected outcome
+
+**`NQ_INLINE` + `NQ_RESTRICT` on `findEntry`**
+
+`findEntry` is called on every global variable access. Marking it
+`always_inline` and the `entries` pointer as `restrict` allows the
+compiler to avoid reload/alias checks inside the lookup loop.
+
+**Compiler hints defined in `common.h`:**
+```c
+NQ_INLINE      // __attribute__((always_inline)) static inline
+NQ_RESTRICT    // __restrict__
+NQ_LIKELY(x)   // __builtin_expect(!!(x), 1)
+NQ_UNLIKELY(x) // __builtin_expect(!!(x), 0)
+```
+All fall back to no-ops on non-GCC/Clang compilers.
 
 ---
 

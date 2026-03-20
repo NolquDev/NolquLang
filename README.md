@@ -7,8 +7,11 @@
 ![status](https://img.shields.io/badge/status-active-success)
 ![license](https://img.shields.io/github/license/Nadzil123/Nolqu)
 
+> [!IMPORTANT]
+> **Latest stable release: [v1.2.1](https://github.com/Nadzil123/Nolqu/releases/tag/v1.2.1).** Recommended for production use.
+
 > [!WARNING]
-> **This is a stable release (v1.2.2a3).** For stable use see [v1.2.2a3](https://github.com/Nadzil123/Nolqu/releases/tag/v1.2.2a3).
+> **This is an alpha release (v1.2.2a3).** Features may change. Not recommended for production.
 
 **A small, fast scripting language with its own stack-based bytecode VM.**
 

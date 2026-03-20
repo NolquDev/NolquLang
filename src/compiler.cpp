@@ -656,13 +656,27 @@ static void compileNode(ASTNode* node) {
                 int exit_j = emitJump(OP_JUMP_IF_FALSE, line);
                 emit(OP_POP, line);
 
-                beginScope();
-                emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
-                int vs = current->local_count;
-                addLocal(node->data.for_range.var, line);
-                current->locals[vs].initialized = current->locals[vs].used = true;
+                /*
+                 * Visible loop variable — zero-copy alias.
+                 *
+                 * Instead of pushing __i onto a new stack slot every
+                 * iteration (GET __i → new slot, POP new slot on endScope),
+                 * we rename __i's slot to the user's variable name.
+                 * The body reads/writes the counter directly.
+                 *
+                 * Saves 2 opcodes per iteration: OP_GET_LOCAL + OP_POP.
+                 */
+                char saved_name[64];
+                strncpy(saved_name, current->locals[i_slot].name, 63);
+                saved_name[63] = '\0';
+                strncpy(current->locals[i_slot].name,
+                        node->data.for_range.var, 63);
+                current->locals[i_slot].used = true;
+
                 compileBlock(node->data.for_range.body);
-                endScope(line);
+
+                /* Restore hidden name so endScope doesn't warn about it */
+                strncpy(current->locals[i_slot].name, saved_name, 63);
 
                 for (int p : loop_stack.back().continue_patches) patchJumpAt(p);
 
@@ -696,13 +710,14 @@ static void compileNode(ASTNode* node) {
                     int ej = emitJump(OP_JUMP_IF_FALSE, line);
                     emit(OP_POP, line);
 
-                    beginScope();
-                    emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
-                    int vs = current->local_count;
-                    addLocal(node->data.for_range.var, line);
-                    current->locals[vs].initialized = current->locals[vs].used = true;
+                    /* Zero-copy alias: rename i_slot to the user's var name */
+                    char sn[64];
+                    strncpy(sn, current->locals[i_slot].name, 63); sn[63]='\0';
+                    strncpy(current->locals[i_slot].name,
+                            node->data.for_range.var, 63);
+                    current->locals[i_slot].used = true;
                     compileBlock(node->data.for_range.body);
-                    endScope(line);
+                    strncpy(current->locals[i_slot].name, sn, 63);
 
                     for (int p : loop_stack.back().continue_patches) patchJumpAt(p);
 
