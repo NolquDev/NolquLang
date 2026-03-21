@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 /*
  * jit.c — Nolqu Template JIT Compiler
  *
@@ -211,7 +212,7 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
     if (n_vars < 0 || n_vars > 5) return false;
 
     /* Allocate executable memory — one page is more than enough */
-    size_t page = (size_t)getpagesize();
+    size_t page = (size_t)sysconf(_SC_PAGESIZE);
     uint8_t* buf = (uint8_t*)mmap(NULL, page,
         PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (buf == MAP_FAILED) return false;

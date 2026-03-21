@@ -83,6 +83,9 @@ InterpretResult runVM  (VM* vm, ObjFunction* script,
 /* Print a runtime error with source location and call-stack trace. */
 void vmRuntimeError(VM* vm, const char* fmt, ...);
 
+/* Inject ARGS global array — call after initVM(), before runFile(). */
+void nq_set_args(VM* vm, int argc, char** argv);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

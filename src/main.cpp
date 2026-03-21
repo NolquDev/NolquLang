@@ -449,8 +449,21 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         if (strcmp(cmd, "run") == 0) {
+            /*
+             * nq run script.nq [arg1 arg2 ...]
+             * nq run script.nq -- arg1 arg2   (explicit separator)
+             *
+             * All arguments after the script filename are available
+             * inside the script as the ARGS array.
+             */
             VM vm; initVM(&vm);
-            int r = runFile(&vm, argv[2]);
+            const char* script = argv[2];
+            int   args_start   = 3;  /* argv[3] onward = script args */
+            /* Skip optional "--" separator */
+            if (args_start < argc && strcmp(argv[args_start], "--") == 0)
+                args_start++;
+            nq_set_args(&vm, argc - args_start, argv + args_start);
+            int r = runFile(&vm, script);
             freeVM(&vm); return r;
         }
         if (strcmp(cmd, "check") == 0)   return checkFile(argv[2]);
@@ -458,11 +471,10 @@ int main(int argc, char* argv[]) {
         if (strcmp(cmd, "compile") == 0) return compileToC(argc - 2, argv + 2);
     }
 
-    // Bare filename or unknown command
-    if (argc == 2) {
-        /* Check if it looks like a mistyped command before trying to run as file */
+    // Bare filename: nq script.nq [arg1 arg2 ...]
+    {
         const char* suggestion = suggestCommand(cmd);
-        if (suggestion) {
+        if (suggestion && argc == 2) {
             fprintf(stderr,
                 NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET
                 " Unknown command: %s\n"
@@ -470,12 +482,19 @@ int main(int argc, char* argv[]) {
                 cmd, suggestion);
             return 1;
         }
+        /*
+         * Treat cmd as a script filename if it ends with .nq or the file exists.
+         * Arguments after the filename go into ARGS.
+         *
+         *   nq script.nq arg1 arg2
+         *   nq script.nq -- arg1 arg2
+         */
+        int args_start = 2;
+        if (args_start < argc && strcmp(argv[args_start], "--") == 0)
+            args_start++;
         VM vm; initVM(&vm);
+        nq_set_args(&vm, argc - args_start, argv + args_start);
         int r = runFile(&vm, cmd);
         freeVM(&vm); return r;
     }
-
-    fprintf(stderr, NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET " Invalid usage.\n\n");
-    printHelp();
-    return 1;
 }

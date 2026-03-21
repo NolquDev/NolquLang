@@ -2,6 +2,68 @@
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -258,6 +320,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 
@@ -657,6 +781,68 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -913,6 +1099,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 
@@ -1380,6 +1628,68 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -1636,6 +1946,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 
@@ -2035,6 +2407,68 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -2291,6 +2725,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 
@@ -3451,6 +3947,68 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -3707,6 +4265,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 
@@ -4106,6 +4726,68 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -4362,6 +5044,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 
@@ -4829,6 +5573,68 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -5085,6 +5891,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 
@@ -5484,6 +6352,68 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
+
+---
+
 ## v1.2.2a8 — Alpha 8 (2026)
 
 ### New: `if cond then stmt end` one-liner
@@ -5740,6 +6670,68 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a9 — Alpha 9 (2026)
+
+### New: Command-line arguments (`ARGS`)
+
+Scripts can now receive arguments from the command line:
+
+```bash
+nq script.nq hello world 42
+nq script.nq -- hello world 42   # explicit separator
+nq run script.nq hello world 42
+```
+
+Inside the script:
+```nolqu
+print len(ARGS)       # 3
+print ARGS[0]         # "hello"
+print ARGS[1]         # "world"
+
+for arg in ARGS
+  print arg
+end
+
+if len(ARGS) == 0
+  print "Usage: nq script.nq <name>"
+  exit(1)
+end
+```
+
+`ARGS` is always defined (empty array if no args given). Available in all
+execution modes (`nq`, `nq run`, `nq script.nq`).
+
+### New: System natives
+
+| Function | Description |
+|---|---|
+| `exit(code)` | Exit with given status code (default 0) |
+| `env(name)` | Get environment variable, returns `null` if not set |
+| `sleep(ms)` | Sleep for given milliseconds |
+| `input(prompt?)` | Read one line from stdin (optional prompt string) |
+
+```nolqu
+exit(0)                          # exit cleanly
+exit(1)                          # exit with error code
+
+let path = env("PATH")           # string or null
+let missing = env("XYZ")        # null
+
+sleep(500)                       # sleep 500ms
+
+let line = input("Enter name: ") # reads from stdin
+let line2 = input()              # no prompt
+```
+
+### Implementation
+
+- `nq_set_args(vm, argc, argv)` in `vm.c` — builds the ARGS array and registers
+  it as a global before the script runs
+- `main.cpp`: all `runFile()` call sites updated to call `nq_set_args` first
+- `--` separator supported: `nq script.nq -- arg1 arg2`
 
 ---
 

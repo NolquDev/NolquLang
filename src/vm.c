@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "vm.h"
 #include "memory.h"
 #include "object.h"
@@ -9,28 +10,16 @@
 #include <time.h>
 #include <stdarg.h>
 #include <string.h>
+#include <unistd.h>
 
 // Forward declaration — set in initVM, used by native error helpers
 static VM* g_vm_for_error = NULL;
+static bool throwError(VM* vm, Value error_val);  /* defined later */
 
 // ─────────────────────────────────────────────
 //  Native function implementations
 // ─────────────────────────────────────────────
 
-// input([prompt]) — read a line from stdin, return as string
-static Value nativeInput(int argc, Value* args) {
-    if (argc == 1 && IS_STRING(args[0])) {
-        printf("%s", AS_CSTRING(args[0]));
-        fflush(stdout);
-    }
-    char buf[4096];
-    if (!fgets(buf, sizeof(buf), stdin)) {
-        return OBJ_VAL(copyString("", 0));
-    }
-    int len = (int)strlen(buf);
-    if (len > 0 && buf[len - 1] == '\n') buf[--len] = '\0';
-    return OBJ_VAL(copyString(buf, len));
-}
 
 // str(value) — convert any value to string
 static Value nativeStr(int argc, Value* args) {
@@ -617,6 +606,61 @@ static void registerNative(VM* vm, const char* name, NativeFn fn, int arity) {
     tableSet(&vm->globals, key, OBJ_VAL(native));
 }
 
+
+/* ── exit / env / sleep / input natives ────────────────────────────── */
+#include <stdlib.h>
+#include <time.h>
+
+static Value nativeExit(int argc, Value* args) {
+    int code = (argc >= 1 && IS_NUMBER(args[0])) ? (int)AS_NUMBER(args[0]) : 0;
+    exit(code);
+    return NIL_VAL; /* unreachable */
+}
+
+static Value nativeEnv(int argc, Value* args) {
+    if (argc < 1 || !IS_STRING(args[0])) {
+        { if (g_vm_for_error) {
+            ObjString* _e = copyString("ValueError: env() requires a string argument.", 45);
+            throwError(g_vm_for_error, OBJ_VAL(_e));
+          } return NIL_VAL; }
+    }
+    const char* val = getenv(AS_STRING(args[0])->chars);
+    if (!val) return NIL_VAL;
+    return OBJ_VAL(copyString(val, (int)strlen(val)));
+}
+
+static Value nativeSleep(int argc, Value* args) {
+    if (argc < 1 || !IS_NUMBER(args[0])) {
+        { if (g_vm_for_error) {
+            ObjString* _e = copyString("ValueError: sleep() requires a number (milliseconds).", 52);
+            throwError(g_vm_for_error, OBJ_VAL(_e));
+          } return NIL_VAL; }
+    }
+    long ms = (long)AS_NUMBER(args[0]);
+    if (ms > 0) {
+        /* portable ms sleep: loop sleep(1) for large values, busy-wait otherwise */
+        if (ms >= 1000) { sleep((unsigned int)(ms / 1000)); ms %= 1000; }
+        if (ms > 0) {
+            volatile int dummy = 0;
+            for (long _i = 0; _i < ms * 10000L; _i++) dummy++;
+        }
+    }
+    return NIL_VAL;
+}
+
+static Value nativeInput(int argc, Value* args) {
+    /* input(prompt) — print prompt (no newline), read one line from stdin */
+    if (argc >= 1 && IS_STRING(args[0])) {
+        printf("%s", AS_STRING(args[0])->chars);
+        fflush(stdout);
+    }
+    char buf[4096];
+    if (!fgets(buf, sizeof(buf), stdin)) return NIL_VAL;
+    int n = (int)strlen(buf);
+    if (n > 0 && buf[n-1] == '\n') buf[--n] = '\0';
+    return OBJ_VAL(copyString(buf, n));
+}
+
 void initVM(VM* vm) {
     vm->stack_top   = vm->stack;
     vm->frame_count = 0;
@@ -687,9 +731,13 @@ void initVM(VM* vm) {
     registerNative(vm, "is_array",    nativeIsArray,     1);
     registerNative(vm, "ord",         nativeOrd,         1);
     registerNative(vm, "chr",         nativeChr,         1);
-    registerNative(vm, "ord",         nativeOrd,         1);
-    registerNative(vm, "chr",         nativeChr,         1);
+    /* System natives */
+    registerNative(vm, "exit",        nativeExit,       -1);
+    registerNative(vm, "env",         nativeEnv,         1);
+    registerNative(vm, "sleep",       nativeSleep,       1);
+    registerNative(vm, "input",       nativeInput,      -1);
 }
+
 
 void freeVM(VM* vm) {
     freeTable(&vm->globals);
@@ -1339,3 +1387,24 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
 #undef READ_CONST
 #undef BINARY_NUM
 }
+
+/* ── nq_set_args ─────────────────────────────────────────────────────
+ * Inject script command-line arguments as a global ARGS array.
+ * Call after initVM(), before runFile(). */
+void nq_set_args(VM* vm, int argc, char** argv) {
+    ObjArray* arr = newArray();
+    /* Use vm->stack directly to root the array without needing push() */
+    *vm->stack_top = OBJ_VAL(arr);
+    vm->stack_top++;
+    for (int i = 0; i < argc; i++) {
+        ObjString* str = copyString(argv[i], (int)strlen(argv[i]));
+        *vm->stack_top = OBJ_VAL(str);
+        vm->stack_top++;
+        arrayPush(arr, OBJ_VAL(str));
+        vm->stack_top--;
+    }
+    ObjString* key = copyString("ARGS", 4);
+    tableSet(&vm->globals, key, OBJ_VAL(arr));
+    vm->stack_top--;  /* pop arr */
+}
+
