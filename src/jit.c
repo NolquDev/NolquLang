@@ -26,9 +26,9 @@
  *  above 5 we fall back to interpreted for safety.)
  */
 
+#include <unistd.h>
 #include "jit.h"
 #include <string.h>
-#include <unistd.h>
 
 /* ─────────────────────────────────────────────────────────────────────
  * x86-64 JIT path
@@ -36,7 +36,6 @@
 #if defined(__x86_64__) && (defined(__linux__) || defined(__APPLE__))
 
 #include <sys/mman.h>
-#include <unistd.h>
 #include <stdint.h>
 
 /* Emit helpers — write bytes into a buffer and advance pointer */

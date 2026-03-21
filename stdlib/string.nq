@@ -344,3 +344,94 @@ end
 function repeat_str(s, n)
   return repeat(s, n)
 end
+
+# trim(s) — remove leading and trailing whitespace
+function trim(s)
+  let start = 0
+  let stop = len(s)
+  loop start < stop and (s[start] == " " or s[start] == "\t" or s[start] == "\n" or s[start] == "\r")
+    start += 1
+  end
+  loop stop > start and (s[stop-1] == " " or s[stop-1] == "\t" or s[stop-1] == "\n" or s[stop-1] == "\r")
+    stop -= 1
+  end
+  return s[start:stop]
+end
+
+# ltrim(s) — remove leading whitespace
+function ltrim(s)
+  let i = 0
+  loop i < len(s) and (s[i] == " " or s[i] == "\t" or s[i] == "\n" or s[i] == "\r")
+    i += 1
+  end
+  return s[i:len(s)]
+end
+
+# rtrim(s) — remove trailing whitespace
+function rtrim(s)
+  let i = len(s)
+  loop i > 0 and (s[i-1] == " " or s[i-1] == "\t" or s[i-1] == "\n" or s[i-1] == "\r")
+    i -= 1
+  end
+  return s[0:i]
+end
+
+# split(s, delim) — split string by delimiter, returns array of substrings
+function split(s, delim)
+  let result = []
+  let dlen = len(delim)
+  let slen = len(s)
+  let i = 0
+  let seg_start = 0
+  loop i <= slen - dlen
+    if s[i:i+dlen] == delim
+      push(result, s[seg_start:i])
+      i += dlen
+      seg_start = i
+    else
+      i += 1
+    end
+  end
+  push(result, s[seg_start:slen])
+  return result
+end
+
+# replace_all(s, old, new_s) — replace ALL occurrences of old with new_s
+# Note: builtin replace() replaces only the first occurrence
+function replace_all(s, old, new_s)
+  let result = ""
+  let olen = len(old)
+  let slen = len(s)
+  let i = 0
+  loop i <= slen - olen
+    if s[i:i+olen] == old
+      result ..= new_s
+      i += olen
+    else
+      result ..= s[i:i+1]
+      i += 1
+    end
+  end
+  if i < slen
+    result ..= s[i:slen]
+  end
+  return result
+end
+
+# pad_left(s, width, char) — pad string on the left to given width
+function pad_left(s, width, char)
+  let r = s
+  loop len(r) < width
+    r = char .. r
+  end
+  return r
+end
+
+# pad_right(s, width, char) — pad string on the right to given width
+function pad_right(s, width, char)
+  let r = s
+  loop len(r) < width
+    r = r .. char
+  end
+  return r
+end

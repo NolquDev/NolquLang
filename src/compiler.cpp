@@ -694,8 +694,7 @@ static void compileNode(ASTNode* node) {
             emit2(OP_GET_LOCAL, (uint8_t)idx_slot, line);
             emitConst(NUMBER_VAL(1), line);
             emit(OP_ADD, line);
-            emit2(OP_SET_LOCAL, (uint8_t)idx_slot, line);
-            emit(OP_POP, line);
+            emit2(OP_STORE_LOCAL, (uint8_t)idx_slot, line);
 
             endScope(line);   /* pops item local */
             emitLoop(loop_stack.back().loop_start, line);
@@ -966,8 +965,7 @@ static void compileNode(ASTNode* node) {
                     emit2(OP_GET_LOCAL, (uint8_t)i_slot, line);
                     emit2(OP_GET_LOCAL, (uint8_t)step_slot, line);
                     emit(OP_ADD, line);
-                    emit2(OP_SET_LOCAL, (uint8_t)i_slot, line);
-                    emit(OP_POP, line);
+                    emit2(OP_STORE_LOCAL, (uint8_t)i_slot, line);
                     emitLoop(loop_stack.back().loop_start, line);
 
                     patchJumpAt(ej);
@@ -1037,8 +1035,7 @@ static void compileNode(ASTNode* node) {
                     int skip = emitJump(OP_JUMP_IF_FALSE, line);
                     emit(OP_POP, line);                    /* pop eq=true */
                     compileExpr(node->data.function.defaults[i]);
-                    emit2(OP_SET_LOCAL, (uint8_t)slot, line);
-                    emit(OP_POP, line);                    /* pop SET_LOCAL copy */
+                    emit2(OP_STORE_LOCAL, (uint8_t)slot, line);                    /* pop SET_LOCAL copy */
                     int end_jump = emitJump(OP_JUMP, line);/* skip false-branch pop */
                     patchJumpAt(skip);
                     emit(OP_POP, line);                    /* pop eq=false */

@@ -73,6 +73,7 @@ typedef enum {
 
     /* ── Superinstructions (fused opcodes for common patterns) ────── */
     OP_ADD_LOCAL_CONST, /* [slot][const_idx]  locals[slot] += const   */
+    OP_STORE_LOCAL,     /* [slot]  locals[slot] = pop()  (SET+POP fused) */
                         /* replaces: GET_LOCAL, CONST, ADD, SET_LOCAL, POP */
     OP_LOOP_IF_LT,      /* [slot_a][slot_b][hi][lo]                   */
                         /* if locals[a] < locals[b]: ip -= offset      */

@@ -2,6 +2,53 @@
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -211,6 +258,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 
@@ -563,6 +657,53 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -772,6 +913,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 
@@ -1192,6 +1380,53 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -1401,6 +1636,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 
@@ -1753,6 +2035,53 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -1962,6 +2291,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 
@@ -3075,6 +3451,53 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -3284,6 +3707,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 
@@ -3636,6 +4106,53 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -3845,6 +4362,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 
@@ -4265,6 +4829,53 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -4474,6 +5085,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 
@@ -4826,6 +5484,53 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
+
+---
+
 ## v1.2.2a7 — Alpha 7 (2026)
 
 ### New: Ternary expression `cond ? then : else`
@@ -5035,6 +5740,53 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a8 — Alpha 8 (2026)
+
+### New: `if cond then stmt end` one-liner
+
+```nolqu
+if x > 0 then print "positive" end
+if x > 0 then print "positive" else print "non-positive" end
+if arr[0] == 0 then arr[0] = 1 end
+```
+
+Works anywhere a multi-line `if` works. Implemented by making `expectNewline`
+accept `end` and `else` as valid statement terminators (no newline needed before
+a block-closing keyword).
+
+### New: string `*` repeat operator
+
+```nolqu
+print "ha" * 3      # hahaha
+print "-" * 40      # ----------------------------------------
+print "ab" * 0      # (empty string)
+```
+
+### New stdlib/string: `trim`, `ltrim`, `rtrim`, `split`, `replace_all`, `pad_left`, `pad_right`
+
+```nolqu
+import "stdlib/string"
+
+trim("  hello  ")              # "hello"
+ltrim("  hello  ")             # "hello  "
+rtrim("  hello  ")             # "  hello"
+split("a,b,c", ",")            # ["a", "b", "c"]
+replace_all("a-b-c", "-", ".") # "a.b.c"  (replaces ALL — cf. builtin replace() = first only)
+pad_left("42", 6, "0")         # "000042"
+pad_right("hi", 5, ".")        # "hi..."
+```
+
+### Perf: `OP_STORE_LOCAL` superinstruction
+
+`SET_LOCAL + POP` (2 opcodes) fused into `OP_STORE_LOCAL` (1 opcode, pops TOS into slot).
+Applied to all local variable assignment paths in the compiler.
+
+### Fix: `getpagesize` implicit-decl warning eliminated
+
+`#include <unistd.h>` moved before `#include "jit.h"` in `jit.c`. Zero warnings.
 
 ---
 

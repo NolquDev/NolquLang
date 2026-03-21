@@ -63,6 +63,11 @@ static void skipNewlines(Parser* p) {
 static void expectNewline(Parser* p) {
     if (check(p, TK_EOF))     return;
     if (check(p, TK_NEWLINE)) { advance(p); return; }
+    /* Allow statement terminators that don't require a newline:
+     * `end` and `else` close a block, so no newline is needed before them.
+     * This makes one-liners like `if cond then stmt end` work. */
+    if (check(p, TK_END))  return;
+    if (check(p, TK_ELSE)) return;
     errorAtCurrent(p, "Expected a new line after statement.");
 }
 
@@ -138,16 +143,46 @@ static ASTNode* parsePrintStmt(Parser* p) {
 static ASTNode* parseIfStmt(Parser* p) {
     int line = p->previous.line;
     ASTNode* cond = parseExpr(p);
-    expectNewline(p);
-    ASTNode* then_block = parseBlock(p);
+
+    ASTNode* then_block;
     ASTNode* else_block = NULL;
-    if (check(p, TK_ELSE)) {
-        advance(p);
+
+    if (match(p, TK_THEN)) {
+        /*
+         * One-liner form:  if cond then stmt [else stmt] end
+         *
+         * After `then`, parse a single statement for the then-branch.
+         * Optionally followed by `else stmt`. Ends with `end`.
+         *
+         *   if x > 0 then print "pos" end
+         *   if x > 0 then print "pos" else print "neg" end
+         */
+        then_block = makeNode(NODE_BLOCK, line);
+        initNodeList(&then_block->data.block.stmts);
+        ASTNode* s = parseStmt(p);
+        if (s) appendNode(&then_block->data.block.stmts, s);
+
+        if (match(p, TK_ELSE)) {
+            else_block = makeNode(NODE_BLOCK, line);
+            initNodeList(&else_block->data.block.stmts);
+            ASTNode* es = parseStmt(p);
+            if (es) appendNode(&else_block->data.block.stmts, es);
+        }
+        expect(p, TK_END, "Expected 'end' to close 'if ... then' block");
         expectNewline(p);
-        else_block = parseBlock(p);
+    } else {
+        /* Multi-line block form */
+        expectNewline(p);
+        then_block = parseBlock(p);
+        if (check(p, TK_ELSE)) {
+            advance(p);
+            expectNewline(p);
+            else_block = parseBlock(p);
+        }
+        expect(p, TK_END, "Expected 'end' to close 'if' block");
+        expectNewline(p);
     }
-    expect(p, TK_END, "Expected 'end' to close 'if' block");
-    expectNewline(p);
+
     ASTNode* n = makeNode(NODE_IF, line);
     n->data.if_stmt.cond       = cond;
     n->data.if_stmt.then_block = then_block;

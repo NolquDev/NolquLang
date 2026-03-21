@@ -978,7 +978,28 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
 
             case OP_ADD: BINARY_NUM(+); break;
             case OP_SUB: BINARY_NUM(-); break;
-            case OP_MUL: BINARY_NUM(*); break;
+            case OP_MUL: {
+                /* number * number  OR  string * number (repeat) */
+                if (IS_STRING(peek(vm,1)) && IS_NUMBER(peek(vm,0))) {
+                    int n = (int)AS_NUMBER(pop(vm));
+                    ObjString* s = AS_STRING(pop(vm));
+                    if (n <= 0) {
+                        push(vm, OBJ_VAL(copyString("", 0)));
+                    } else {
+                        int slen = s->length;
+                        int total = slen * n;
+                        char* buf = (char*)malloc((size_t)(total + 1));
+                        for (int ri = 0; ri < n; ri++)
+                            memcpy(buf + ri * slen, s->chars, (size_t)slen);
+                        buf[total] = '\0';
+                        ObjString* r = takeString(buf, total);
+                        push(vm, OBJ_VAL(r));
+                    }
+                } else {
+                    BINARY_NUM(*);
+                }
+                break;
+            }
             case OP_DIV: {
                 if (!IS_NUMBER(peek(vm,0)) || !IS_NUMBER(peek(vm,1))) {
                     THROW_ERROR("TypeError: division requires numbers.");
@@ -1225,6 +1246,12 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 break;
             }
 
+            case OP_STORE_LOCAL: {
+                /* SET_LOCAL + POP fused — pops TOS into slot, no stack residue */
+                uint8_t slot = READ_BYTE();
+                frame->slots[slot] = pop(vm);
+                break;
+            }
             case OP_ADD_LOCAL_CONST: {
                 uint8_t slot = READ_BYTE();
                 Value   cv   = READ_CONST();
