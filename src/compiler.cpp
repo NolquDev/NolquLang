@@ -659,6 +659,92 @@ static void compileNode(ASTNode* node) {
                 endScope(line); break;
             }
 
+            /*
+             * ── JIT fast path ─────────────────────────────────────────
+             *
+             * If the body consists ONLY of "local += literal_number"
+             * compound assignments AND step is a positive constant,
+             * emit OP_JIT_FOR_RANGE — a single opcode that the VM
+             * executes via native x86-64 machine code.
+             *
+             * JIT-able body:  every statement is NODE_COMPOUND_ASSIGN
+             *   with TK_PLUS op, local target (not i or stop), and
+             *   a NUMBER literal RHS.
+             *
+             * Non-JIT-able:  any call, conditional, string op, etc.
+             *   → falls through to the normal bytecode fast path.
+             */
+            bool body_jit_ok = step_is_const && step_val > 0.0;
+            /* Body vars: (slot, delta) pairs — up to NQ_JIT_MAX_BODY_VARS */
+            struct BodyVar { int slot; double delta; };
+            BodyVar body_vars[8];
+            int     n_body_vars = 0;
+
+            if (body_jit_ok && node->data.for_range.body) {
+                ASTNode* body = node->data.for_range.body;
+                NodeList& stmts = body->data.block.stmts;
+                for (int bi = 0; bi < stmts.count && body_jit_ok; bi++) {
+                    ASTNode* s = stmts.items[bi];
+                    if (!s) continue;
+                    if (s->type != NODE_COMPOUND_ASSIGN) { body_jit_ok = false; break; }
+                    if (s->data.compound_assign.op != TK_PLUS) { body_jit_ok = false; break; }
+                    if (!s->data.compound_assign.value ||
+                        s->data.compound_assign.value->type != NODE_NUMBER) {
+                        body_jit_ok = false; break;
+                    }
+                    int bslot = resolveLocal(current, s->data.compound_assign.name);
+                    if (bslot < 0 || bslot == i_slot || bslot == stop_slot) {
+                        body_jit_ok = false; break;
+                    }
+                    if (n_body_vars >= 8) { body_jit_ok = false; break; }
+                    body_vars[n_body_vars].slot  = bslot;
+                    body_vars[n_body_vars].delta = s->data.compound_assign.value->data.number.value;
+                    n_body_vars++;
+                }
+            }
+
+            if (body_jit_ok) {
+                /*
+                 * Emit OP_JIT_FOR_RANGE:
+                 *
+                 *   opcode  (1 byte)
+                 *   i_slot  (1 byte)
+                 *   stop_slot (1 byte)
+                 *   step_const_idx (2 bytes)
+                 *   n_body_vars (1 byte)
+                 *   for each body var:
+                 *     slot (1 byte)
+                 *     delta_const_idx (2 bytes)
+                 *
+                 * The VM reads these and builds a JITLoopSpec.
+                 * After execution, __i, __stop, __step are still on the
+                 * stack; we just need to clean them up.
+                 */
+                int step_cidx = addConstant(currentChunk(), NUMBER_VAL(step_val));
+                emit(OP_JIT_FOR_RANGE, line);
+                emit((uint8_t)i_slot,   line);
+                emit((uint8_t)stop_slot, line);
+                emitUint16((uint16_t)step_cidx, line);
+                emit((uint8_t)n_body_vars, line);
+                for (int k = 0; k < n_body_vars; k++) {
+                    int dcidx = addConstant(currentChunk(), NUMBER_VAL(body_vars[k].delta));
+                    emit((uint8_t)body_vars[k].slot, line);
+                    emitUint16((uint16_t)dcidx, line);
+                }
+
+                /* Mark all involved locals as used so no spurious warnings */
+                current->locals[i_slot].used    = true;
+                current->locals[stop_slot].used = true;
+                current->locals[step_slot].used = true;
+                for (int k = 0; k < n_body_vars; k++)
+                    current->locals[body_vars[k].slot].used = true;
+
+                /* JIT handles everything including __i sync;
+                 * just clean up the scope's hidden locals from the stack. */
+                endScope(line);
+                break;
+            }
+
             if (step_is_const) {
                 /* ── Fast path: direction known at compile time ── */
                 LoopCtx lctx;

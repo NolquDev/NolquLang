@@ -76,6 +76,14 @@ typedef enum {
                         /* replaces: GET_LOCAL, CONST, ADD, SET_LOCAL, POP */
     OP_LOOP_IF_LT,      /* [slot_a][slot_b][hi][lo]                   */
                         /* if locals[a] < locals[b]: ip -= offset      */
+
+    /* ── JIT opcode ────────────────────────────────────────────────── */
+    OP_JIT_FOR_RANGE,   /* Template-JIT a numeric for loop.            */
+                        /* Encoding: [i_slot][stop_slot][step_cidx_hi] */
+                        /*           [step_cidx_lo][n_vars]            */
+                        /*           [slot0][delta_cidx0_hi][delta_cidx0_lo] ... */
+                        /* On x86-64: generates & runs native code.    */
+                        /* On other archs: interpreted fallback.       */
                         /* replaces: GET_LOCAL a, GET_LOCAL b, LT,     */
                         /*           JUMP_IF_FALSE, POP                */
 

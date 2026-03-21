@@ -72,7 +72,8 @@ C_SOURCES = \
     $(SRCDIR)/object.c   \
     $(SRCDIR)/table.c    \
     $(SRCDIR)/gc.c       \
-    $(SRCDIR)/vm.c
+    $(SRCDIR)/vm.c       \
+    $(SRCDIR)/jit.c
 
 # C++ tooling layer — lexer, parser, compiler, REPL, CLI, transpiler
 CXX_SOURCES = \

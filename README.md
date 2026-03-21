@@ -11,7 +11,7 @@
 > **Latest stable release: [v1.2.1](https://github.com/Nadzil123/Nolqu/releases/tag/v1.2.1).** Recommended for production use.
 
 > [!WARNING]
-> **This is an alpha release (v1.2.2a4).** Features may change. Not recommended for production.
+> **This is an alpha release (v1.2.2a5).** Features may change. Not recommended for production.
 
 **A small, fast scripting language with its own stack-based bytecode VM.**
 
@@ -40,7 +40,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - 50+ built-in functions + `range()` `first()` `last()` `find()` `count_if()` in stdlib
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
-- Current version: **v1.2.2a4** (Stable)
+- Current version: **v1.2.2a5** (Stable)
 
 ---
 
@@ -182,8 +182,8 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 | | |
 |---|---|
 | [docs/README.md](docs/README.md) | Documentation index — stable vs dev, version comparison |
-| [docs/stable/](docs/stable/) | Docs for **v1.2.2a4 stable** |
-| [docs/dev/](docs/dev/) | Docs for **v1.2.2a4** (current) |
+| [docs/stable/](docs/stable/) | Docs for **v1.2.2a5 stable** |
+| [docs/dev/](docs/dev/) | Docs for **v1.2.2a5** (current) |
 | [docs/dev/semantics.md](docs/dev/semantics.md) | Truthiness, null, const, slice, logical operators |
 | [CHANGELOG.md](CHANGELOG.md) | Full version history |
 | [ROADMAP.md](ROADMAP.md) | What's coming |

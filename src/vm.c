@@ -2,6 +2,7 @@
 #include "memory.h"
 #include "object.h"
 #include "gc.h"
+#include "jit.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1176,8 +1177,53 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
             case OP_JUMP_IF_FALSE: { uint16_t off = READ_UINT16(); if (NQ_UNLIKELY(!isTruthy(peek(vm, 0)))) frame->ip += off; break; }
             case OP_LOOP:          { uint16_t off = READ_UINT16(); frame->ip -= off; break; }
 
+            case OP_JIT_FOR_RANGE: {
+                /*
+                 * Template-JIT a numeric for loop.
+                 *
+                 * Read loop parameters from bytecode, build a JITLoopSpec,
+                 * call the JIT (generates + executes native code on x86-64,
+                 * or runs a C tight-loop on other architectures).
+                 *
+                 * After this opcode, the loop is fully complete.
+                 * Hidden locals (__i, __stop, __step) were pushed onto the
+                 * stack before this opcode; endScope already emitted their
+                 * POPs so we have nothing to clean up here.
+                 *
+                 * The Value struct layout:
+                 *   type  (4 bytes) | padding (4 bytes) | as.number (8 bytes)
+                 * So the double is at byte offset 8 within each Value.
+                 */
+                uint8_t  i_slot    = READ_BYTE();
+                uint8_t  stop_slot = READ_BYTE();
+                uint16_t sc_idx    = READ_UINT16();
+                uint8_t  n_vars    = READ_BYTE();
+
+                /* Build spec */
+                JITLoopSpec spec;
+                /* .as.number is at offset 8 in Value (type=4, padding=4) */
+                spec.i_ptr = &frame->slots[i_slot].as.number;
+                spec.stop  = AS_NUMBER(frame->function->chunk->constants.values[sc_idx]);
+                spec.step  = AS_NUMBER(frame->function->chunk->constants.values[sc_idx]);
+                /* step is the same const for now — actually step = the value at sc_idx */
+                /* (stop was evaluated at runtime and stored in the slot) */
+                spec.stop  = frame->slots[stop_slot].as.number;
+                spec.step  = AS_NUMBER(frame->function->chunk->constants.values[sc_idx]);
+                spec.n_vars = (int)n_vars;
+
+                for (int k = 0; k < (int)n_vars; k++) {
+                    uint8_t  vslot  = READ_BYTE();
+                    uint16_t dc_idx = READ_UINT16();
+                    spec.var_ptrs[k] = &frame->slots[vslot].as.number;
+                    spec.deltas[k]   = AS_NUMBER(
+                        frame->function->chunk->constants.values[dc_idx]);
+                }
+
+                nq_jit_run_loop(&spec);
+                break;
+            }
+
             case OP_ADD_LOCAL_CONST: {
-                /* locals[slot] += const_val  (no stack traffic) */
                 uint8_t slot = READ_BYTE();
                 Value   cv   = READ_CONST();
                 /* Only works for numbers — the compiler guarantees this */

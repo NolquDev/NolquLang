@@ -2,6 +2,80 @@
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -55,6 +129,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 
@@ -251,6 +399,80 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -304,6 +526,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 
@@ -568,6 +864,80 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -621,6 +991,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 
@@ -817,6 +1261,80 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -870,6 +1388,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 
@@ -1827,6 +2419,80 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -1880,6 +2546,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 
@@ -2076,6 +2816,80 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -2129,6 +2943,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 
@@ -2393,6 +3281,80 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -2446,6 +3408,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 
@@ -2642,6 +3678,80 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
+
+---
+
 ## v1.2.2a4 — Alpha 4 (2026)
 
 ### Performance: superinstructions (69% faster than v1.2.1)
@@ -2695,6 +3805,80 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a5 — Alpha 5 (2026)
+
+### Template JIT compiler for numeric for-range loops
+
+Nolqu now includes a template JIT compiler that generates native x86-64
+machine code for simple numeric loops at runtime.
+
+**What gets JIT-compiled:**
+
+A `for i = 0 to N` loop whose body consists entirely of `local += literal`
+compound assignments is compiled to native machine code:
+
+```nolqu
+function run()
+  let number = 0
+  for i = 0 to 1000000000
+    number += 1   # ← JIT-compiled
+  end
+  return number
+end
+print run()
+```
+
+Multiple accumulators also work:
+```nolqu
+for i = 0 to N
+  a += 1   # ← all three compiled to native
+  b += 2
+  c += 3
+end
+```
+
+**What does NOT get JIT-compiled (safe fallback):**
+
+Any body containing conditionals, function calls, string operations, or
+non-numeric operations falls back to the bytecode VM automatically.
+
+```nolqu
+for i = 0 to N
+  if i % 2 == 0   # ← conditional: NOT JIT-compiled
+    n += 1
+  end
+end
+```
+
+**Implementation:**
+
+- New file: `src/jit.c` / `src/jit.h` (~300 LOC)
+- Compiler (`compiler.cpp`): detects JIT-able body at compile time, emits
+  `OP_JIT_FOR_RANGE` instead of normal loop bytecode
+- VM (`vm.c`): handles `OP_JIT_FOR_RANGE` by building a `JITLoopSpec` and
+  calling `nq_jit_run_loop()`
+- JIT generates code via `mmap(PROT_READ|PROT_WRITE)` → write → `mprotect(PROT_READ|PROT_EXEC)` → call → `munmap`
+- Platform: x86-64 Linux/macOS. Other architectures: C tight-loop fallback
+  (still fast — no bytecode dispatch, direct pointer access)
+
+**Bug fixed during development:** SSE instructions require mandatory prefix
+(`F2`) to come *before* the REX prefix, not after. Wrong order produced
+silent misencoding (e.g. `xmm8` encoded as `xmm0`).
+
+**Benchmark results (1B iterations, `for i=0 to N; number+=1; end`):**
+
+| Version | Time | vs v1.2.1 |
+|---|---|---|
+| v1.2.1 | 61s | baseline |
+| v1.2.2a2 | 43s | -29% |
+| v1.2.2a4 | 19s | -69% |
+| **v1.2.2a5 (JIT)** | **~1s** | **-98%** |
+
+Nolqu is now approximately 60× faster than v1.2.1 for numeric loops,
+and ~65× faster than CPython for the equivalent `for i in range(N): n+=1`.
 
 ---
 

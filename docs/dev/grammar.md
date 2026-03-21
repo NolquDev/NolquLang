@@ -1,4 +1,4 @@
-# Nolqu Language Grammar — v1.2.2a4
+# Nolqu Language Grammar — v1.2.2a5
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**

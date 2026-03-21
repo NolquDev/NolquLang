@@ -1,4 +1,4 @@
-# Nolqu Standard Library — v1.2.2a4
+# Nolqu Standard Library — v1.2.2a5
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**
