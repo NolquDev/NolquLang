@@ -1,4 +1,4 @@
-# Nolqu Language Reference — v1.2.2a5
+# Nolqu Language Reference — v1.2.2a6
 
 > [!NOTE]
 > **Nolqu v1.2.0 — Stable**

@@ -29,6 +29,7 @@ typedef struct {
     bool        panic_mode;     /* suppress cascading errors          */
     const char* source_path;
     bool        repl_mode;      /* true when parsing REPL input; allows bare expressions */
+    bool        silent_errors;  /* suppress error output (used by interpolation inner parser) */
 } Parser;
 
 /* ── Parser API ──────────────────────────────────────────────────── */

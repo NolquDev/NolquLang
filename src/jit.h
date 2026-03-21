@@ -46,6 +46,12 @@ extern "C" {
 /* Maximum number of body variables in a JIT-able loop */
 #define NQ_JIT_MAX_BODY_VARS 8
 
+/* Operations supported in JIT loop body */
+typedef enum {
+    JIT_OP_ADD = 0,   /* var += delta */
+    JIT_OP_MUL = 1,   /* var *= delta */
+} JITOp;
+
 /*
  * JITLoopSpec — everything the JIT needs to compile a loop.
  *
@@ -58,7 +64,8 @@ typedef struct {
     double  step;           /* step (positive or negative)        */
     int     n_vars;         /* number of body accumulator vars    */
     double* var_ptrs[NQ_JIT_MAX_BODY_VARS];  /* pointers to body vars */
-    double  deltas[NQ_JIT_MAX_BODY_VARS];    /* amounts to add        */
+    double  deltas[NQ_JIT_MAX_BODY_VARS];    /* amounts to add/mul    */
+    JITOp   ops[NQ_JIT_MAX_BODY_VARS];       /* operation per var     */
 } JITLoopSpec;
 
 /*

@@ -24,12 +24,14 @@ typedef enum {
     /* Literals */
     TK_NUMBER,      /* 42 / 3.14                                     */
     TK_STRING,      /* "hello"  (escape sequences resolved at parse)  */
+    TK_FSTRING,     /* f"hello {name}"  interpolated string           */
     TK_IDENT,       /* variable / function name                       */
 
     /* Keywords */
     TK_LET,         /* let      */
     TK_PRINT,       /* print    */
-    TK_IF,          /* if       */
+    TK_IF,
+    TK_WHEN,          /* if       */
     TK_ELSE,        /* else     */
     TK_LOOP,        /* loop     */
     TK_FUNCTION,    /* function */

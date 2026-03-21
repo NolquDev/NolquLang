@@ -28,6 +28,7 @@
 
 #include "jit.h"
 #include <string.h>
+#include <unistd.h>
 
 /* ─────────────────────────────────────────────────────────────────────
  * x86-64 JIT path
@@ -126,6 +127,22 @@ static void emit_addsd(uint8_t** p, int xmm_dst, int xmm_src) {
     }
     emit_byte(p, 0x0F);
     emit_byte(p, 0x58);
+    emit_byte(p, (uint8_t)(((xmm_dst & 7) << 3) | 0xC0 | (xmm_src & 7)));
+}
+
+/* Emit: mulsd xmm_dst, xmm_src */
+static void emit_mulsd(uint8_t** p, int xmm_dst, int xmm_src) {
+    /* Encoding: F2 [REX] 0F 59 ModRM */
+    emit_byte(p, 0xF2);
+    int need_rex = (xmm_dst >= 8) || (xmm_src >= 8);
+    if (need_rex) {
+        uint8_t rex = 0x40;
+        if (xmm_dst >= 8) rex |= 0x04;
+        if (xmm_src >= 8) rex |= 0x01;
+        emit_byte(p, rex);
+    }
+    emit_byte(p, 0x0F);
+    emit_byte(p, 0x59);
     emit_byte(p, (uint8_t)(((xmm_dst & 7) << 3) | 0xC0 | (xmm_src & 7)));
 }
 
@@ -252,9 +269,12 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
     /* addsd xmm7, xmm1 — i += step */
     emit_addsd(&p, XMM_I, 1 /*xmm1=step*/);
 
-    /* addsd xmmN, xmm(k+2) — accumulators */
+    /* addsd/mulsd xmmN, xmm(k+2) — accumulators */
     for (int k = 0; k < n_vars; k++) {
-        emit_addsd(&p, accum_xmm_for_var(k), delta_xmm_for_var(k));
+        if (spec->ops[k] == JIT_OP_MUL)
+            emit_mulsd(&p, accum_xmm_for_var(k), delta_xmm_for_var(k));
+        else
+            emit_addsd(&p, accum_xmm_for_var(k), delta_xmm_for_var(k));
     }
 
     /* jmp loop_top — short backward jump */

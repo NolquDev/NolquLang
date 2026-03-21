@@ -522,7 +522,7 @@ static ASTNode* parseStmt(Parser* p) {
      */
     if (p->repl_mode) {
         TokenType cur = p->current.type;
-        bool is_expr_start = (cur == TK_NUMBER || cur == TK_STRING ||
+        bool is_expr_start = (cur == TK_NUMBER || cur == TK_STRING || cur == TK_FSTRING ||
                               cur == TK_TRUE   || cur == TK_FALSE  ||
                               cur == TK_NIL    || cur == TK_NULL   ||
                               cur == TK_LBRACKET || cur == TK_MINUS ||
@@ -558,6 +558,89 @@ static ASTNode* parseStmt(Parser* p) {
         }
         case TK_PRINT:    return parsePrintStmt(p);
         case TK_IF:       return parseIfStmt(p);
+        case TK_WHEN: {
+            /*
+             * when expr
+             *   is value1
+             *     body
+             *   is value2
+             *     body
+             *   else
+             *     body
+             * end
+             *
+             * `is` is a contextual keyword (not reserved).
+             * `else` marks the default case.
+             * Body ends when we see `is`, `else`, or `end`.
+             */
+            int line = tok.line;
+            ASTNode* subject = parseExpr(p);
+            expectNewline(p);
+
+            ASTNode** values = NULL;
+            ASTNode** bodies = NULL;
+            int count = 0, cap = 0;
+
+            while (!check(p, TK_END) && !check(p, TK_EOF)) {
+                skipNewlines(p);
+                if (check(p, TK_END)) break;
+
+                ASTNode* val = NULL;
+                /* Check for `is` contextual keyword */
+                bool is_case = (check(p, TK_IDENT) &&
+                    p->current.length == 2 &&
+                    memcmp(p->current.start, "is", 2) == 0);
+                bool is_else = check(p, TK_ELSE);
+
+                if (!is_case && !is_else) {
+                    errorAt(p, &p->current,
+                        "Expected 'is <value>', 'else', or 'end' in 'when' block.");
+                    break;
+                }
+                if (is_case) {
+                    advance(p);  /* consume 'is' */
+                    val = parseExpr(p);
+                }
+                if (is_else) advance(p); /* consume 'else' */
+                expectNewline(p);
+
+                /* Parse body until next `is`, `else`, or `end` */
+                ASTNode* body = makeNode(NODE_BLOCK, p->current.line);
+                initNodeList(&body->data.block.stmts);
+                while (!check(p, TK_END) && !check(p, TK_ELSE) && !check(p, TK_EOF)) {
+                    /* Stop at `is` contextual keyword */
+                    if (check(p, TK_IDENT) &&
+                        p->current.length == 2 &&
+                        memcmp(p->current.start, "is", 2) == 0) break;
+                    skipNewlines(p);
+                    if (check(p, TK_END) || check(p, TK_ELSE) || check(p, TK_EOF)) break;
+                    if (check(p, TK_IDENT) &&
+                        p->current.length == 2 &&
+                        memcmp(p->current.start, "is", 2) == 0) break;
+                    ASTNode* stmt = parseStmt(p);
+                    if (stmt) appendNode(&body->data.block.stmts, stmt);
+                }
+
+                if (count >= cap) {
+                    int old = cap; cap = GROW_CAPACITY(old);
+                    values = GROW_ARRAY(ASTNode*, values, old, cap);
+                    bodies = GROW_ARRAY(ASTNode*, bodies, old, cap);
+                }
+                values[count] = val;
+                bodies[count] = body;
+                count++;
+                if (!val) break; /* else is always last */
+            }
+            expect(p, TK_END, "Expected 'end' to close 'when' block");
+            expectNewline(p);
+
+            ASTNode* n = makeNode(NODE_WHEN, line);
+            n->data.when_stmt.subject = subject;
+            n->data.when_stmt.values  = values;
+            n->data.when_stmt.bodies  = bodies;
+            n->data.when_stmt.count   = count;
+            return n;
+        }
         case TK_LOOP:     return parseLoopStmt(p);
         case TK_FOR:      return parseForStmt(p);
         case TK_FUNCTION: return parseFunctionDecl(p);
@@ -1053,6 +1136,7 @@ static ASTNode* parsePrimary(Parser* p) {
         n->data.number.value = strtod(p->previous.start, NULL);
         return n;
     }
+    /* Plain string literal — NO interpolation */
     if (check(p, TK_STRING)) {
         advance(p);
         int slen = 0;
@@ -1061,6 +1145,169 @@ static ASTNode* parsePrimary(Parser* p) {
         n->data.string.value  = sval;
         n->data.string.length = slen;
         return n;
+    }
+    /* f-string: f"hello {name}" — WITH interpolation */
+    if (check(p, TK_FSTRING)) {
+        advance(p);
+        int slen = 0;
+        /* Token starts at 'f', skip it: start+1, length-1 */
+        char* sval = extractString(p->previous.start + 1, p->previous.length - 1, &slen);
+        int line = p->previous.line;
+
+        /*
+         * String interpolation: f"hello {name}, you are {age} years old"
+         *
+         * Detected at parse time: if the string contains `{...}`, we split
+         * it into segments and desugar to a concatenation chain:
+         *
+         *   "hello {name}!" → "hello " .. str(name) .. "!"
+         *
+         * Rules:
+         *   {expr}  — interpolate any expression
+         *   {{      — literal '{'
+         *   }}      — literal '}'
+         *
+         * If no interpolation markers, return a plain NODE_STRING (no overhead).
+         */
+        bool has_interp = false;
+        for (int ci = 0; ci < slen - 1; ci++) {
+            if (sval[ci] == '{' && sval[ci+1] != '{') { has_interp = true; break; }
+        }
+
+        if (!has_interp) {
+            ASTNode* n = makeNode(NODE_STRING, line);
+            n->data.string.value  = sval;
+            n->data.string.length = slen;
+            return n;
+        }
+
+        /*
+         * Parse interpolated string into a concat chain.
+         * We walk `sval` character by character, accumulating literal
+         * text segments and parsing expression segments.
+         */
+        ASTNode* result = NULL;  /* growing concat chain */
+
+        auto concat_with = [&](ASTNode* right) {
+            if (!result) { result = right; return; }
+            ASTNode* cat = makeNode(NODE_BINARY, line);
+            cat->data.binary.op    = TK_DOTDOT;
+            cat->data.binary.left  = result;
+            cat->data.binary.right = right;
+            result = cat;
+        };
+
+        int ci = 0;
+        while (ci < slen) {
+            /* Collect literal segment until next '{' or end */
+            int seg_start = ci;
+            while (ci < slen) {
+                if (ci < slen - 1 && sval[ci] == '{' && sval[ci+1] == '{') {
+                    ci += 2; /* escaped {{ → literal { */
+                } else if (ci < slen - 1 && sval[ci] == '}' && sval[ci+1] == '}') {
+                    ci += 2; /* escaped }} → literal } */
+                } else if (sval[ci] == '{') {
+                    break; /* start of interpolation */
+                } else {
+                    ci++;
+                }
+            }
+
+            /* Emit literal segment (may be empty) */
+            if (ci > seg_start) {
+                /* Build unescaped literal: {{ → {, }} → } */
+                char* lit = (char*)malloc((size_t)(ci - seg_start + 1));
+                int li = 0;
+                for (int si = seg_start; si < ci; ) {
+                    if (si < ci - 1 && sval[si] == '{' && sval[si+1] == '{') {
+                        lit[li++] = '{'; si += 2;
+                    } else if (si < ci - 1 && sval[si] == '}' && sval[si+1] == '}') {
+                        lit[li++] = '}'; si += 2;
+                    } else {
+                        lit[li++] = sval[si++];
+                    }
+                }
+                lit[li] = '\0';
+                if (li > 0) {
+                    ASTNode* seg = makeNode(NODE_STRING, line);
+                    seg->data.string.value  = lit;
+                    seg->data.string.length = li;
+                    concat_with(seg);
+                } else {
+                    free(lit);
+                }
+            }
+
+            if (ci >= slen) break;
+
+            /* We're at '{' — parse inner expression */
+            ci++; /* skip '{' */
+            /* Empty braces {} → literal "{}" */
+            if (ci < slen && sval[ci] == '}') {
+                ci++;
+                ASTNode* lit = makeNode(NODE_STRING, line);
+                lit->data.string.value  = dupStr("{}", 2);
+                lit->data.string.length = 2;
+                concat_with(lit);
+                continue;
+            }
+
+            /* Extract expression source until matching '}' */
+            int depth = 1, expr_start = ci;
+            while (ci < slen && depth > 0) {
+                if (sval[ci] == '{') depth++;
+                else if (sval[ci] == '}') depth--;
+                if (depth > 0) ci++;
+                else break;
+            }
+            if (depth != 0 || ci >= slen) {
+                errorAt(p, &p->previous,
+                    "Unterminated '{' in string interpolation.");
+                free(sval);
+                return result ? result : makeNode(NODE_NIL, line);
+            }
+            int expr_len = ci - expr_start;
+            ci++; /* skip '}' */
+
+            /* Parse the expression from the substring */
+            char* expr_src = (char*)malloc((size_t)(expr_len + 1));
+            memcpy(expr_src, sval + expr_start, (size_t)expr_len);
+            expr_src[expr_len] = '\0';
+
+            Parser inner;
+            initParser(&inner, expr_src, p->source_path);
+            inner.repl_mode     = false;
+            inner.silent_errors = true;
+            ASTNode* inner_expr = parseExpr(&inner);
+            free(expr_src);
+
+            if (inner.had_error || !inner_expr) {
+                freeNode(inner_expr);
+                /* Non-valid expression: emit as literal "{...}" */
+                char* lit = (char*)malloc((size_t)(expr_len + 3));
+                lit[0] = '{';
+                memcpy(lit + 1, sval + expr_start, (size_t)expr_len);
+                lit[expr_len + 1] = '}';
+                lit[expr_len + 2] = '\0';
+                ASTNode* lnode = makeNode(NODE_STRING, line);
+                lnode->data.string.value = lit;
+                lnode->data.string.length = expr_len + 2;
+                concat_with(lnode);
+                continue;
+            }
+
+            /* Wrap expr in str() call so any type becomes a string */
+            ASTNode* str_fn = makeNode(NODE_IDENT, line);
+            str_fn->data.ident.name = dupStr("str", 3);
+            ASTNode* call = makeNode(NODE_CALL, line);
+            call->data.call.callee = str_fn;
+            initNodeList(&call->data.call.args);
+            appendNode(&call->data.call.args, inner_expr);
+            concat_with(call);
+        }
+
+        free(sval);
+        return result ? result : ([]{ ASTNode* n = makeNode(NODE_STRING, 0); n->data.string.value = dupStr("",0); n->data.string.length = 0; return n; })();
     }
     if (check(p, TK_TRUE))  { advance(p); ASTNode* n = makeNode(NODE_BOOL, p->previous.line); n->data.boolean.value = true;  return n; }
     if (check(p, TK_FALSE)) { advance(p); ASTNode* n = makeNode(NODE_BOOL, p->previous.line); n->data.boolean.value = false; return n; }
@@ -1099,8 +1346,9 @@ void initParser(Parser* p, const char* source, const char* path) {
     initLexer(&p->lexer, source);
     p->had_error   = false;
     p->panic_mode  = false;
-    p->repl_mode   = false;
-    p->source_path = path;
+    p->repl_mode     = false;
+    p->silent_errors = false;
+    p->source_path   = path;
     advance(p);
 }
 

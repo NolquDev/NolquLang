@@ -6,6 +6,7 @@ static Keyword keywords[] = {
     {"let",      3, TK_LET},
     {"print",    5, TK_PRINT},
     {"if",       2, TK_IF},
+    {"when",     4, TK_WHEN},
     {"else",     4, TK_ELSE},
     {"loop",     4, TK_LOOP},
     {"function", 8, TK_FUNCTION},
@@ -127,6 +128,12 @@ Token nextToken(Lexer* lex) {
 
     char c = advance(lex);
 
+    if (c == 'f' && !isAtEnd(lex) && peek(lex) == '"') {
+        advance(lex);  /* consume '"' */
+        Token t = scanString(lex);
+        t.type = TK_FSTRING;
+        return t;
+    }
     if (isalpha(c) || c == '_') return scanIdent(lex);
     if (isdigit(c)) return scanNumber(lex);
 
@@ -170,9 +177,11 @@ const char* tokenTypeName(TokenType t) {
     switch (t) {
         case TK_NUMBER:   return "NUMBER";
         case TK_STRING:   return "STRING";
+        case TK_FSTRING:  return "FSTRING";
         case TK_IDENT:    return "IDENTIFIER";
         case TK_LET:      return "let";
         case TK_PRINT:    return "print";
+        case TK_WHEN:     return "when";
         case TK_IF:       return "if";
         case TK_ELSE:     return "else";
         case TK_LOOP:     return "loop";

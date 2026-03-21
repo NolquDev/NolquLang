@@ -413,6 +413,70 @@ static void compileNode(ASTNode* node) {
             compileExpr(node->data.print.expr);
             emit(OP_PRINT, line);
             break;
+        case NODE_WHEN: {
+            /*
+             * Compile:  when subject | v1: b1 | v2: b2 | else: bN | end
+             *
+             * The subject is stored in a hidden local so it's evaluated once.
+             * Each case: GET_LOCAL subject, CONST value, EQ, JUMP_IF_FALSE next
+             * The else branch (NULL value) always matches.
+             *
+             * Emits:
+             *   LET __when = subject
+             *   GET __when; CONST v1; EQ; JUMP_IF_FALSE → case2
+             *   POP; [body1]; JUMP → end
+             *   case2: POP; GET __when; CONST v2; EQ; JUMP_IF_FALSE → case3
+             *   POP; [body2]; JUMP → end
+             *   ...
+             *   else: POP; [bodyN]
+             *   end:
+             */
+            beginScope();
+            compileExpr(node->data.when_stmt.subject);
+            int subj_slot = current->local_count;
+            addLocal("__when__", line);
+            current->locals[subj_slot].initialized = true;
+            current->locals[subj_slot].used        = true;
+
+            std::vector<int> end_jumps;
+            int next_jump = -1;
+
+            for (int ci = 0; ci < node->data.when_stmt.count; ci++) {
+                if (next_jump >= 0) {
+                    patchJumpAt(next_jump);
+                    emit(OP_POP, line);  /* pop condition=false */
+                }
+                ASTNode* val = node->data.when_stmt.values[ci];
+                if (val) {
+                    /* case: GET __when; CONST val; EQ; JUMP_IF_FALSE */
+                    emit2(OP_GET_LOCAL, (uint8_t)subj_slot, line);
+                    compileExpr(val);
+                    emit(OP_EQ, line);
+                    next_jump = emitJump(OP_JUMP_IF_FALSE, line);
+                    emit(OP_POP, line);  /* pop condition=true */
+                } else {
+                    /* else case — always runs */
+                    next_jump = -1;
+                }
+                beginScope();
+                compileBlock(node->data.when_stmt.bodies[ci]);
+                endScope(line);
+                if (ci < node->data.when_stmt.count - 1)
+                    end_jumps.push_back(emitJump(OP_JUMP, line));
+            }
+
+            /* Patch final condition fail (if no else) */
+            if (next_jump >= 0) {
+                patchJumpAt(next_jump);
+                emit(OP_POP, line);
+            }
+
+            /* All end jumps land here */
+            for (int ej : end_jumps) patchJumpAt(ej);
+
+            endScope(line);  /* pop __when__ */
+            break;
+        }
         case NODE_IF: {
             compileExpr(node->data.if_stmt.cond);
             int then_jump = emitJump(OP_JUMP_IF_FALSE, line);
@@ -676,7 +740,7 @@ static void compileNode(ASTNode* node) {
              */
             bool body_jit_ok = step_is_const && step_val > 0.0;
             /* Body vars: (slot, delta) pairs — up to NQ_JIT_MAX_BODY_VARS */
-            struct BodyVar { int slot; double delta; };
+            struct BodyVar { int slot; double delta; int op; /* 0=add, 1=mul */ };
             BodyVar body_vars[8];
             int     n_body_vars = 0;
 
@@ -687,7 +751,8 @@ static void compileNode(ASTNode* node) {
                     ASTNode* s = stmts.items[bi];
                     if (!s) continue;
                     if (s->type != NODE_COMPOUND_ASSIGN) { body_jit_ok = false; break; }
-                    if (s->data.compound_assign.op != TK_PLUS) { body_jit_ok = false; break; }
+                    TokenType bop = s->data.compound_assign.op;
+                    if (bop != TK_PLUS && bop != TK_MINUS && bop != TK_STAR) { body_jit_ok = false; break; }
                     if (!s->data.compound_assign.value ||
                         s->data.compound_assign.value->type != NODE_NUMBER) {
                         body_jit_ok = false; break;
@@ -699,6 +764,10 @@ static void compileNode(ASTNode* node) {
                     if (n_body_vars >= 8) { body_jit_ok = false; break; }
                     body_vars[n_body_vars].slot  = bslot;
                     body_vars[n_body_vars].delta = s->data.compound_assign.value->data.number.value;
+                    /* -= is add with negative delta */
+                    if (bop == TK_MINUS)
+                        body_vars[n_body_vars].delta = -body_vars[n_body_vars].delta;
+                    body_vars[n_body_vars].op = (bop == TK_STAR) ? 1 : 0;
                     n_body_vars++;
                 }
             }
@@ -730,6 +799,7 @@ static void compileNode(ASTNode* node) {
                     int dcidx = addConstant(currentChunk(), NUMBER_VAL(body_vars[k].delta));
                     emit((uint8_t)body_vars[k].slot, line);
                     emitUint16((uint16_t)dcidx, line);
+                    emit((uint8_t)body_vars[k].op, line);  /* JIT op: 0=add, 1=mul */
                 }
 
                 /* Mark all involved locals as used so no spurious warnings */

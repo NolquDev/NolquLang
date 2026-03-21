@@ -1214,9 +1214,11 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                 for (int k = 0; k < (int)n_vars; k++) {
                     uint8_t  vslot  = READ_BYTE();
                     uint16_t dc_idx = READ_UINT16();
+                    uint8_t  vop    = READ_BYTE();
                     spec.var_ptrs[k] = &frame->slots[vslot].as.number;
                     spec.deltas[k]   = AS_NUMBER(
                         frame->function->chunk->constants.values[dc_idx]);
+                    spec.ops[k]      = (JITOp)vop;
                 }
 
                 nq_jit_run_loop(&spec);

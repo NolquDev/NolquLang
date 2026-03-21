@@ -27,7 +27,8 @@ typedef enum {
     NODE_LET,           /* let name = expr                            */
     NODE_ASSIGN,        /* name = expr  (reassignment)                */
     NODE_PRINT,         /* print expr                                 */
-    NODE_IF,            /* if cond then [else alt] end                */
+    NODE_IF,
+    NODE_WHEN,         /* when x | val1: body | val2: body | else: body end */
     NODE_LOOP,          /* loop cond body end                         */
     NODE_FUNCTION,      /* function name(params) body end             */
     NODE_RETURN,        /* return [expr]                              */
@@ -134,6 +135,14 @@ struct ASTNode {
             ASTNode* then_block;
             ASTNode* else_block;    /* NULL if no else branch         */
         } if_stmt;
+
+        /* NODE_WHEN */
+        struct {
+            ASTNode*  subject;
+            ASTNode** values;   /* NULL entry = else case */
+            ASTNode** bodies;
+            int       count;
+        } when_stmt;
 
         /* NODE_LOOP */
         struct { ASTNode* cond; ASTNode* body; } loop;

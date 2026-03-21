@@ -2,6 +2,56 @@
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -129,6 +179,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
@@ -399,6 +499,56 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -526,6 +676,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
@@ -864,6 +1064,56 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -991,6 +1241,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
@@ -1261,6 +1561,56 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -1388,6 +1738,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
@@ -2419,6 +2819,56 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -2546,6 +2996,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
@@ -2816,6 +3316,56 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -2943,6 +3493,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
@@ -3281,6 +3881,56 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -3408,6 +4058,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
@@ -3678,6 +4378,56 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
+
+---
+
 ## v1.2.2a5 — Alpha 5 (2026)
 
 ### Template JIT compiler for numeric for-range loops
@@ -3805,6 +4555,56 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a6 — Alpha 6 (2026)
+
+### New: f-string interpolation  `f"hello {name}!"`
+
+```nolqu
+let name = "Nolqu"
+let ver = "1.2.2"
+print f"Hello from {name} v{ver}!"      # Hello from Nolqu v1.2.2!
+print f"{x} + {y} = {x + y}"           # 5 + 10 = 15
+print f"PI is approximately {PI}"
+print f"{{double braces = literal}}"    # {double braces = literal}
+```
+
+Opt-in via `f"..."` prefix — regular `"..."` strings are untouched.
+This preserves full backward compatibility with stdlib/fmt and all existing code.
+
+Implementation: `TK_FSTRING` token in the lexer (detected when `f` is followed
+immediately by `"`). Parser splits the string at `{...}` markers, builds a concat
+chain: `"literal" .. str(expr) .. "literal" ..`. Silent fallback for invalid
+inner expressions (they become literal `{...}` text).
+
+### New: `when` / match statement
+
+```nolqu
+when status
+  is 200
+    print "OK"
+  is 404
+    print "Not Found"
+  else
+    print f"Error: {status}"
+end
+```
+
+Desugars to chained `if/else if` comparisons. Subject expression evaluated once.
+`is` is a contextual keyword — freely usable as a variable name.
+
+### JIT: `*=` now JIT-compiled
+
+```nolqu
+for i = 0 to 100000000
+  n *= 1.00000001   # ← now JIT-compiled (was 2379ms, now 158ms = 15× faster)
+end
+```
+
+`mulsd` instruction added to the JIT emitter. The JITLoopSpec now carries a
+`JITOp` per body variable (`JIT_OP_ADD` / `JIT_OP_MUL`).
 
 ---
 
