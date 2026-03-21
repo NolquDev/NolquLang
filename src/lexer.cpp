@@ -6,6 +6,7 @@ static Keyword keywords[] = {
     {"let",      3, TK_LET},
     {"print",    5, TK_PRINT},
     {"if",       2, TK_IF},
+    {"then",     4, TK_THEN},
     {"when",     4, TK_WHEN},
     {"else",     4, TK_ELSE},
     {"loop",     4, TK_LOOP},
@@ -150,6 +151,7 @@ Token nextToken(Lexer* lex) {
         case '[':  return makeToken(lex, TK_LBRACKET);
         case ']':  return makeToken(lex, TK_RBRACKET);
         case ':':  return makeToken(lex, TK_COLON);
+        case '?':  return makeToken(lex, TK_QUESTION);
         case '=':  return makeToken(lex, matchChar(lex, '=') ? TK_EQEQ  : TK_EQ);
         case '<':  return makeToken(lex, matchChar(lex, '=') ? TK_LTEQ  : TK_LT);
         case '>':  return makeToken(lex, matchChar(lex, '=') ? TK_GTEQ  : TK_GT);
@@ -178,11 +180,13 @@ const char* tokenTypeName(TokenType t) {
         case TK_NUMBER:   return "NUMBER";
         case TK_STRING:   return "STRING";
         case TK_FSTRING:  return "FSTRING";
+        case TK_QUESTION: return "?";
         case TK_IDENT:    return "IDENTIFIER";
         case TK_LET:      return "let";
         case TK_PRINT:    return "print";
         case TK_WHEN:     return "when";
         case TK_IF:       return "if";
+        case TK_THEN:     return "then";
         case TK_ELSE:     return "else";
         case TK_LOOP:     return "loop";
         case TK_FUNCTION: return "function";

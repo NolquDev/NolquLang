@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <vector>
 #include <unordered_set>
+#include <functional>
 #include <string>
 
 static CompilerCtx* current           = NULL;
@@ -228,6 +229,54 @@ static void compileExpr(ASTNode* node) {
             break;
         case NODE_BINARY: {
             TokenType op = node->data.binary.op;
+
+            /*
+             * Compile-time constant folding for numeric arithmetic.
+             *
+             * If both operands are literal numbers (NUMBER nodes), compute the
+             * result at compile time and emit a single CONST instruction.
+             *
+             * Covers: +  -  *  /  %  <  >  <=  >=  ==  !=
+             * Does NOT fold: and/or (short-circuit), string concat, division by zero.
+             */
+            bool left_const  = node->data.binary.left  && node->data.binary.left->type  == NODE_NUMBER;
+            bool right_const = node->data.binary.right && node->data.binary.right->type == NODE_NUMBER;
+            if (left_const && right_const &&
+                op != TK_AND && op != TK_OR && op != TK_DOTDOT) {
+                double a = node->data.binary.left->data.number.value;
+                double b = node->data.binary.right->data.number.value;
+                bool   folded = true;
+                double r = 0;
+                bool   r_bool = false;
+                bool   is_bool = false;
+                switch (op) {
+                    case TK_PLUS:    r = a + b; break;
+                    case TK_MINUS:   r = a - b; break;
+                    case TK_STAR:    r = a * b; break;
+                    case TK_SLASH:
+                        if (b == 0.0) { folded = false; break; }
+                        r = a / b; break;
+                    case TK_PERCENT:
+                        if (b == 0.0) { folded = false; break; }
+                        r = (double)((long long)a % (long long)b); break;
+                    case TK_LT:   r_bool = a < b;  is_bool = true; break;
+                    case TK_GT:   r_bool = a > b;  is_bool = true; break;
+                    case TK_LTEQ: r_bool = a <= b; is_bool = true; break;
+                    case TK_GTEQ: r_bool = a >= b; is_bool = true; break;
+                    case TK_EQEQ: r_bool = a == b; is_bool = true; break;
+                    case TK_BANGEQ: r_bool = a != b; is_bool = true; break;
+                    default: folded = false; break;
+                }
+                if (folded) {
+                    if (is_bool) {
+                        emit(r_bool ? OP_TRUE : OP_FALSE, line);
+                    } else {
+                        emitConst(NUMBER_VAL(r), line);
+                    }
+                    break;
+                }
+            }
+
             if (op == TK_AND) {
                 compileExpr(node->data.binary.left);
                 int jump = emitJump(OP_JUMP_IF_FALSE, line);
@@ -287,6 +336,19 @@ static void compileExpr(ASTNode* node) {
             compileExpr(node->data.get_index.index);
             emit(OP_GET_INDEX, line);
             break;
+        case NODE_TERNARY: {
+            /* cond ? then_expr : else_expr — leaves value on stack */
+            compileExpr(node->data.ternary.cond);
+            int else_j = emitJump(OP_JUMP_IF_FALSE, line);
+            emit(OP_POP, line);  /* pop cond=true  */
+            compileExpr(node->data.ternary.then_expr);
+            int end_j = emitJump(OP_JUMP, line);
+            patchJumpAt(else_j);
+            emit(OP_POP, line);  /* pop cond=false */
+            compileExpr(node->data.ternary.else_expr);
+            patchJumpAt(end_j);
+            break;
+        }
         case NODE_SLICE: {
             /*
              * arr[start:end]
@@ -414,23 +476,6 @@ static void compileNode(ASTNode* node) {
             emit(OP_PRINT, line);
             break;
         case NODE_WHEN: {
-            /*
-             * Compile:  when subject | v1: b1 | v2: b2 | else: bN | end
-             *
-             * The subject is stored in a hidden local so it's evaluated once.
-             * Each case: GET_LOCAL subject, CONST value, EQ, JUMP_IF_FALSE next
-             * The else branch (NULL value) always matches.
-             *
-             * Emits:
-             *   LET __when = subject
-             *   GET __when; CONST v1; EQ; JUMP_IF_FALSE → case2
-             *   POP; [body1]; JUMP → end
-             *   case2: POP; GET __when; CONST v2; EQ; JUMP_IF_FALSE → case3
-             *   POP; [body2]; JUMP → end
-             *   ...
-             *   else: POP; [bodyN]
-             *   end:
-             */
             beginScope();
             compileExpr(node->data.when_stmt.subject);
             int subj_slot = current->local_count;
@@ -444,18 +489,41 @@ static void compileNode(ASTNode* node) {
             for (int ci = 0; ci < node->data.when_stmt.count; ci++) {
                 if (next_jump >= 0) {
                     patchJumpAt(next_jump);
-                    emit(OP_POP, line);  /* pop condition=false */
+                    emit(OP_POP, line);
                 }
                 ASTNode* val = node->data.when_stmt.values[ci];
                 if (val) {
-                    /* case: GET __when; CONST val; EQ; JUMP_IF_FALSE */
-                    emit2(OP_GET_LOCAL, (uint8_t)subj_slot, line);
-                    compileExpr(val);
-                    emit(OP_EQ, line);
+                    /* val may be an OR chain (multi-value: is 1, 2, 3)
+                     * OR nodes compile naturally via compileExpr.
+                     * But we need to compare against __when__, so we can't
+                     * use the raw OR node — we need to inject subj into EQ.
+                     *
+                     * Instead: for a plain OR chain built from values,
+                     * we recognize it and emit: EQ(subj,v1) OR EQ(subj,v2)...
+                     * This is done by walking the OR tree. */
+                    std::function<void(ASTNode*)> emitMatch = [&](ASTNode* v) {
+                        if (v->type == NODE_BINARY && v->data.binary.op == TK_OR) {
+                            /* Left OR right: emit left EQ, OR with right EQ */
+                            emitMatch(v->data.binary.left);
+                            /* At this point: left result on stack */
+                            /* If true, skip right; if false, eval right */
+                            int skip = emitJump(OP_JUMP_IF_FALSE, line);
+                            /* left was true — short-circuit */
+                            int done = emitJump(OP_JUMP, line);
+                            patchJumpAt(skip);
+                            emit(OP_POP, line);
+                            emitMatch(v->data.binary.right);
+                            patchJumpAt(done);
+                        } else {
+                            emit2(OP_GET_LOCAL, (uint8_t)subj_slot, line);
+                            compileExpr(v);
+                            emit(OP_EQ, line);
+                        }
+                    };
+                    emitMatch(val);
                     next_jump = emitJump(OP_JUMP_IF_FALSE, line);
-                    emit(OP_POP, line);  /* pop condition=true */
+                    emit(OP_POP, line);
                 } else {
-                    /* else case — always runs */
                     next_jump = -1;
                 }
                 beginScope();
@@ -465,19 +533,15 @@ static void compileNode(ASTNode* node) {
                     end_jumps.push_back(emitJump(OP_JUMP, line));
             }
 
-            /* Patch final condition fail (if no else) */
             if (next_jump >= 0) {
                 patchJumpAt(next_jump);
                 emit(OP_POP, line);
             }
-
-            /* All end jumps land here */
             for (int ej : end_jumps) patchJumpAt(ej);
-
-            endScope(line);  /* pop __when__ */
+            endScope(line);
             break;
         }
-        case NODE_IF: {
+                case NODE_IF: {
             compileExpr(node->data.if_stmt.cond);
             int then_jump = emitJump(OP_JUMP_IF_FALSE, line);
             emit(OP_POP, line);                          // pop cond (true path)
@@ -738,7 +802,7 @@ static void compileNode(ASTNode* node) {
              * Non-JIT-able:  any call, conditional, string op, etc.
              *   → falls through to the normal bytecode fast path.
              */
-            bool body_jit_ok = step_is_const && step_val > 0.0;
+            bool body_jit_ok = step_is_const && step_val != 0.0;
             /* Body vars: (slot, delta) pairs — up to NQ_JIT_MAX_BODY_VARS */
             struct BodyVar { int slot; double delta; int op; /* 0=add, 1=mul */ };
             BodyVar body_vars[8];

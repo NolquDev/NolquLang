@@ -2,6 +2,38 @@
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -179,6 +211,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 
@@ -499,6 +563,38 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -676,6 +772,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 
@@ -1064,6 +1192,38 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -1241,6 +1401,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 
@@ -1561,6 +1753,38 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -1738,6 +1962,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 
@@ -2819,6 +3075,38 @@ Programs written for v1.0.0 will continue to run on all future 1.x versions.
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -2996,6 +3284,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 
@@ -3316,6 +3636,38 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -3493,6 +3845,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 
@@ -3881,6 +4265,38 @@ Full error type map now consistent end-to-end:
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -4058,6 +4474,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 
@@ -4378,6 +4826,38 @@ Promoted from v1.2.1-rc1 with no code changes.
 
 ---
 
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
+
+---
+
 ## v1.2.2a6 — Alpha 6 (2026)
 
 ### New: f-string interpolation  `f"hello {name}!"`
@@ -4555,6 +5035,38 @@ print run()
 ## v1.2.2a3 — Alpha 3 (2026)
 
 Promoted from v1.2.2a2. No code changes.
+
+---
+
+## v1.2.2a7 — Alpha 7 (2026)
+
+### New: Ternary expression `cond ? then : else`
+
+```nolqu
+let label = score >= 90 ? "A" : score >= 80 ? "B" : "C"
+let kind  = n % 2 == 0 ? "even" : "odd"
+print x > 0 ? "positive" : "negative"
+```
+
+Works anywhere an expression is valid: `let`, `return`, function args, f-strings
+(via variable), `when` bodies, and nested ternary chains.
+
+**Bug fixed:** `NODE_TERNARY` was compiled inside `compileNode` (statement
+path) instead of `compileExpr` (expression path), causing a "Cannot compile
+expression" error whenever the ternary appeared inside an expression context.
+
+### Fix: Zero compiler warnings
+
+All `-Wall -Wextra` warnings eliminated:
+- `jit.c`: `getpagesize()` implicit declaration → `#include <unistd.h>`
+- `jit.c`: ISO C forbidden object-to-function-pointer cast → union trick
+- `ast.h`: ODR violations from stale object files → `make clean`
+
+### Fix: `NODE_TERNARY` deduplicated in `ast.h`
+
+The enum and union had two conflicting `NODE_TERNARY` entries with different
+field names (`then_val`/`else_val` vs `then_expr`/`else_expr`). Unified to
+`then_expr`/`else_expr` throughout parser, compiler, and `freeNode`.
 
 ---
 

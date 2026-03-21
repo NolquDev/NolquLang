@@ -89,6 +89,11 @@ void freeNode(ASTNode* node) {
             freeNode(node->data.print.expr);
             break;
 
+        case NODE_TERNARY:
+            freeNode(node->data.ternary.cond);
+            freeNode(node->data.ternary.then_expr);
+            freeNode(node->data.ternary.else_expr);
+            break;
         case NODE_IF:
             freeNode(node->data.if_stmt.cond);
             freeNode(node->data.if_stmt.then_block);

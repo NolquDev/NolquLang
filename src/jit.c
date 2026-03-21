@@ -205,8 +205,8 @@ static int accum_xmm_for_var(int k) {
 }
 
 bool nq_jit_run_loop(JITLoopSpec* spec) {
-    /* Only support positive step (i < stop direction) for now */
-    if (spec->step <= 0.0) return false;
+    if (spec->step == 0.0) return false;
+    /* Negative step supported: jbe instead of jae */
 
     int n_vars = spec->n_vars;
     if (n_vars < 0 || n_vars > 5) return false;
@@ -262,9 +262,10 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
     /* ucomisd xmm7, xmm0 — compare counter vs stop */
     emit_ucomisd(&p, XMM_I, 0 /*xmm0=stop*/);
 
-    /* jae done — placeholder, patch after we know the offset */
-    uint8_t* jae_ip = p;  /* address of the jae instruction */
-    emit2(&p, 0x73, 0x00);  /* jae rel8 = 0 (placeholder) */
+    /* jae (positive step: exit if i >= stop) or jbe (negative: exit if i <= stop) */
+    uint8_t branch_op = (spec->step > 0) ? 0x73 : 0x76;
+    uint8_t* jae_ip = p;
+    emit2(&p, branch_op, 0x00);  /* rel8 = 0 (placeholder) */
 
     /* addsd xmm7, xmm1 — i += step */
     emit_addsd(&p, XMM_I, 1 /*xmm1=step*/);
@@ -335,22 +336,22 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
 
     switch (n_vars) {
         case 0:
-            ((F0)(void*)buf)(spec->i_ptr, spec->stop, spec->step);
+            { union { void* v; F0 f; } u; u.v = buf; u.f(spec->i_ptr, spec->stop, spec->step); }
             break;
         case 1:
-            ((F1)(void*)buf)(spec->i_ptr, spec->stop, spec->step,
-                             vp[0], spec->deltas[0]);
+            { union { void* v; F1 f; } u; u.v = buf;
+              u.f(spec->i_ptr, spec->stop, spec->step, vp[0], spec->deltas[0]); }
             break;
         case 2:
-            ((F2)(void*)buf)(spec->i_ptr, spec->stop, spec->step,
-                             vp[0], spec->deltas[0],
-                             vp[1], spec->deltas[1]);
+            { union { void* v; F2 f; } u; u.v = buf;
+              u.f(spec->i_ptr, spec->stop, spec->step,
+                  vp[0], spec->deltas[0], vp[1], spec->deltas[1]); }
             break;
         case 3:
-            ((F3)(void*)buf)(spec->i_ptr, spec->stop, spec->step,
-                             vp[0], spec->deltas[0],
-                             vp[1], spec->deltas[1],
-                             vp[2], spec->deltas[2]);
+            { union { void* v; F3 f; } u; u.v = buf;
+              u.f(spec->i_ptr, spec->stop, spec->step,
+                  vp[0], spec->deltas[0], vp[1], spec->deltas[1],
+                  vp[2], spec->deltas[2]); }
             break;
         default:
             munmap(buf, page); return false;

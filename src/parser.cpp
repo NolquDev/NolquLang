@@ -581,11 +581,12 @@ static ASTNode* parseStmt(Parser* p) {
             ASTNode** bodies = NULL;
             int count = 0, cap = 0;
 
+            ASTNode* val = NULL;
             while (!check(p, TK_END) && !check(p, TK_EOF)) {
+                val = NULL;
                 skipNewlines(p);
                 if (check(p, TK_END)) break;
 
-                ASTNode* val = NULL;
                 /* Check for `is` contextual keyword */
                 bool is_case = (check(p, TK_IDENT) &&
                     p->current.length == 2 &&
@@ -600,6 +601,17 @@ static ASTNode* parseStmt(Parser* p) {
                 if (is_case) {
                     advance(p);  /* consume 'is' */
                     val = parseExpr(p);
+                    /* Multi-value: is 1, 2, 3 → OR chain */
+                    while (match(p, TK_COMMA)) {
+                        if (check(p, TK_NEWLINE) || check(p, TK_EOF)) break;
+                        ASTNode* extra = parseExpr(p);
+                        /* Build: val OR extra → NODE_BINARY TK_OR */
+                        ASTNode* ornode = makeNode(NODE_BINARY, p->previous.line);
+                        ornode->data.binary.op    = TK_OR;
+                        ornode->data.binary.left  = val;
+                        ornode->data.binary.right = extra;
+                        val = ornode;
+                    }
                 }
                 if (is_else) advance(p); /* consume 'else' */
                 expectNewline(p);
@@ -804,7 +816,27 @@ static ASTNode* parseBlock(Parser* p) {
     return block;
 }
 
-static ASTNode* parseExpr(Parser* p)  { return parseOr(p); }
+static ASTNode* parseExpr(Parser* p) {
+    ASTNode* expr = parseOr(p);
+    /* Ternary: cond ? then_val : else_val */
+    if (check(p, TK_QUESTION)) {
+        advance(p);
+        int line = p->previous.line;
+        ASTNode* then_expr = parseExpr(p);
+        if (!match(p, TK_COLON)) {
+            errorAt(p, &p->current, "Expected ':' in ternary expression 'cond ? a : b'.");
+            freeNode(then_expr);
+            return expr;
+        }
+        ASTNode* else_expr = parseExpr(p);
+        ASTNode* n = makeNode(NODE_TERNARY, line);
+        n->data.ternary.cond      = expr;
+        n->data.ternary.then_expr = then_expr;
+        n->data.ternary.else_expr = else_expr;
+        return n;
+    }
+    return expr;
+}
 
 static ASTNode* parseOr(Parser* p) {
     ASTNode* left = parseAnd(p);

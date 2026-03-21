@@ -29,6 +29,7 @@ typedef enum {
     NODE_PRINT,         /* print expr                                 */
     NODE_IF,
     NODE_WHEN,         /* when x | val1: body | val2: body | else: body end */
+    NODE_TERNARY,      /* cond ? then_expr : else_expr  (value-producing)   */
     NODE_LOOP,          /* loop cond body end                         */
     NODE_FUNCTION,      /* function name(params) body end             */
     NODE_RETURN,        /* return [expr]                              */
@@ -136,10 +137,13 @@ struct ASTNode {
             ASTNode* else_block;    /* NULL if no else branch         */
         } if_stmt;
 
+        /* NODE_TERNARY */
+        struct { ASTNode* cond; ASTNode* then_expr; ASTNode* else_expr; } ternary;
+
         /* NODE_WHEN */
         struct {
             ASTNode*  subject;
-            ASTNode** values;   /* NULL entry = else case */
+            ASTNode** values;   /* NULL = else case; non-NULL may be OR chain */
             ASTNode** bodies;
             int       count;
         } when_stmt;
