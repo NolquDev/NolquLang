@@ -89,14 +89,10 @@ typedef struct {
     uint64_t cache_misses;
     uint64_t compiled;
     uint64_t fallbacks;
-    uint64_t cache_evictions;
-    uint64_t unsupported_specs;
-    uint64_t cache_entries;
 } NQJitStats;
 
 void nq_jit_get_stats(NQJitStats* out_stats);
 void nq_jit_reset_stats(void);
-void nq_jit_flush_cache(void);
 bool nq_jit_set_enabled(bool enabled);
 bool nq_jit_is_enabled(void);
 

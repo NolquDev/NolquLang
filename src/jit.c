@@ -50,14 +50,10 @@ typedef struct {
     bool    used;
     uint32_t key;
     JitFn5  fn;
-    uint64_t age;
 } JitCacheEntry;
 
 #define NQ_JIT_CACHE_SIZE 64
 static JitCacheEntry g_jit_cache[NQ_JIT_CACHE_SIZE];
-static NQJitStats g_jit_stats;
-static bool g_jit_enabled = true;
-static uint64_t g_jit_cache_clock = 0;
 
 static uint32_t jitKeyFromSpec(const JITLoopSpec* spec) {
     uint32_t key = (spec->step > 0.0) ? 1u : 0u;
@@ -71,7 +67,6 @@ static uint32_t jitKeyFromSpec(const JITLoopSpec* spec) {
 static JitFn5 jitCacheFind(uint32_t key) {
     for (int i = 0; i < NQ_JIT_CACHE_SIZE; i++) {
         if (g_jit_cache[i].used && g_jit_cache[i].key == key) {
-            g_jit_cache[i].age = ++g_jit_cache_clock;
             return g_jit_cache[i].fn;
         }
     }
@@ -79,54 +74,14 @@ static JitFn5 jitCacheFind(uint32_t key) {
 }
 
 static void jitCacheStore(uint32_t key, JitFn5 fn) {
-    int lru_idx = 0;
     for (int i = 0; i < NQ_JIT_CACHE_SIZE; i++) {
         if (!g_jit_cache[i].used) {
             g_jit_cache[i].used = true;
             g_jit_cache[i].key  = key;
             g_jit_cache[i].fn   = fn;
-            g_jit_cache[i].age  = ++g_jit_cache_clock;
             return;
         }
-        if (g_jit_cache[i].age < g_jit_cache[lru_idx].age) lru_idx = i;
     }
-
-    g_jit_cache[lru_idx].key = key;
-    g_jit_cache[lru_idx].fn  = fn;
-    g_jit_cache[lru_idx].age = ++g_jit_cache_clock;
-    g_jit_stats.cache_evictions++;
-}
-
-static uint64_t jitCacheUsedEntries(void) {
-    uint64_t used = 0;
-    for (int i = 0; i < NQ_JIT_CACHE_SIZE; i++) {
-        if (g_jit_cache[i].used) used++;
-    }
-    return used;
-}
-
-void nq_jit_flush_cache(void) {
-    memset(g_jit_cache, 0, sizeof(g_jit_cache));
-    g_jit_cache_clock = 0;
-}
-
-void nq_jit_get_stats(NQJitStats* out_stats) {
-    if (!out_stats) return;
-    *out_stats = g_jit_stats;
-    out_stats->cache_entries = jitCacheUsedEntries();
-}
-
-void nq_jit_reset_stats(void) {
-    memset(&g_jit_stats, 0, sizeof(g_jit_stats));
-}
-
-bool nq_jit_set_enabled(bool enabled) {
-    g_jit_enabled = enabled;
-    return g_jit_enabled;
-}
-
-bool nq_jit_is_enabled(void) {
-    return g_jit_enabled;
 }
 
 /* Emit helpers — write bytes into a buffer and advance pointer */
@@ -402,38 +357,18 @@ static JitFn5 buildJitFunction(const JITLoopSpec* spec) {
 }
 
 bool nq_jit_run_loop(JITLoopSpec* spec) {
-    g_jit_stats.attempts++;
-    if (!g_jit_enabled) {
-        g_jit_stats.fallbacks++;
-        return false;
-    }
-    if (spec->step == 0.0) {
-        g_jit_stats.unsupported_specs++;
-        g_jit_stats.fallbacks++;
-        return false;
-    }
+    if (spec->step == 0.0) return false;
     /* Negative step supported: jbe instead of jae */
 
     int n_vars = spec->n_vars;
-    if (n_vars < 0 || n_vars > 5) {
-        g_jit_stats.unsupported_specs++;
-        g_jit_stats.fallbacks++;
-        return false;
-    }
+    if (n_vars < 0 || n_vars > 5) return false;
 
     uint32_t key = jitKeyFromSpec(spec);
     JitFn5 fn = jitCacheFind(key);
     if (!fn) {
-        g_jit_stats.cache_misses++;
         fn = buildJitFunction(spec);
-        if (!fn) {
-            g_jit_stats.fallbacks++;
-            return false;
-        }
+        if (!fn) return false;
         jitCacheStore(key, fn);
-        g_jit_stats.compiled++;
-    } else {
-        g_jit_stats.cache_hits++;
     }
 
     double* vp[5] = {NULL, NULL, NULL, NULL, NULL};
@@ -496,8 +431,6 @@ void nq_jit_get_stats(NQJitStats* out_stats) {
 void nq_jit_reset_stats(void) {
     memset(&g_jit_stats, 0, sizeof(g_jit_stats));
 }
-
-void nq_jit_flush_cache(void) {}
 
 bool nq_jit_set_enabled(bool enabled) {
     g_jit_enabled = enabled;

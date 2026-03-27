@@ -568,17 +568,14 @@ static Value nativeJitStats(int argc, Value* args) {
     (void)argc; (void)args;
     NQJitStats stats;
     nq_jit_get_stats(&stats);
-    char buf[320];
+    char buf[192];
     snprintf(buf, sizeof(buf),
-             "attempts=%llu hits=%llu misses=%llu compiled=%llu fallbacks=%llu evictions=%llu unsupported=%llu entries=%llu",
+             "attempts=%llu hits=%llu misses=%llu compiled=%llu fallbacks=%llu",
              (unsigned long long)stats.attempts,
              (unsigned long long)stats.cache_hits,
              (unsigned long long)stats.cache_misses,
              (unsigned long long)stats.compiled,
-             (unsigned long long)stats.fallbacks,
-             (unsigned long long)stats.cache_evictions,
-             (unsigned long long)stats.unsupported_specs,
-             (unsigned long long)stats.cache_entries);
+             (unsigned long long)stats.fallbacks);
     return OBJ_VAL(copyString(buf, (int)strlen(buf)));
 }
 
@@ -586,13 +583,6 @@ static Value nativeJitStats(int argc, Value* args) {
 static Value nativeJitResetStats(int argc, Value* args) {
     (void)argc; (void)args;
     nq_jit_reset_stats();
-    return NIL_VAL;
-}
-
-/* jit_flush_cache() -> nil */
-static Value nativeJitFlushCache(int argc, Value* args) {
-    (void)argc; (void)args;
-    nq_jit_flush_cache();
     return NIL_VAL;
 }
 
@@ -795,7 +785,6 @@ void initVM(VM* vm) {
     registerNative(vm, "jit_enable",  nativeJitEnable,   1);
     registerNative(vm, "jit_stats",   nativeJitStats,    0);
     registerNative(vm, "jit_reset_stats", nativeJitResetStats, 0);
-    registerNative(vm, "jit_flush_cache", nativeJitFlushCache, 0);
     registerNative(vm, "is_nil",      nativeIsNil,       1);
     registerNative(vm, "is_num",      nativeIsNum,       1);
     registerNative(vm, "bool",        nativeBool,        1);
