@@ -54,8 +54,6 @@ typedef struct {
 
 #define NQ_JIT_CACHE_SIZE 64
 static JitCacheEntry g_jit_cache[NQ_JIT_CACHE_SIZE];
-static NQJitStats g_jit_stats;
-static bool g_jit_enabled = true;
 
 static uint32_t jitKeyFromSpec(const JITLoopSpec* spec) {
     uint32_t key = (spec->step > 0.0) ? 1u : 0u;
@@ -84,24 +82,6 @@ static void jitCacheStore(uint32_t key, JitFn5 fn) {
             return;
         }
     }
-}
-
-void nq_jit_get_stats(NQJitStats* out_stats) {
-    if (!out_stats) return;
-    *out_stats = g_jit_stats;
-}
-
-void nq_jit_reset_stats(void) {
-    memset(&g_jit_stats, 0, sizeof(g_jit_stats));
-}
-
-bool nq_jit_set_enabled(bool enabled) {
-    g_jit_enabled = enabled;
-    return g_jit_enabled;
-}
-
-bool nq_jit_is_enabled(void) {
-    return g_jit_enabled;
 }
 
 /* Emit helpers — write bytes into a buffer and advance pointer */
@@ -377,11 +357,6 @@ static JitFn5 buildJitFunction(const JITLoopSpec* spec) {
 }
 
 bool nq_jit_run_loop(JITLoopSpec* spec) {
-    g_jit_stats.attempts++;
-    if (!g_jit_enabled) {
-        g_jit_stats.fallbacks++;
-        return false;
-    }
     if (spec->step == 0.0) return false;
     /* Negative step supported: jbe instead of jae */
 
@@ -391,16 +366,9 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
     uint32_t key = jitKeyFromSpec(spec);
     JitFn5 fn = jitCacheFind(key);
     if (!fn) {
-        g_jit_stats.cache_misses++;
         fn = buildJitFunction(spec);
-        if (!fn) {
-            g_jit_stats.fallbacks++;
-            return false;
-        }
+        if (!fn) return false;
         jitCacheStore(key, fn);
-        g_jit_stats.compiled++;
-    } else {
-        g_jit_stats.cache_hits++;
     }
 
     double* vp[5] = {NULL, NULL, NULL, NULL, NULL};
