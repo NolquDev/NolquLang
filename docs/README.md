@@ -18,9 +18,9 @@ Documentation for the **v1.2.1 stable release**.
 
 ---
 
-## `dev/` — Nolqu v1.2.0 (Primary)
+## `dev/` — Current development docs (Primary)
 
-The main documentation. Reflects v1.2.1 stable.
+The main documentation for in-progress and newest language features.
 
 | Document | Contents |
 |---|---|
@@ -35,16 +35,16 @@ The main documentation. Reflects v1.2.1 stable.
 ## Which should I read?
 
 ```
-Are you using a v1.0.0 stable binary?
+Are you using the latest stable release (v1.2.1)?
   └─ Yes → read docs/stable/
-  └─ No, I want the full/latest docs → read docs/dev/
+  └─ No, I want current/latest features → read docs/dev/
 ```
 
 ---
 
 ## Version comparison
 
-| Feature | v1.0.0 | v1.2.0 |
+| Feature | v1.0.0 | v1.2.x |
 |---|---|---|
 | `break` / `continue` | ✗ | ✓ |
 | `for item in array` | ✗ | ✓ |

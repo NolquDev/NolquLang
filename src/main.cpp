@@ -409,9 +409,32 @@ static void printHelp(void) {
     printf("  function greet(name = \"world\")  return \"Hi, \" .. name  end\n");
     printf("  try  error(\"oops\")  catch err  print error_type(err)  end\n");
     printf("  arr[1:3]  s[:5]  s[-2:]            # slice\n");
-  printf("  1 < x < 10                         # comparison chaining\n");
-  printf("  from stdlib/math import PI, sin    # selective import\n");
+    printf("  1 < x < 10                         # comparison chaining\n");
+    printf("  from stdlib/math import PI, sin    # selective import\n");
     printf("\n");
+}
+
+static int runReplCommand(void) {
+    VM vm;
+    initVM(&vm);
+    runREPL(&vm);
+    freeVM(&vm);
+    return 0;
+}
+
+static int runScriptWithArgs(const char* script, int argc, char* argv[], int args_start) {
+    VM vm;
+    initVM(&vm);
+
+    /* Skip optional "--" separator */
+    if (args_start < argc && strcmp(argv[args_start], "--") == 0) {
+        args_start++;
+    }
+
+    nq_set_args(&vm, argc - args_start, argv + args_start);
+    int result = runFile(&vm, script);
+    freeVM(&vm);
+    return result;
 }
 
 // ─────────────────────────────────────────────
