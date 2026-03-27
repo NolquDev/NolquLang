@@ -280,7 +280,7 @@ static JitFn5 buildJitFunction(const JITLoopSpec* spec) {
     /* Load accumulators */
     for (int k = 0; k < n_vars; k++) {
         int base = ptr_reg_for_var(k);
-        if (base < 0) return false; /* shouldn't happen given n_vars <= 5 */
+        if (base < 0) { munmap(buf, page); return NULL; } /* safety */
         emit_movsd_load(&p, accum_xmm_for_var(k), base, 0);
     }
 
@@ -405,14 +405,20 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
         while (*spec->i_ptr < spec->stop) {
             *spec->i_ptr += spec->step;
             for (int k = 0; k < spec->n_vars; k++)
-                *spec->var_ptrs[k] += spec->deltas[k];
+                if (spec->ops[k] == JIT_OP_MUL) *spec->var_ptrs[k] *= spec->deltas[k];
+                else                            *spec->var_ptrs[k] += spec->deltas[k];
         }
     } else if (spec->step < 0) {
         while (*spec->i_ptr > spec->stop) {
             *spec->i_ptr += spec->step;
             for (int k = 0; k < spec->n_vars; k++)
-                *spec->var_ptrs[k] += spec->deltas[k];
+                if (spec->ops[k] == JIT_OP_MUL) *spec->var_ptrs[k] *= spec->deltas[k];
+                else                            *spec->var_ptrs[k] += spec->deltas[k];
         }
+    } else {
+        g_jit_stats.unsupported_specs++;
+        g_jit_stats.fallbacks++;
+        return false;
     }
     return true;
 }
