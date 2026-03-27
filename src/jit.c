@@ -39,6 +39,51 @@
 #include <sys/mman.h>
 #include <stdint.h>
 
+typedef void (*JitFn5)(
+    double* i, double stop, double step,
+    double* n0, double d0, double* n1, double d1,
+    double* n2, double d2, double* n3, double d3,
+    double* n4, double d4
+);
+
+typedef struct {
+    bool    used;
+    uint32_t key;
+    JitFn5  fn;
+} JitCacheEntry;
+
+#define NQ_JIT_CACHE_SIZE 64
+static JitCacheEntry g_jit_cache[NQ_JIT_CACHE_SIZE];
+
+static uint32_t jitKeyFromSpec(const JITLoopSpec* spec) {
+    uint32_t key = (spec->step > 0.0) ? 1u : 0u;
+    key |= ((uint32_t)(spec->n_vars & 0x7)) << 1;
+    for (int k = 0; k < spec->n_vars && k < 5; k++) {
+        key |= ((uint32_t)(spec->ops[k] == JIT_OP_MUL ? 1u : 0u)) << (4 + k);
+    }
+    return key;
+}
+
+static JitFn5 jitCacheFind(uint32_t key) {
+    for (int i = 0; i < NQ_JIT_CACHE_SIZE; i++) {
+        if (g_jit_cache[i].used && g_jit_cache[i].key == key) {
+            return g_jit_cache[i].fn;
+        }
+    }
+    return NULL;
+}
+
+static void jitCacheStore(uint32_t key, JitFn5 fn) {
+    for (int i = 0; i < NQ_JIT_CACHE_SIZE; i++) {
+        if (!g_jit_cache[i].used) {
+            g_jit_cache[i].used = true;
+            g_jit_cache[i].key  = key;
+            g_jit_cache[i].fn   = fn;
+            return;
+        }
+    }
+}
+
 /* Emit helpers — write bytes into a buffer and advance pointer */
 static void emit_byte(uint8_t** p, uint8_t b)      { *(*p)++ = b; }
 static void emit2(uint8_t** p, uint8_t a, uint8_t b) { emit_byte(p,a); emit_byte(p,b); }
@@ -204,18 +249,12 @@ static int accum_xmm_for_var(int k) {
     return 8 + k; /* xmm8, xmm9, xmm10... (needs REX prefix in encoding) */
 }
 
-bool nq_jit_run_loop(JITLoopSpec* spec) {
-    if (spec->step == 0.0) return false;
-    /* Negative step supported: jbe instead of jae */
-
+static JitFn5 buildJitFunction(const JITLoopSpec* spec) {
     int n_vars = spec->n_vars;
-    if (n_vars < 0 || n_vars > 5) return false;
-
-    /* Allocate executable memory — one page is more than enough */
     size_t page = (size_t)sysconf(_SC_PAGESIZE);
     uint8_t* buf = (uint8_t*)mmap(NULL, page,
         PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (buf == MAP_FAILED) return false;
+    if (buf == MAP_FAILED) return NULL;
 
     uint8_t* p = buf;
 
@@ -294,7 +333,7 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
     /* Patch jae offset */
     uint8_t* done_ptr = p;
     int jae_off = (int)(done_ptr - (jae_ip + 2));
-    if (jae_off > 127) { mmap(buf, page, 0, 0, -1, 0); return false; }
+    if (jae_off > 127) { munmap(buf, page); return NULL; }
     jae_ip[1] = (uint8_t)(int8_t)jae_off;
 
     /* Store results back */
@@ -309,55 +348,38 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
 
     /* Make executable */
     if (mprotect(buf, page, PROT_READ | PROT_EXEC) != 0) {
-        munmap(buf, page); return false;
+        munmap(buf, page); return NULL;
     }
 
-    /*
-     * Build argument list and call the generated function.
-     *
-     * The C compiler will place args into the right registers
-     * for us via the calling convention. We use a typed function
-     * pointer that matches the generated code's expected ABI.
-     *
-     * For 0..5 body vars we use overloaded call patterns via
-     * a simple switch — ugly but avoids va_args and is safe.
-     */
-    typedef void (*F0)(double* i, double stop, double step);
-    typedef void (*F1)(double* i, double stop, double step,
-                       double* n0, double d0);
-    typedef void (*F2)(double* i, double stop, double step,
-                       double* n0, double d0, double* n1, double d1);
-    typedef void (*F3)(double* i, double stop, double step,
-                       double* n0, double d0, double* n1, double d1,
-                       double* n2, double d2);
+    union { void* v; JitFn5 f; } u;
+    u.v = buf;
+    return u.f;
+}
 
-    double* vp[5];
-    for (int k = 0; k < n_vars; k++) vp[k] = spec->var_ptrs[k];
+bool nq_jit_run_loop(JITLoopSpec* spec) {
+    if (spec->step == 0.0) return false;
+    /* Negative step supported: jbe instead of jae */
 
-    switch (n_vars) {
-        case 0:
-            { union { void* v; F0 f; } u; u.v = buf; u.f(spec->i_ptr, spec->stop, spec->step); }
-            break;
-        case 1:
-            { union { void* v; F1 f; } u; u.v = buf;
-              u.f(spec->i_ptr, spec->stop, spec->step, vp[0], spec->deltas[0]); }
-            break;
-        case 2:
-            { union { void* v; F2 f; } u; u.v = buf;
-              u.f(spec->i_ptr, spec->stop, spec->step,
-                  vp[0], spec->deltas[0], vp[1], spec->deltas[1]); }
-            break;
-        case 3:
-            { union { void* v; F3 f; } u; u.v = buf;
-              u.f(spec->i_ptr, spec->stop, spec->step,
-                  vp[0], spec->deltas[0], vp[1], spec->deltas[1],
-                  vp[2], spec->deltas[2]); }
-            break;
-        default:
-            munmap(buf, page); return false;
+    int n_vars = spec->n_vars;
+    if (n_vars < 0 || n_vars > 5) return false;
+
+    uint32_t key = jitKeyFromSpec(spec);
+    JitFn5 fn = jitCacheFind(key);
+    if (!fn) {
+        fn = buildJitFunction(spec);
+        if (!fn) return false;
+        jitCacheStore(key, fn);
     }
 
-    munmap(buf, page);
+    double* vp[5] = {NULL, NULL, NULL, NULL, NULL};
+    double  dv[5] = {0, 0, 0, 0, 0};
+    for (int k = 0; k < n_vars; k++) {
+        vp[k] = spec->var_ptrs[k];
+        dv[k] = spec->deltas[k];
+    }
+
+    fn(spec->i_ptr, spec->stop, spec->step,
+       vp[0], dv[0], vp[1], dv[1], vp[2], dv[2], vp[3], dv[3], vp[4], dv[4]);
     return true;
 }
 
