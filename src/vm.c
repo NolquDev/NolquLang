@@ -16,6 +16,26 @@
 static VM* g_vm_for_error = NULL;
 static bool throwError(VM* vm, Value error_val);  /* defined later */
 
+static void runJitFallbackLoop(const JITLoopSpec* spec) {
+    if (spec->step > 0) {
+        while (*spec->i_ptr < spec->stop) {
+            *spec->i_ptr += spec->step;
+            for (int k = 0; k < spec->n_vars; k++) {
+                if (spec->ops[k] == JIT_OP_MUL) *spec->var_ptrs[k] *= spec->deltas[k];
+                else                            *spec->var_ptrs[k] += spec->deltas[k];
+            }
+        }
+    } else if (spec->step < 0) {
+        while (*spec->i_ptr > spec->stop) {
+            *spec->i_ptr += spec->step;
+            for (int k = 0; k < spec->n_vars; k++) {
+                if (spec->ops[k] == JIT_OP_MUL) *spec->var_ptrs[k] *= spec->deltas[k];
+                else                            *spec->var_ptrs[k] += spec->deltas[k];
+            }
+        }
+    }
+}
+
 // ─────────────────────────────────────────────
 //  Native function implementations
 // ─────────────────────────────────────────────
@@ -527,6 +547,55 @@ static Value nativeMemUsage(int argc, Value* args) {
     return NUMBER_VAL((double)nq_bytes_allocated);
 }
 
+/* jit_enabled() -> bool, jit_enable(bool) -> bool */
+static Value nativeJitEnabled(int argc, Value* args) {
+    (void)argc; (void)args;
+    return BOOL_VAL(nq_jit_is_enabled());
+}
+
+static Value nativeJitEnable(int argc, Value* args) {
+    if (argc != 1 || !IS_BOOL(args[0])) {
+        const char* msg = "TypeError: jit_enable(bool) expects 1 boolean argument";
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return NIL_VAL;
+    }
+    return BOOL_VAL(nq_jit_set_enabled(AS_BOOL(args[0])));
+}
+
+/* jit_stats() -> "attempts=..., hits=..., misses=..., compiled=..., fallbacks=..." */
+static Value nativeJitStats(int argc, Value* args) {
+    (void)argc; (void)args;
+    NQJitStats stats;
+    nq_jit_get_stats(&stats);
+    char buf[320];
+    snprintf(buf, sizeof(buf),
+             "attempts=%llu hits=%llu misses=%llu compiled=%llu fallbacks=%llu evictions=%llu unsupported=%llu entries=%llu",
+             (unsigned long long)stats.attempts,
+             (unsigned long long)stats.cache_hits,
+             (unsigned long long)stats.cache_misses,
+             (unsigned long long)stats.compiled,
+             (unsigned long long)stats.fallbacks,
+             (unsigned long long)stats.cache_evictions,
+             (unsigned long long)stats.unsupported_specs,
+             (unsigned long long)stats.cache_entries);
+    return OBJ_VAL(copyString(buf, (int)strlen(buf)));
+}
+
+/* jit_reset_stats() -> nil */
+static Value nativeJitResetStats(int argc, Value* args) {
+    (void)argc; (void)args;
+    nq_jit_reset_stats();
+    return NIL_VAL;
+}
+
+/* jit_flush_cache() -> nil */
+static Value nativeJitFlushCache(int argc, Value* args) {
+    (void)argc; (void)args;
+    nq_jit_flush_cache();
+    return NIL_VAL;
+}
+
 // is_nil(v) / is_num(v) / is_str(v) / is_bool(v) / is_array(v) — type predicates
 static Value nativeIsNil(int argc, Value* args)   { return BOOL_VAL(argc==1 && IS_NIL(args[0]));    }
 static Value nativeIsNum(int argc, Value* args)   { return BOOL_VAL(argc==1 && IS_NUMBER(args[0])); }
@@ -722,6 +791,11 @@ void initVM(VM* vm) {
     registerNative(vm, "assert",      nativeAssert,     -1); // 1 or 2 args
     registerNative(vm, "clock",       nativeClock,       0);
     registerNative(vm, "mem_usage",   nativeMemUsage,    0);
+    registerNative(vm, "jit_enabled", nativeJitEnabled,  0);
+    registerNative(vm, "jit_enable",  nativeJitEnable,   1);
+    registerNative(vm, "jit_stats",   nativeJitStats,    0);
+    registerNative(vm, "jit_reset_stats", nativeJitResetStats, 0);
+    registerNative(vm, "jit_flush_cache", nativeJitFlushCache, 0);
     registerNative(vm, "is_nil",      nativeIsNil,       1);
     registerNative(vm, "is_num",      nativeIsNum,       1);
     registerNative(vm, "bool",        nativeBool,        1);
@@ -1290,7 +1364,9 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     spec.ops[k]      = (JITOp)vop;
                 }
 
-                nq_jit_run_loop(&spec);
+                if (!nq_jit_run_loop(&spec)) {
+                    runJitFallbackLoop(&spec);
+                }
                 break;
             }
 
@@ -1407,4 +1483,3 @@ void nq_set_args(VM* vm, int argc, char** argv) {
     tableSet(&vm->globals, key, OBJ_VAL(arr));
     vm->stack_top--;  /* pop arr */
 }
-
