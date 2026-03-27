@@ -40,7 +40,7 @@ Great for learning, scripting, and embedding into C or C++ projects.
 - 50+ built-in functions + `range()` `first()` `last()` `find()` `count_if()` in stdlib
 - **C/C++ embed API** — drop Nolqu into any C or C++ project via `nolqu.h`
 - Runtime core in **C11**, tooling in **C++17**
-- Current version: **v1.2.2a9** (Stable)
+- Current development version: **v1.2.2a9** (alpha)
 
 ---
 
@@ -66,6 +66,20 @@ cp nq $PREFIX/bin/
 ```bash
 git clone https://github.com/Nadzil123/Nolqu.git
 cd Nolqu && mingw32-make
+```
+
+---
+
+## Project Structure
+
+```text
+.
+├── src/         # Runtime + compiler implementation (C11 + C++17)
+├── include/     # Public embed API (nolqu.h)
+├── stdlib/      # Standard library modules written in Nolqu
+├── examples/    # Language examples and test scripts
+├── docs/        # Stable and development documentation tracks
+└── assets/      # Banner/logo assets
 ```
 
 ---
@@ -182,8 +196,8 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 | | |
 |---|---|
 | [docs/README.md](docs/README.md) | Documentation index — stable vs dev, version comparison |
-| [docs/stable/](docs/stable/) | Docs for **v1.2.2a9 stable** |
-| [docs/dev/](docs/dev/) | Docs for **v1.2.2a9** (current) |
+| [docs/stable/](docs/stable/) | Docs for the **v1.2.1 stable release** |
+| [docs/dev/](docs/dev/) | Docs for **current development** versions |
 | [docs/dev/semantics.md](docs/dev/semantics.md) | Truthiness, null, const, slice, logical operators |
 | [CHANGELOG.md](CHANGELOG.md) | Full version history |
 | [ROADMAP.md](ROADMAP.md) | What's coming |

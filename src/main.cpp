@@ -384,6 +384,7 @@ static void printHelp(void) {
     printf("  Error:    error(msg)  assert(cond [, msg])\n");
     printf("  Time:     clock()\n");
     printf("  Memory:   mem_usage()  gc_collect()\n");
+    printf("  JIT:      jit_enabled()  jit_enable(bool)  jit_stats()  jit_reset_stats()\n");
     printf("\n");
     printf(NQ_COLOR_BOLD "Stdlib (import \"stdlib/name\"):" NQ_COLOR_RESET "\n");
     printf("  math      clamp  lerp  sign  PI  TAU  E  sin  cos  tan  log  gcd  lcm\n");
@@ -409,9 +410,32 @@ static void printHelp(void) {
     printf("  function greet(name = \"world\")  return \"Hi, \" .. name  end\n");
     printf("  try  error(\"oops\")  catch err  print error_type(err)  end\n");
     printf("  arr[1:3]  s[:5]  s[-2:]            # slice\n");
-  printf("  1 < x < 10                         # comparison chaining\n");
-  printf("  from stdlib/math import PI, sin    # selective import\n");
+    printf("  1 < x < 10                         # comparison chaining\n");
+    printf("  from stdlib/math import PI, sin    # selective import\n");
     printf("\n");
+}
+
+static int runReplCommand(void) {
+    VM vm;
+    initVM(&vm);
+    runREPL(&vm);
+    freeVM(&vm);
+    return 0;
+}
+
+static int runScriptWithArgs(const char* script, int argc, char* argv[], int args_start) {
+    VM vm;
+    initVM(&vm);
+
+    /* Skip optional "--" separator */
+    if (args_start < argc && strcmp(argv[args_start], "--") == 0) {
+        args_start++;
+    }
+
+    nq_set_args(&vm, argc - args_start, argv + args_start);
+    int result = runFile(&vm, script);
+    freeVM(&vm);
+    return result;
 }
 
 // ─────────────────────────────────────────────
@@ -419,17 +443,14 @@ static void printHelp(void) {
 // ─────────────────────────────────────────────
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-        VM vm; initVM(&vm);
-        runREPL(&vm);
-        freeVM(&vm);
-        return 0;
+        return runReplCommand();
     }
 
     const char* cmd = argv[1];
 
     // No-arg commands
     if (strcmp(cmd, "repl") == 0) {
-        VM vm; initVM(&vm); runREPL(&vm); freeVM(&vm); return 0;
+        return runReplCommand();
     }
     if (strcmp(cmd, "version") == 0 || strcmp(cmd, "--version") == 0 ||
         strcmp(cmd, "-v")      == 0) { printVersion(); return 0; }
@@ -456,15 +477,7 @@ int main(int argc, char* argv[]) {
              * All arguments after the script filename are available
              * inside the script as the ARGS array.
              */
-            VM vm; initVM(&vm);
-            const char* script = argv[2];
-            int   args_start   = 3;  /* argv[3] onward = script args */
-            /* Skip optional "--" separator */
-            if (args_start < argc && strcmp(argv[args_start], "--") == 0)
-                args_start++;
-            nq_set_args(&vm, argc - args_start, argv + args_start);
-            int r = runFile(&vm, script);
-            freeVM(&vm); return r;
+            return runScriptWithArgs(argv[2], argc, argv, 3);
         }
         if (strcmp(cmd, "check") == 0)   return checkFile(argv[2]);
         if (strcmp(cmd, "test")  == 0)   return runTests(argv[2]);
@@ -489,12 +502,6 @@ int main(int argc, char* argv[]) {
          *   nq script.nq arg1 arg2
          *   nq script.nq -- arg1 arg2
          */
-        int args_start = 2;
-        if (args_start < argc && strcmp(argv[args_start], "--") == 0)
-            args_start++;
-        VM vm; initVM(&vm);
-        nq_set_args(&vm, argc - args_start, argv + args_start);
-        int r = runFile(&vm, cmd);
-        freeVM(&vm); return r;
+        return runScriptWithArgs(cmd, argc, argv, 2);
     }
 }
