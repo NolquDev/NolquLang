@@ -377,6 +377,7 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
         vp[k] = spec->var_ptrs[k];
         dv[k] = spec->deltas[k];
     }
+    /* Negative step supported: jbe instead of jae */
 
     fn(spec->i_ptr, spec->stop, spec->step,
        vp[0], dv[0], vp[1], dv[1], vp[2], dv[2], vp[3], dv[3], vp[4], dv[4]);
