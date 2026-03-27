@@ -384,6 +384,7 @@ static void printHelp(void) {
     printf("  Error:    error(msg)  assert(cond [, msg])\n");
     printf("  Time:     clock()\n");
     printf("  Memory:   mem_usage()  gc_collect()\n");
+    printf("  JIT:      jit_enabled()  jit_enable(bool)  jit_stats()  jit_reset_stats()\n");
     printf("\n");
     printf(NQ_COLOR_BOLD "Stdlib (import \"stdlib/name\"):" NQ_COLOR_RESET "\n");
     printf("  math      clamp  lerp  sign  PI  TAU  E  sin  cos  tan  log  gcd  lcm\n");

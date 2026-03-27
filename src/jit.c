@@ -385,12 +385,22 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
 
 #else /* ─── Non-x86-64 fallback ─────────────────────────────────────── */
 
+static NQJitStats g_jit_stats;
+static bool g_jit_enabled = true;
+
 bool nq_jit_run_loop(JITLoopSpec* spec) {
+    g_jit_stats.attempts++;
+    if (!g_jit_enabled) {
+        g_jit_stats.fallbacks++;
+        return false;
+    }
     /*
      * No JIT available on this platform.
      * Execute the loop as a C tight-loop (no bytecode dispatch overhead,
      * since we have direct double* pointers to the slot values).
      */
+    g_jit_stats.cache_misses++;
+    g_jit_stats.fallbacks++;
     if (spec->step > 0) {
         while (*spec->i_ptr < spec->stop) {
             *spec->i_ptr += spec->step;
@@ -405,6 +415,24 @@ bool nq_jit_run_loop(JITLoopSpec* spec) {
         }
     }
     return true;
+}
+
+void nq_jit_get_stats(NQJitStats* out_stats) {
+    if (!out_stats) return;
+    *out_stats = g_jit_stats;
+}
+
+void nq_jit_reset_stats(void) {
+    memset(&g_jit_stats, 0, sizeof(g_jit_stats));
+}
+
+bool nq_jit_set_enabled(bool enabled) {
+    g_jit_enabled = enabled;
+    return g_jit_enabled;
+}
+
+bool nq_jit_is_enabled(void) {
+    return g_jit_enabled;
 }
 
 #endif
