@@ -173,7 +173,7 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 
 ## Standard Library
 
-10 modules included:
+11 modules included:
 
 | Module | Key functions |
 |---|---|
@@ -199,6 +199,7 @@ REPL commands: `help` · `clear` · `exit` · `quit`
 | [docs/stable/](docs/stable/) | Docs for the **v1.2.1 stable release** |
 | [docs/dev/](docs/dev/) | Docs for **current development** versions |
 | [docs/dev/semantics.md](docs/dev/semantics.md) | Truthiness, null, const, slice, logical operators |
+| [docs/dev/feature_gap.md](docs/dev/feature_gap.md) | Priority plan for missing features and implementation phases |
 | [CHANGELOG.md](CHANGELOG.md) | Full version history |
 | [ROADMAP.md](ROADMAP.md) | What's coming |
 
