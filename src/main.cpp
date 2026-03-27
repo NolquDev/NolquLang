@@ -438,69 +438,101 @@ static int runScriptWithArgs(const char* script, int argc, char* argv[], int arg
 }
 
 // ─────────────────────────────────────────────
+//  Command dispatch helpers
+// ─────────────────────────────────────────────
+static bool isVersionCommand(const char* cmd) {
+    return strcmp(cmd, "version") == 0 || strcmp(cmd, "--version") == 0 ||
+           strcmp(cmd, "-v") == 0;
+}
+
+static bool isHelpCommand(const char* cmd) {
+    return strcmp(cmd, "help") == 0 || strcmp(cmd, "--help") == 0 ||
+           strcmp(cmd, "-h") == 0;
+}
+
+static bool needsFilename(const char* cmd) {
+    return strcmp(cmd, "run") == 0 || strcmp(cmd, "check") == 0 ||
+           strcmp(cmd, "test") == 0 || strcmp(cmd, "compile") == 0;
+}
+
+static int printMissingFilename(const char* cmd) {
+    fprintf(stderr,
+        NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET
+        " Missing filename.\n"
+        "  Usage:  nq %s <file.nq>\n"
+        "  Run  " NQ_COLOR_BOLD "nq help" NQ_COLOR_RESET
+        "  for all commands.\n\n", cmd);
+    return 1;
+}
+
+static int runScriptWithArgs(const char* script, int argc, char* argv[], int args_start) {
+    /* Skip optional "--" separator */
+    if (args_start < argc && strcmp(argv[args_start], "--") == 0)
+        args_start++;
+
+    VM vm;
+    initVM(&vm);
+    nq_set_args(&vm, argc - args_start, argv + args_start);
+    int r = runFile(&vm, script);
+    freeVM(&vm);
+    return r;
+}
+
+// ─────────────────────────────────────────────
 //  Entry point
 // ─────────────────────────────────────────────
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-        return runReplCommand();
+        VM vm;
+        initVM(&vm);
+        runREPL(&vm);
+        freeVM(&vm);
+        return 0;
     }
 
     const char* cmd = argv[1];
 
-    // No-arg commands
     if (strcmp(cmd, "repl") == 0) {
-        return runReplCommand();
+        VM vm;
+        initVM(&vm);
+        runREPL(&vm);
+        freeVM(&vm);
+        return 0;
     }
-    if (strcmp(cmd, "version") == 0 || strcmp(cmd, "--version") == 0 ||
-        strcmp(cmd, "-v")      == 0) { printVersion(); return 0; }
-    if (strcmp(cmd, "help")    == 0 || strcmp(cmd, "--help")    == 0 ||
-        strcmp(cmd, "-h")      == 0) { printHelp();    return 0; }
+    if (isVersionCommand(cmd)) {
+        printVersion();
+        return 0;
+    }
+    if (isHelpCommand(cmd)) {
+        printHelp();
+        return 0;
+    }
 
-    // Two-argument commands — check that a filename was provided
-    if (strcmp(cmd, "run") == 0 || strcmp(cmd, "check") == 0 ||
-        strcmp(cmd, "test") == 0 || strcmp(cmd, "compile") == 0) {
-        if (argc < 3) {
-            fprintf(stderr,
-                NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET
-                " Missing filename.\n"
-                "  Usage:  nq %s <file.nq>\n"
-                "  Run  " NQ_COLOR_BOLD "nq help" NQ_COLOR_RESET
-                "  for all commands.\n\n", cmd);
-            return 1;
-        }
+    if (needsFilename(cmd)) {
+        if (argc < 3) return printMissingFilename(cmd);
+
         if (strcmp(cmd, "run") == 0) {
-            /*
-             * nq run script.nq [arg1 arg2 ...]
-             * nq run script.nq -- arg1 arg2   (explicit separator)
-             *
-             * All arguments after the script filename are available
-             * inside the script as the ARGS array.
-             */
             return runScriptWithArgs(argv[2], argc, argv, 3);
         }
-        if (strcmp(cmd, "check") == 0)   return checkFile(argv[2]);
-        if (strcmp(cmd, "test")  == 0)   return runTests(argv[2]);
-        if (strcmp(cmd, "compile") == 0) return compileToC(argc - 2, argv + 2);
+        if (strcmp(cmd, "check") == 0) {
+            return checkFile(argv[2]);
+        }
+        if (strcmp(cmd, "test") == 0) {
+            return runTests(argv[2]);
+        }
+        return compileToC(argc - 2, argv + 2); // compile
     }
 
     // Bare filename: nq script.nq [arg1 arg2 ...]
-    {
-        const char* suggestion = suggestCommand(cmd);
-        if (suggestion && argc == 2) {
-            fprintf(stderr,
-                NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET
-                " Unknown command: %s\n"
-                "  Did you mean: " NQ_COLOR_BOLD "%s" NQ_COLOR_RESET " ?\n\n",
-                cmd, suggestion);
-            return 1;
-        }
-        /*
-         * Treat cmd as a script filename if it ends with .nq or the file exists.
-         * Arguments after the filename go into ARGS.
-         *
-         *   nq script.nq arg1 arg2
-         *   nq script.nq -- arg1 arg2
-         */
-        return runScriptWithArgs(cmd, argc, argv, 2);
+    const char* suggestion = suggestCommand(cmd);
+    if (suggestion && argc == 2) {
+        fprintf(stderr,
+            NQ_COLOR_RED "[UsageError]" NQ_COLOR_RESET
+            " Unknown command: %s\n"
+            "  Did you mean: " NQ_COLOR_BOLD "%s" NQ_COLOR_RESET " ?\n\n",
+            cmd, suggestion);
+        return 1;
     }
+
+    return runScriptWithArgs(cmd, argc, argv, 2);
 }
