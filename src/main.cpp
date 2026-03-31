@@ -375,6 +375,7 @@ static void printHelp(void) {
     printf("  Type:     str(v)  num(v)  bool(v)  type(v)  error_type(e)\n");
     printf("            is_nil  is_num  is_str  is_bool  is_array\n");
     printf("            ord(ch)  chr(n)\n");
+    printf("  Args:     args()  arg(index [, default])  arg_count()  argumen(...)\n");
     printf("  Math:     sqrt  floor  ceil  round  abs  pow  min  max\n");
     printf("  String:   upper  lower  slice  trim  replace  split  join\n");
     printf("            startswith  endswith  index  repeat  len\n");

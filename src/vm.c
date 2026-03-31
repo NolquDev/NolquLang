@@ -728,6 +728,7 @@ void initVM(VM* vm) {
     vm->thrown      = NIL_VAL;
     initTable(&vm->globals);
     initStringTable(&nq_string_table);
+    nq_set_args(vm, 0, NULL);  // ensure ARGS is always available
 
     // Register built-in functions
     registerNative(vm, "input",      nativeInput,      -1);
@@ -803,6 +804,7 @@ void initVM(VM* vm) {
 
 
 void freeVM(VM* vm) {
+    nq_jit_flush_cache(); // release executable pages from JIT cache
     freeTable(&vm->globals);
     freeStringTable(&nq_string_table);
     freeAllObjects();

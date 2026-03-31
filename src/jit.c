@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include "jit.h"
 #include <string.h>
+#include <math.h>
 
 /* ─────────────────────────────────────────────────────────────────────
  * x86-64 JIT path
