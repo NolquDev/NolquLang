@@ -1,0 +1,38 @@
+# jit_test.nq — JIT controls, stats, and fallback correctness
+
+assert(jit_enabled() == true, "jit enabled by default")
+
+jit_reset_stats()
+let acc = 0
+for i = 0 to 10000 step 1
+  acc += 1
+end
+assert(acc == 10000, "jit loop computes correctly")
+
+let stats_after_jit = jit_stats()
+assert(type(stats_after_jit) == "string", "jit_stats returns string")
+assert(index(stats_after_jit, "attempts=") >= 0, "jit_stats includes attempts")
+assert(index(stats_after_jit, "evictions=") >= 0, "jit_stats includes evictions")
+assert(index(stats_after_jit, "flushes=") >= 0, "jit_stats includes flushes")
+assert(index(stats_after_jit, "unsupported=") >= 0, "jit_stats includes unsupported")
+assert(index(stats_after_jit, "entries=") >= 0, "jit_stats includes entries")
+assert(jit_cache_capacity() >= 0, "jit cache capacity builtin is available")
+
+jit_enable(false)
+assert(jit_enabled() == false, "jit can be disabled")
+
+let m = 1
+for i = 0 to 10 step 1
+  m *= 2
+end
+assert(m == 1024, "fallback loop with multiply is correct")
+
+jit_enable(true)
+assert(jit_enabled() == true, "jit can be enabled again")
+
+jit_flush_cache()
+let stats_after_flush = jit_stats()
+assert(index(stats_after_flush, "entries=0") >= 0, "jit cache can be flushed")
+assert(index(stats_after_flush, "flushes=") >= 0, "jit flush counter is visible")
+
+print "jit tests OK"

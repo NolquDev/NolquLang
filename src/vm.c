@@ -12,9 +12,35 @@
 #include <string.h>
 #include <unistd.h>
 
+/*
+ * Keep a local declaration to avoid implicit-declaration failures when
+ * older jit.h copies are used during partial updates.
+ */
+void nq_jit_flush_cache(void);
+
 // Forward declaration — set in initVM, used by native error helpers
 static VM* g_vm_for_error = NULL;
 static bool throwError(VM* vm, Value error_val);  /* defined later */
+
+static void runJitFallbackLoop(const JITLoopSpec* spec) {
+    if (spec->step > 0) {
+        while (*spec->i_ptr < spec->stop) {
+            *spec->i_ptr += spec->step;
+            for (int k = 0; k < spec->n_vars; k++) {
+                if (spec->ops[k] == JIT_OP_MUL) *spec->var_ptrs[k] *= spec->deltas[k];
+                else                            *spec->var_ptrs[k] += spec->deltas[k];
+            }
+        }
+    } else if (spec->step < 0) {
+        while (*spec->i_ptr > spec->stop) {
+            *spec->i_ptr += spec->step;
+            for (int k = 0; k < spec->n_vars; k++) {
+                if (spec->ops[k] == JIT_OP_MUL) *spec->var_ptrs[k] *= spec->deltas[k];
+                else                            *spec->var_ptrs[k] += spec->deltas[k];
+            }
+        }
+    }
+}
 
 // ─────────────────────────────────────────────
 //  Native function implementations
@@ -527,6 +553,110 @@ static Value nativeMemUsage(int argc, Value* args) {
     return NUMBER_VAL((double)nq_bytes_allocated);
 }
 
+/* args()/arg()/arg_count()/argumen() — command line argument helpers */
+static ObjArray* getArgsArrayOrNull(void) {
+    if (!g_vm_for_error) return NULL;
+    ObjString* key = copyString("ARGS", 4);
+    Value args_value = NIL_VAL;
+    if (!tableGet(&g_vm_for_error->globals, key, &args_value)) return NULL;
+    if (!IS_ARRAY(args_value)) return NULL;
+    return AS_ARRAY(args_value);
+}
+
+static Value nativeArgs(int argc, Value* args) {
+    (void)args;
+    if (argc != 0) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("TypeError: args() expects 0 arguments", 37));
+        return NIL_VAL;
+    }
+    ObjArray* arr = getArgsArrayOrNull();
+    if (!arr) return OBJ_VAL(newArray());
+    return OBJ_VAL(arr);
+}
+
+static Value nativeArgCount(int argc, Value* args) {
+    (void)args;
+    if (argc != 0) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("TypeError: arg_count() expects 0 arguments", 42));
+        return NIL_VAL;
+    }
+    ObjArray* arr = getArgsArrayOrNull();
+    return NUMBER_VAL(arr ? arr->count : 0);
+}
+
+static Value nativeArg(int argc, Value* args) {
+    if (argc < 1 || argc > 2 || !IS_NUMBER(args[0])) {
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString("TypeError: arg(index [, default]) expects index as number", 58));
+        return NIL_VAL;
+    }
+    ObjArray* arr = getArgsArrayOrNull();
+    int count = arr ? arr->count : 0;
+    int idx = (int)AS_NUMBER(args[0]);
+    if (idx < 0) idx += count;
+    if (idx >= 0 && idx < count) return arr->items[idx];
+    if (argc == 2) return args[1];
+    return NIL_VAL;
+}
+
+/* jit_enabled() -> bool, jit_enable(bool) -> bool */
+static Value nativeJitEnabled(int argc, Value* args) {
+    (void)argc; (void)args;
+    return BOOL_VAL(nq_jit_is_enabled());
+}
+
+static Value nativeJitEnable(int argc, Value* args) {
+    if (argc != 1 || !IS_BOOL(args[0])) {
+        const char* msg = "TypeError: jit_enable(bool) expects 1 boolean argument";
+        if (g_vm_for_error) g_vm_for_error->thrown =
+            OBJ_VAL(copyString(msg, (int)strlen(msg)));
+        return NIL_VAL;
+    }
+    return BOOL_VAL(nq_jit_set_enabled(AS_BOOL(args[0])));
+}
+
+/* jit_stats() -> "attempts=..., hits=..., misses=..., compiled=..., fallbacks=..." */
+static Value nativeJitStats(int argc, Value* args) {
+    (void)argc; (void)args;
+    NQJitStats stats;
+    nq_jit_get_stats(&stats);
+    char buf[320];
+    snprintf(buf, sizeof(buf),
+             "attempts=%llu hits=%llu misses=%llu compiled=%llu fallbacks=%llu evictions=%llu flushes=%llu unsupported=%llu entries=%llu",
+             (unsigned long long)stats.attempts,
+             (unsigned long long)stats.cache_hits,
+             (unsigned long long)stats.cache_misses,
+             (unsigned long long)stats.compiled,
+             (unsigned long long)stats.fallbacks,
+             (unsigned long long)stats.cache_evictions,
+             (unsigned long long)stats.cache_flushes,
+             (unsigned long long)stats.unsupported_specs,
+             (unsigned long long)stats.cache_entries);
+    return OBJ_VAL(copyString(buf, (int)strlen(buf)));
+}
+
+/* jit_reset_stats() -> nil */
+static Value nativeJitResetStats(int argc, Value* args) {
+    (void)argc; (void)args;
+    nq_jit_reset_stats();
+    return NIL_VAL;
+}
+
+/* jit_flush_cache() -> nil */
+static Value nativeJitFlushCache(int argc, Value* args) {
+    (void)argc; (void)args;
+    nq_jit_flush_cache();
+    return NIL_VAL;
+}
+
+/* jit_cache_capacity() -> number */
+static Value nativeJitCacheCapacity(int argc, Value* args) {
+    (void)argc; (void)args;
+    return NUMBER_VAL((double)nq_jit_cache_capacity());
+}
+
 // is_nil(v) / is_num(v) / is_str(v) / is_bool(v) / is_array(v) — type predicates
 static Value nativeIsNil(int argc, Value* args)   { return BOOL_VAL(argc==1 && IS_NIL(args[0]));    }
 static Value nativeIsNum(int argc, Value* args)   { return BOOL_VAL(argc==1 && IS_NUMBER(args[0])); }
@@ -669,6 +799,7 @@ void initVM(VM* vm) {
     vm->thrown      = NIL_VAL;
     initTable(&vm->globals);
     initStringTable(&nq_string_table);
+    nq_set_args(vm, 0, NULL);  // ensure ARGS is always available
 
     // Register built-in functions
     registerNative(vm, "input",      nativeInput,      -1);
@@ -722,6 +853,16 @@ void initVM(VM* vm) {
     registerNative(vm, "assert",      nativeAssert,     -1); // 1 or 2 args
     registerNative(vm, "clock",       nativeClock,       0);
     registerNative(vm, "mem_usage",   nativeMemUsage,    0);
+    registerNative(vm, "args",        nativeArgs,        0);
+    registerNative(vm, "arg",         nativeArg,        -1); // 1 or 2 args
+    registerNative(vm, "arg_count",   nativeArgCount,    0);
+    registerNative(vm, "argumen",     nativeArg,        -1); // Indonesian alias
+    registerNative(vm, "jit_enabled", nativeJitEnabled,  0);
+    registerNative(vm, "jit_enable",  nativeJitEnable,   1);
+    registerNative(vm, "jit_stats",   nativeJitStats,    0);
+    registerNative(vm, "jit_reset_stats", nativeJitResetStats, 0);
+    registerNative(vm, "jit_flush_cache", nativeJitFlushCache, 0);
+    registerNative(vm, "jit_cache_capacity", nativeJitCacheCapacity, 0);
     registerNative(vm, "is_nil",      nativeIsNil,       1);
     registerNative(vm, "is_num",      nativeIsNum,       1);
     registerNative(vm, "bool",        nativeBool,        1);
@@ -740,6 +881,7 @@ void initVM(VM* vm) {
 
 
 void freeVM(VM* vm) {
+    nq_jit_flush_cache(); // release executable pages from JIT cache
     freeTable(&vm->globals);
     freeStringTable(&nq_string_table);
     freeAllObjects();
@@ -1290,7 +1432,9 @@ InterpretResult runVM(VM* vm, ObjFunction* script, const char* source_path) {
                     spec.ops[k]      = (JITOp)vop;
                 }
 
-                nq_jit_run_loop(&spec);
+                if (!nq_jit_run_loop(&spec)) {
+                    runJitFallbackLoop(&spec);
+                }
                 break;
             }
 
@@ -1407,4 +1551,3 @@ void nq_set_args(VM* vm, int argc, char** argv) {
     tableSet(&vm->globals, key, OBJ_VAL(arr));
     vm->stack_top--;  /* pop arr */
 }
-

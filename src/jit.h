@@ -38,6 +38,7 @@
 
 #include "common.h"
 #include "value.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,8 +72,8 @@ typedef struct {
 /*
  * nq_jit_run_loop — compile and execute a JIT-able loop.
  *
- * On x86-64: generates 33–200 bytes of native code via mmap, executes it,
- * frees the mapping. The loop runs at native speed.
+ * On x86-64: generates native code via mmap, caches it by loop shape,
+ * and executes it at native speed.
  *
  * On other architectures: falls back to a C tight-loop (still fast due
  * to the direct double* pointers — no bytecode dispatch overhead).
@@ -81,6 +82,25 @@ typedef struct {
  * Returns false if JIT compilation failed (caller should interpret normally).
  */
 bool nq_jit_run_loop(JITLoopSpec* spec);
+
+typedef struct {
+    uint64_t attempts;
+    uint64_t cache_hits;
+    uint64_t cache_misses;
+    uint64_t compiled;
+    uint64_t fallbacks;
+    uint64_t cache_evictions;
+    uint64_t cache_flushes;
+    uint64_t unsupported_specs;
+    uint64_t cache_entries;
+} NQJitStats;
+
+void nq_jit_get_stats(NQJitStats* out_stats);
+void nq_jit_reset_stats(void);
+void nq_jit_flush_cache(void);
+uint64_t nq_jit_cache_capacity(void);
+bool nq_jit_set_enabled(bool enabled);
+bool nq_jit_is_enabled(void);
 
 #ifdef __cplusplus
 }

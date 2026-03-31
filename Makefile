@@ -173,6 +173,8 @@ test: release
 	@$(NQ) examples/stdlib.nq       > /dev/null && echo "  ✓ stdlib"
 	@$(NQ) examples/import_demo.nq  > /dev/null && echo "  ✓ import"
 	@$(NQ) examples/files.nq        > /dev/null && echo "  ✓ file I/O"
+	@$(NQ) examples/tests/jit_test.nq > /dev/null && echo "  ✓ jit controls"
+	@$(NQ) examples/tests/args_test.nq > /dev/null && echo "  ✓ args helpers"
 	@echo ""
 	@echo "  ── Static analysis ──"
 	@$(NQ) check examples/hello.nq       > /dev/null
