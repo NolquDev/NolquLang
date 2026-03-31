@@ -1,0 +1,18 @@
+# args_test.nq — command line argument helpers
+
+assert(type(args()) == "array", "args() returns array")
+assert(arg_count() == len(args()), "arg_count() equals len(args())")
+
+let c = arg_count()
+if c == 0
+  # default run from make test has no extra argv
+  assert(is_nil(arg(0)), "arg(0) is nil when out of range")
+  assert(arg(0, "fallback") == "fallback", "arg() default value works")
+  assert(argumen(1, "cadangan") == "cadangan", "argumen alias works")
+else
+  # with argv, helpers should return real values
+  assert(arg(0) == args()[0], "arg(0) maps to ARGS[0]")
+  assert(arg(-1) == args()[c - 1], "negative index is supported")
+end
+
+print "args tests OK"
