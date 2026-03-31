@@ -12,6 +12,12 @@
 #include <string.h>
 #include <unistd.h>
 
+/*
+ * Keep a local declaration to avoid implicit-declaration failures when
+ * older jit.h copies are used during partial updates.
+ */
+void nq_jit_flush_cache(void);
+
 // Forward declaration — set in initVM, used by native error helpers
 static VM* g_vm_for_error = NULL;
 static bool throwError(VM* vm, Value error_val);  /* defined later */
